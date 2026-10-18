@@ -419,7 +419,8 @@ func restrictedClaudeReceiptWithInput(tool, callID string, content json.RawMessa
 	if err := json.Unmarshal([]byte(receipt), &values); err != nil {
 		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
 	}
-	if values["connectionState"] != "online" || !restrictedBrainReceiptIsVerifiable(tool, values) ||
+	if (tool != "company_events" && values["connectionState"] != "online") ||
+		!restrictedBrainReceiptIsVerifiable(tool, values) ||
 		!restrictedBrainReceiptMatchesInput(tool, values, input, policy) {
 		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
 	}
@@ -496,7 +497,7 @@ func containsRestrictedProject(policy *taskpolicy.ExecutionPolicy, value any) bo
 }
 
 func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) bool {
-	if receipt["dataPolicyPresent"] != true {
+	if tool != "company_events" && receipt["dataPolicyPresent"] != true {
 		return false
 	}
 	hasNonEmptyString := func(key string) bool {
@@ -592,9 +593,10 @@ func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) boo
 		next, nextOK := safeBrainReceiptInt(receipt["nextAfterId"])
 		snapshot, snapshotOK := safeBrainReceiptInt(receipt["snapshotThroughId"])
 		hasMore, hasMoreOK := receipt["hasMore"].(bool)
+		_, pageHashOK := safeBrainReceiptHash(receipt["pageSha256"])
 		return rowsOK && len(rows) == 1 && totalOK && total == 1 &&
 			nextOK && next == 199901 && snapshotOK && snapshot == 199901 &&
-			hasMoreOK && !hasMore
+			hasMoreOK && !hasMore && pageHashOK
 	default:
 		return false
 	}

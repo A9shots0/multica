@@ -738,7 +738,7 @@ func TestRestrictedClaudeCompanyEventsResultPersistsOnlyOperationalSummary(t *te
 	if _, failure := b.handleRestrictedAssistant(assistant, make(chan Message, 1), map[string]TokenUsage{}, policy, calls); failure != "" {
 		t.Fatalf("exact event selector was rejected: %s", failure)
 	}
-	payload := `{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-10-18T01:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-10-18T01:00:00Z"},"items":[{"id":199901,"evidence_ref":"source_event:199901","producer":"synthetic_test","event_type":"watcher.status","payload_schema_version":1,"observed_at":"2026-10-18T00:00:00Z","received_at":"2026-10-18T00:00:01Z","complete":true,"scope":{"record_id":199901},"payload_sha256":"39f618e2cc21a328899a316380c29da2298b6ab9d94b71af2c3402595dd9ea92","payload":{"body":"SENSITIVE_EVENT_BODY"}}],"has_more":false,"next_after_id":199901,"snapshot_through_id":199901}`
+	payload := `{"available_streams":["source_events"],"items":[{"id":199901,"evidence_ref":"source_event:199901","producer":"synthetic_test","event_type":"watcher.status","payload_schema_version":1,"observed_at":"2026-10-18T00:00:00Z","received_at":"2026-10-18T00:00:01Z","complete":true,"scope":{"record_id":199901},"payload_sha256":"39f618e2cc21a328899a316380c29da2298b6ab9d94b71af2c3402595dd9ea92","payload":{"body":"SENSITIVE_EVENT_BODY"}}],"has_more":false,"next_after_id":199901,"page_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","snapshot_through_id":199901}`
 	content := json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
 	user := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
 		Content: []claudeContentBlock{{Type: "tool_result", ToolUseID: "event-call", Content: content}},
@@ -1139,7 +1139,7 @@ func TestRestrictedClaudeFakeCLIHelper(t *testing.T) {
 			toolCall("brain_read", fmt.Sprintf("read-%d", index), map[string]any{"id": doc, "revision": documentRevision}, scopedRead)
 		}
 		toolCall("brain_resolve", "refusal", map[string]any{"identity": "not-an-enrolled-project"}, "brain request rejected (HTTP 404)", true)
-		event := `{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"items":[{"id":199901,"evidence_ref":"source_event:199901","producer":"synthetic","event_type":"synthetic","payload_schema_version":1,"observed_at":"2000-01-01T00:00:00Z","received_at":"2000-01-01T00:00:00Z","complete":true,"scope":{},"payload_sha256":"` + strings.Repeat("a", 64) + `","payload":{}}],"has_more":false,"next_after_id":199901,"snapshot_through_id":199901}`
+		event := `{"available_streams":["source_events"],"items":[{"id":199901,"evidence_ref":"source_event:199901","producer":"synthetic","event_type":"synthetic","payload_schema_version":1,"observed_at":"2000-01-01T00:00:00Z","received_at":"2000-01-01T00:00:00Z","complete":true,"scope":{},"payload_sha256":"` + strings.Repeat("a", 64) + `","payload":{}}],"has_more":false,"next_after_id":199901,"page_sha256":"` + strings.Repeat("b", 64) + `","snapshot_through_id":199901}`
 		toolCall("company_events", "event", map[string]any{"afterId": float64(199900), "throughId": float64(199901), "limit": float64(1)}, event)
 	} else {
 		toolCall("brain_context", "context-call", map[string]any{"project": "brain", "q": "How do I retrieve evidence beyond the short search excerpt?"}, contextPayload)

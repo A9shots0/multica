@@ -3383,6 +3383,9 @@ func codexMCPBrainSafeReceipt(tool string, item map[string]any) string {
 	if payload == nil {
 		return ""
 	}
+	if tool == "company_events" {
+		return codexMCPCompanyEventsSafeReceipt(payload)
+	}
 
 	schemaVersion, ok := payload["schemaVersion"].(string)
 	if !ok || schemaVersion != "silvermediums.brain.v2" {
@@ -3452,33 +3455,48 @@ func codexMCPBrainSafeReceipt(tool string, item map[string]any) string {
 			receipt["projectsTotal"] = len(projects)
 			receipt["projectReceiptsIncomplete"] = incomplete
 		}
-	case "company_events":
-		items, itemsOK := payload["items"].([]any)
-		nextAfterID, nextAfterOK := safeBrainReceiptInt(payload["next_after_id"])
-		snapshotThroughID, snapshotThroughOK := safeBrainReceiptInt(payload["snapshot_through_id"])
-		hasMore, hasMoreOK := payload["has_more"].(bool)
-		if !itemsOK || !nextAfterOK || !snapshotThroughOK || !hasMoreOK {
+	}
+	encoded, err := json.Marshal(receipt)
+	if err != nil || len(encoded) > 4096 {
+		return ""
+	}
+	return string(encoded)
+}
+
+// company_events is served by the source-event feed rather than the Brain v2
+// document envelope. Keep its verifier separate so the adapter validates the
+// feed's actual integrity fields without inventing document-envelope metadata.
+func codexMCPCompanyEventsSafeReceipt(payload map[string]any) string {
+	items, itemsOK := payload["items"].([]any)
+	nextAfterID, nextAfterOK := safeBrainReceiptInt(payload["next_after_id"])
+	snapshotThroughID, snapshotThroughOK := safeBrainReceiptInt(payload["snapshot_through_id"])
+	hasMore, hasMoreOK := payload["has_more"].(bool)
+	pageSHA256, pageHashOK := safeBrainReceiptHash(payload["page_sha256"])
+	if !itemsOK || !nextAfterOK || !snapshotThroughOK || !hasMoreOK || !pageHashOK {
+		return ""
+	}
+	receipt := map[string]any{
+		"tool":              "company_events",
+		"eventItemsTotal":   len(items),
+		"nextAfterId":       nextAfterID,
+		"snapshotThroughId": snapshotThroughID,
+		"hasMore":           hasMore,
+		"pageSha256":        pageSHA256,
+	}
+	eventRows := make([]map[string]any, 0, len(items))
+	for _, value := range items {
+		event, ok := value.(map[string]any)
+		if !ok {
 			return ""
 		}
-		receipt["eventItemsTotal"] = len(items)
-		receipt["nextAfterId"] = nextAfterID
-		receipt["snapshotThroughId"] = snapshotThroughID
-		receipt["hasMore"] = hasMore
-		eventRows := make([]map[string]any, 0, len(items))
-		for _, value := range items {
-			event, ok := value.(map[string]any)
-			if !ok {
-				return ""
-			}
-			id, idOK := safeBrainReceiptInt(event["id"])
-			evidenceRef, refOK := safeBrainReceiptToken(event["evidence_ref"], 256)
-			if !idOK || !refOK {
-				return ""
-			}
-			eventRows = append(eventRows, map[string]any{"id": id, "evidenceRef": evidenceRef})
+		id, idOK := safeBrainReceiptInt(event["id"])
+		evidenceRef, refOK := safeBrainReceiptToken(event["evidence_ref"], 256)
+		if !idOK || !refOK {
+			return ""
 		}
-		receipt["eventRows"] = eventRows
+		eventRows = append(eventRows, map[string]any{"id": id, "evidenceRef": evidenceRef})
 	}
+	receipt["eventRows"] = eventRows
 	encoded, err := json.Marshal(receipt)
 	if err != nil || len(encoded) > 4096 {
 		return ""
