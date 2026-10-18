@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/multica-ai/multica/server/internal/runtimeapps"
+	"github.com/multica-ai/multica/server/pkg/taskcontinuity"
 )
 
 // This file holds the runtime brief assembler — the post-MUL-3560 path
@@ -190,6 +191,17 @@ func writeWorkspaceContext(b *strings.Builder, ctx TaskContextForEnv) {
 	}
 	b.WriteString("## Workspace Context\n\n")
 	b.WriteString(ctxText)
+	b.WriteString("\n\n")
+}
+
+// writeContinuity emits the provider-neutral execution-state contract for
+// every task kind. This belongs in the shared brief rather than an issue-only
+// workflow: chat, quick-create, and run-only autopilots encounter the same
+// browser, provider, evidence, and workspace failures even when they have no
+// Multica issue whose status can be updated.
+func writeContinuity(b *strings.Builder) {
+	b.WriteString("## Execution Continuity\n\n")
+	b.WriteString(taskcontinuity.RuntimeInstruction)
 	b.WriteString("\n\n")
 }
 
@@ -708,7 +720,7 @@ func writeWorkflowIssue(b *strings.Builder, ctx TaskContextForEnv) {
 	b.WriteString("Status reflects the state the ISSUE is in, not your run's lifecycle — keep it true at every point in the turn, not only at checkpoints: write the new value the moment your work changes it, mid-turn included. Write only when the new value differs from the current one, whoever the assignee is:\n\n")
 	b.WriteString("- You delivered what the issue itself asks for and it awaits acceptance → `in_review`. Delivering an issue assigned to you — including a sub-issue in a chain or stage — always lands here; stage barriers and parent notifications depend on that signal. `done` stays human.\n")
 	b.WriteString("- The issue's work continues beyond this turn — you dispatched sub-issues, or delivered one part with more underway → `in_progress`.\n")
-	b.WriteString("- You cannot proceed without something you are missing → `blocked`, and post a comment explaining the blocker unless your Agent Identity forbids issue comments.\n")
+	b.WriteString("- The whole issue satisfies the continuity contract for an external block → `blocked`, and post a comment explaining the blocker unless your Agent Identity forbids issue comments. Include the evidence, accountable system or role, exact resume condition, and exhausted recovery paths. A waiting lane never moves the parent issue to `blocked`.\n")
 	if ctx.IsSquadLeader {
 		b.WriteString("- Squad leader: dispatching members is not delivery — a dispatch turn leaves the parent `in_progress`, and it moves to `in_review` only on the later turn (a member update or stage-barrier re-trigger) where you confirm the overall goal is met.\n")
 	}
@@ -979,6 +991,7 @@ func buildMetaSkillContentSlim(provider string, ctx TaskContextForEnv) string {
 	writeAgentIdentity(&b, ctx)
 	writeRequestingUser(&b, ctx)
 	writeWorkspaceContext(&b, ctx)
+	writeContinuity(&b)
 
 	switch kind {
 	case kindQuickCreate:

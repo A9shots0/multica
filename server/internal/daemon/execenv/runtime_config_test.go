@@ -286,6 +286,39 @@ func TestStatusRuleIsFactJudgmentAtBothMoments(t *testing.T) {
 	}
 }
 
+func TestEveryRuntimeCarriesProviderNeutralContinuityContract(t *testing.T) {
+	t.Parallel()
+
+	contexts := map[string]TaskContextForEnv{
+		"issue":        {IssueID: "55555555-6666-7777-8888-999999999999"},
+		"chat":         {ChatSessionID: "chat-1"},
+		"quick-create": {QuickCreatePrompt: "create an issue"},
+		"autopilot":    {AutopilotRunID: "run-1"},
+	}
+	for _, provider := range []string{"codex", "claude", "copilot"} {
+		for name, ctx := range contexts {
+			t.Run(provider+"/"+name, func(t *testing.T) {
+				t.Parallel()
+				out := buildMetaSkillContent(provider, ctx)
+				for _, want := range []string{
+					"## Execution Continuity",
+					"preferred tool, browser surface, evidence source, shared checkout, or provider call failing is degraded execution",
+					"continue other safe in-scope work",
+					"Do not ask the owner to resolve agent inconvenience",
+					"three unchanged checks",
+				} {
+					if !strings.Contains(out, want) {
+						t.Errorf("%s %s runtime brief missing %q", provider, name, want)
+					}
+				}
+				if name == "issue" && !strings.Contains(out, "A waiting lane never moves the parent issue to `blocked`") {
+					t.Errorf("%s issue runtime brief missing waiting-lane status guard", provider)
+				}
+			})
+		}
+	}
+}
+
 // TestPerRunCommentContextStaysOutOfBrief pins MUL-5377: no per-run comment
 // routing value may be rendered into the runtime brief. The brief lands in
 // messages[0], ahead of the whole conversation, so any change there throws away
