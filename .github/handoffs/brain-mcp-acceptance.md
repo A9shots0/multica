@@ -212,7 +212,7 @@ resume signal occurred.
   `silver-mediums` daemon is
   `/opt/homebrew/bin/multica` v0.4.44 at commit
   `17ebe8d89f2bcdc246f3669442f15e2d1bd9c3fb`. Its Studio Claude runtime is
-  `f0362694-e493-46b4-af3e-13fe75797497`, version 2.1.259. Its registered
+  `f0362694-4af9-406d-a902-0e26f603d256`, version 2.1.259. Its registered
   capability list does not contain `task-execution-policy-v1`.
 - The production HQ workspace already has the intended Mac Brain server,
   `silver-mediums-brain-mac-studio` ID
@@ -226,7 +226,7 @@ resume signal occurred.
   server policy and the production `silver-mediums` lane changes—activate the
   exact daemon candidate above, install or pin and authenticate Claude 2.1.295
   or newer, and create a dedicated acceptance agent on runtime
-  `f0362694-e493-46b4-af3e-13fe75797497` with the existing Mac Brain server
+  `f0362694-4af9-406d-a902-0e26f603d256` with the existing Mac Brain server
   assigned.
 - Next safe action after authorization: snapshot the affected server and Studio
   launch artifacts, release only the integrated policy path, change only the
@@ -252,7 +252,7 @@ The repository integration gate was advanced without invoking Actions:
 - The fork has no GitHub Deployment or Environment records for the hosted API,
   and no supported fork-side action can publish this private branch to
   `api.multica.ai`. The hosted API still reports commit `18fa9f728`.
-- Clean upstream draft PR <https://github.com/multica-ai/multica/pull/9327>
+- Clean upstream ready-for-review PR <https://github.com/multica-ai/multica/pull/9327>
   contains the qualified code and developer documentation but omits this
   Silver Mediums handoff. Its exact head is
   `d28792e0df4a6d42934b951563146909922efc8e`, it is mergeable, has no check
@@ -270,6 +270,39 @@ maintainer provides another supported no-hosted-Actions deployment route. The
 next independent safe action is to prepare the authorized Mac daemon and Claude
 pin while preserving rollback; do not enqueue the policy task before the server
 can dispatch the contract.
+
+## Mac activation and dedicated-agent milestone
+
+Snapshot time: `2026-10-18T21:26:20Z`.
+
+- Only LaunchAgent `com.silvermediums.multica.cloud-brain-daemon` changed. The
+  unrelated worker daemon remains on `/opt/homebrew/bin/multica`.
+- The cloud-Brain daemon now runs durable binary
+  `~/.multica/profiles/silver-mediums/bin/multica-comp-rea-7451e3547`, SHA-256
+  `2189facebeda7b61a42bb3589520f40df8680846761ba6a2c111b35c7dfe2eb2`,
+  version `v0.6.3-comp-rea.7451e3547`, commit `7451e3547...`.
+- Its process-local `MULTICA_CLAUDE_PATH` is pinned to
+  `~/.multica/profiles/silver-mediums/bin/claude-2.1.295`, SHA-256
+  `0116ee2e0a513900b633d9951367f18747686478e2b462805b8c31609f047f70`.
+  Runtime `f0362694-4af9-406d-a902-0e26f603d256` is online, reports Claude
+  2.1.295 and advertises `task-execution-policy-v1`. The earlier handoff UUID
+  ending `...e493...` was a transcription error and is corrected above.
+- The first immediate unload/reload hit macOS `launchctl bootstrap` error 5;
+  the prepared original plist restored successfully. A corrected reload with a
+  two-second unload-settle interval succeeded. Rollback remains at
+  `~/.multica/profiles/silver-mediums/rollback/comp-rea-20261018T212349Z`.
+- Dedicated private agent `COMP-REA Brain Acceptance` ID
+  `1a69ef34-2392-4bd7-acfb-7ba81afab843` is bound to that runtime, model
+  `claude-opus-5`, concurrency 1, and exactly one enabled workspace MCP:
+  `silver-mediums-brain-mac-studio` ID
+  `af9d12d5-1662-4c3e-a3f9-11664cefe66f`.
+- Post-restart hosted API health remained HTTP 200 at commit `18fa9f728`.
+  Claude 2.1.295 still reports `loggedIn: false`, `authMethod: none`.
+
+Two external resume conditions remain: upstream PR 9327 must be merged and
+deployed to the hosted API, and the existing company-approved Claude
+subscription must be interactively authenticated on the Mac Studio. No policy
+task has been enqueued; therefore no live result or provider spend occurred.
 
 ## Exact safe resume command
 
