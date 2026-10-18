@@ -1,11 +1,12 @@
 # Brain MCP acceptance resume checkpoint
 
-Paused at the owner's usage boundary. Do not treat this checkpoint, a passing
-synthetic fixture, or the draft PR as completion of live acceptance.
+Prepared at the owner's shared-runtime and activation decision boundary. Do not
+treat this checkpoint, a passing synthetic fixture, or the draft PR as
+completion of live acceptance.
 
 ## Source and scope
 
-- Implementation head: `1b0dcc504439519aae1ac6b6584b06de65dabe88`, pushed.
+- Implementation head: `cfcdde794c3ad889cf9aad5beb38d0702e86271a`.
 - Repository: `A9shots0/multica`; branch: `a9shots0-animated-meme`.
 - Draft PR: <https://github.com/A9shots0/multica/pull/1>, base `main`.
 - This handoff is a documentation-only commit after the implementation head.
@@ -63,14 +64,26 @@ duration at most three seconds. Retrieval and answer quality are distinct.
 - Read metadata uses strict source-defined tier/status/freshness,
   `assured: false`, and optional validated `recordedAt`. A historical revision
   alone does not imply superseded freshness; `truth` is not authority.
-- `go test ./pkg/taskpolicy ./pkg/agent -count=1` passed; targeted daemon
-  execution tests, evaluator/hook race tests, and `go vet ./pkg/agent
-  ./internal/daemon` passed. Final focused evaluator/daemon/budget checks passed.
-- Earlier isolated PostgreSQL 17 claim/rerun/retry regressions passed; their
-  disposable container was stopped and verified absent. No DB behavior changed
-  in the latest implementation commit.
-- Exact-head official Linux Claude 2.1.295 fixture passed all nine cases under
-  rootless Podman `--network none`: allowed dispatch 1; denied args, refused
+- Platform/security review found and corrected two concrete fail-closed defects:
+  a later buffered event could clear the first restricted-stream failure, and an
+  untrusted provider call identifier could carry arbitrary or oversized text
+  into durable operational receipts. The first failure is now monotonic; call
+  identifiers are bounded and restricted to an identifier alphabet in the
+  assistant, hook and result-correlation paths. Both have regression tests.
+- `go test ./pkg/taskpolicy ./pkg/agent -run
+  'RestrictedClaude|ClaudeRestricted|BrainAcceptance|EvaluateBrainAcceptance'
+  -count=1` passed. Targeted daemon policy/evaluator tests passed. `go vet
+  ./pkg/agent ./internal/daemon ./internal/service ./internal/handler` passed.
+- A fresh isolated PostgreSQL 17 database was migrated through the current
+  schema. The focused claim capability, restricted connected-app suppression,
+  manual-rerun policy/session reset, and retry policy/session reset tests passed.
+  Its disposable container was stopped, removed and verified absent.
+- The broad Windows agent/daemon package run is not a clean repository gate on
+  this host: unrelated tests consumed the real installed CLI, skill and MCP
+  configuration, and several POSIX-oriented fixtures failed under Windows. No
+  failure in that noisy run implicated a file or behavior changed by this PR.
+- The prior implementation-head Linux Claude 2.1.295 fixture passed all nine
+  cases under rootless Podman `--network none`: allowed dispatch 1; denied args, refused
   hook, timeout, malformed JSON and injected Bash/Read/Write/Edit dispatch 0.
   Native cases first exercise the CLI registry without the adapter gate, then
   replay through the actual backend and require task failure at the tool or
@@ -86,20 +99,19 @@ duration at most three seconds. Retrieval and answer quality are distinct.
 - Exact-head Linux test: `/tmp/multica-claude-1b0dcc504-linux-amd64.test`,
   SHA-256 `adf15d3f7bf79b1ccb7e9e540459956dd375a1410ac10c8ec218368f4c82ec0c`.
 - Exact-head Darwin/arm64 test:
-  `/tmp/multica-claude-1b0dcc504-darwin-arm64.test`,
-  SHA-256 `67bd6f8ac4cd23fa0491281fff9ad1991d23f0acec1e7c35df2d9ae97653a216`.
-  Clean-source build used Go 1.27.2, CGO=0, `agentintegration`.
-- Studio collaborator session `69101036-91e9-4504-a246-012b450ac936` owns the
-  established transfer/native execution lane. A pinned nine-case request was
-  sent; its result has not arrived at this checkpoint. The collaborator was
-  told to finish only an already-started check, otherwise pause.
-- Studio's prior five-case fixture at `dc276d095815313908f84dc0d7a80fa3db8a96fd`
-  passed under a qualified inherited process-local localhost-only network
-  sandbox. Its log SHA-256 is
-  `89e0e12e1f8d5f1cd5327d0c33ac76fd9c53ec5ec3217c7e8a24977ae806ceb4`;
-  receipt SHA-256 is
-  `914aebb9d5dee7525776773184a4dc30128f5491e4826d117d5889225b08d5e7`.
-  Files remain under `/tmp/smi-claude-2295-readiness.nOtkzD/`.
+  `/tmp/smi-claude-2295-readiness.nOtkzD/multica-claude-cfcdde794-darwin-arm64.test`,
+  SHA-256 `a9cd3aff98f29bb30919e0766a1b12954410fff04c01feb592d262bd46b4442b`.
+  The serial cross-build used the repository-selected Go 1.26.6 toolchain,
+  CGO=0 and `agentintegration`.
+- That exact implementation head passed all nine Studio cases under the
+  process-local sandbox profile that denies all network except localhost:
+  authorized dispatch 1 with one pre/post hook; denied input, refused hook,
+  timeout, malformed JSON and injected Bash/Read/Write/Edit dispatch 0. Log
+  SHA-256 is
+  `447aefe36cf801931892ea00fdabd9610b0d6a8cf3dcda0c9e13638a538e5df0`.
+  Receipt is
+  `/tmp/smi-claude-2295-readiness.nOtkzD/studio-synthetic-cfcdde794-receipt.json`,
+  SHA-256 `869ed4a4376024769fecb5d1763422698f1a0dd78be1fb1bd282d8c6d1755b1e`.
 - Retained official Studio CLI:
   `/tmp/smi-claude-2295-readiness.nOtkzD/pkg/node_modules/@anthropic-ai/claude-code-darwin-arm64/claude`,
   version 2.1.295, SHA-256
@@ -117,35 +129,37 @@ The evaluator enforces the full-precision monotonic pre/post hook interval as a
 conservative connector-time upper bound; it is not connector-internal telemetry
 or a live timing result.
 
-The expanded Studio fixture result and source review remain pending. No custom
-daemon release artifact was built or activated in this checkpoint. Authentication
-for the ordinary daemon lane is still unknown.
+The source review and expanded Studio fixture are complete. No daemon release
+artifact was built or activated in this checkpoint. Authentication for the
+ordinary daemon lane is still unknown.
 
 The owner has not approved upgrading shared Studio Claude or changing accounts,
 permissions, providers, shared settings, assignments, or daemon activation.
 `MULTICA_CLAUDE_PATH` is existing daemon-process-wide discovery configuration, not
 a per-task executable selector. Ordinary execution uses the provider's discovered
 `AgentEntry`; custom runtime commands are rejected by this restricted policy.
-No qualifying task-local binary override was found. Do not add a workaround to
-evade the pending owner decision or treat synthetic tests as spending authority.
+No qualifying task-local binary override was found. Fresh readback on the Mac
+Studio found `/opt/homebrew/bin/claude` at 2.1.259 and
+`MULTICA_CLAUDE_PATH` unset. The supported path is therefore an owner-approved
+upgrade or daemon-process-wide `MULTICA_CLAUDE_PATH` pin to a verified 2.1.295+
+built-in Claude binary, followed by daemon registration/activation and runtime
+readback. Do not add a per-task workaround or treat synthetic tests as spending
+authority.
 
 ## Exact safe resume command
 
-From this worktree, without any real agent invocation:
+From this checkout, without any real agent invocation:
 
-```bash
-export PATH=/home/linuxbrew/.linuxbrew/bin:$PATH
+```powershell
 git status --short
 git rev-parse HEAD
-cd server
-go test ./pkg/agent ./internal/daemon \
-  -run 'TestClaudeRestrictedTransientEvaluation|TestEvaluateBrainAcceptance|TestExecuteAndDrainRequiresTaskOwnedBrainAcceptance|TestRestrictedClaudeHookAcceptsBoundedFullRead|TestRestrictedClaudeHookRejectsBodyAbove' \
-  -count=1
+Set-Location server
+go test ./pkg/agent ./internal/daemon -run 'TestClaudeRestrictedTransientEvaluation|TestEvaluateBrainAcceptance|TestExecuteAndDrainRequiresTaskOwnedBrainAcceptance|TestRestrictedClaudeHookAcceptsBoundedFullRead|TestRestrictedClaudeHookRejectsBodyAbove' -count=1
 ```
 
-Then read any existing Studio receipt for the pinned artifact before considering
-another synthetic run. Installed-CLI tests require the documented opt-ins,
+The remaining resume condition is the owner's decision on the shared Studio
+Claude path and daemon activation. After that decision, verify the discovered
+binary/version and authenticated runtime, then run the live A33/A36/A28/A49/
+event contract once. Installed-CLI tests require the documented opt-ins,
 explicit binary, fresh allowlisted environment, and an outer inherited network
-fence; `ANTHROPIC_BASE_URL` alone does not prevent public egress. No live model,
-production Brain task, shared upgrade, release/activation, or new phase should
-start until the owner resumes the work with the applicable authorization.
+fence; `ANTHROPIC_BASE_URL` alone does not prevent public egress.
