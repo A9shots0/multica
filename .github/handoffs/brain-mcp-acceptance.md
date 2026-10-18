@@ -6,15 +6,16 @@ completion of live acceptance.
 
 ## Source and scope
 
-- Implementation head: `7451e354713dd41865024a3f007e3c3b76aa76ef`.
+- Policy implementation head: `7451e354713dd41865024a3f007e3c3b76aa76ef`.
+- Latest code/test head: `a9f7f7f41f6529aa24bf7c4861322cba54165446`.
 - Repository: `A9shots0/multica`; branch: `a9shots0-animated-meme`.
-- Draft PR: <https://github.com/A9shots0/multica/pull/1>, base `main`.
-- This handoff is a documentation-only commit after the implementation head.
+- Draft PR: <https://github.com/A9shots0/multica/pull/1>, base
+  `upstream-main-f896cc483`.
+- This handoff is a documentation-only commit after the latest code/test head.
 - The implementation head merges the feature with current upstream `main` at
-  `f896cc483379ff16735a638e94b6c64d128329d2`. Fork `origin/main` is still at
-  `d8fa885d...`; do not interpret the draft PR's stale base as an upstream-ready
-  review diff or update the shared fork base without an explicit repository
-  decision.
+  `f896cc483379ff16735a638e94b6c64d128329d2`. The dedicated PR base is an
+  exact snapshot of that upstream revision, keeping the review diff bounded
+  without changing the fork's shared `main` branch.
 - Work only in the assigned worktree, not the main checkout.
 - Read root `CLAUDE.md` and
   `apps/docs/content/docs/developers/task-scoped-brain-acceptance.mdx`.
@@ -79,6 +80,16 @@ duration at most three seconds. Retrieval and answer quality are distinct.
   'RestrictedClaude|ClaudeRestricted|BrainAcceptance|EvaluateBrainAcceptance'
   -count=1` passed. Targeted daemon policy/evaluator tests passed. `go vet
   ./pkg/agent ./internal/daemon ./internal/service ./internal/handler` passed.
+- The first remote `backend-tests` run exposed two branch-owned test defects:
+  the new task-policy capability case still queried the coalesced-comments
+  capability, and an MCP transcript assertion required a real caller-measured
+  duration to equal zero. Commit `a9f7f7f41f6529aa24bf7c4861322cba54165446`
+  corrects only those assertions. The capability tests passed five consecutive
+  local runs, the POSIX-only transcript test passed three consecutive runs on
+  the Mac Studio, and `go vet ./internal/daemon ./internal/handler` passed. The
+  same CI run also had an unchanged WeCom 150 ms deadline test fail once; that
+  file has no feature-branch diff and remains separately classified as runner
+  timing instability unless it repeats after the corrected head is pushed.
 - A fresh isolated PostgreSQL 16 database was migrated through upstream
   migration `582_issue_workflow_default_index` and the current
   schema. The focused claim capability, restricted connected-app suppression,
