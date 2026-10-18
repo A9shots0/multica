@@ -38,6 +38,7 @@ import (
 	"github.com/multica-ai/multica/server/pkg/redact"
 	"github.com/multica-ai/multica/server/pkg/skillbundle"
 	"github.com/multica-ai/multica/server/pkg/taskfailure"
+	"github.com/multica-ai/multica/server/pkg/taskpolicy"
 )
 
 // ErrRepoNotConfigured is returned by ensureRepoReady when the requested repo
@@ -7281,6 +7282,23 @@ func qualifyTaskModel(
 func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot int, taskLog *slog.Logger) (taskResult TaskResult, returnErr error) {
 	phaseRecorder := taskPhaseRecorderFromContext(ctx)
 	phaseRecorder.Mark(taskPhasePrepareStarted)
+	if err := taskpolicy.Validate(task.ExecutionPolicy); err != nil {
+		return TaskResult{}, fmt.Errorf("refusing to launch task with invalid execution policy: %w", err)
+	}
+	if task.ExecutionPolicy != nil {
+		if provider != task.ExecutionPolicy.Provider {
+			return TaskResult{}, fmt.Errorf("refusing to launch restricted task: policy requires provider %q, got %q", task.ExecutionPolicy.Provider, provider)
+		}
+		if task.Agent == nil {
+			return TaskResult{}, errors.New("refusing to launch restricted task without agent configuration")
+		}
+		if task.PriorSessionID != "" {
+			return TaskResult{}, errors.New("refusing to resume a prior provider session for a restricted task")
+		}
+		task.RemoteMCPConnections = nil
+		task.PluginHookTools = nil
+		task.ConnectedApps = nil
+	}
 	// A claim carries the task-row agent id both at the top level and inside
 	// the expanded agent configuration. The top-level id is authoritative
 	// because it is also bound into the task-scoped token. Never prepare or
@@ -7694,6 +7712,16 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		}
 		if provider == "cursor" {
 			cursorMcpAuthSource = strings.TrimSpace(task.Agent.CustomEnv[execenv.CursorMcpAuthSourceEnv])
+		}
+		if task.ExecutionPolicy != nil {
+			if provider != "claude" {
+				return TaskResult{}, errors.New("restricted Brain MCP execution is supported only by the Claude provider")
+			}
+			filtered, filterErr := taskpolicy.FilterMCPConfig(effectiveMcpConfig, task.ExecutionPolicy)
+			if filterErr != nil {
+				return TaskResult{}, fmt.Errorf("prepare restricted Brain MCP config: %w", filterErr)
+			}
+			effectiveMcpConfig = filtered
 		}
 		// Supply fetch for runtimes without native web tools. Browser servers
 		// must be explicitly configured; absence is not permission to launch
@@ -8590,6 +8618,7 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		ExtraArgs:              extraArgs,
 		CustomArgs:             customArgs,
 		McpConfig:              mcpConfig,
+		ExecutionPolicy:        task.ExecutionPolicy,
 		ThinkingLevel:          thinkingLevel,
 		ServiceTier:            serviceTier,
 		OpenclawMode:           openclawMode,
@@ -9336,6 +9365,9 @@ func freshSessionMayHelp(errText string) bool {
 // sequence instead of restarting at 1 — the server orders the transcript by
 // seq alone, and duplicate seqs would interleave the two attempts' rows.
 func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, prompt string, opts agent.ExecOptions, taskLog *slog.Logger, taskID, codexHome string, msgSeq *atomic.Int32) (agent.Result, int32, error) {
+	if opts.ExecutionPolicy != nil {
+		opts.EvaluateBrainAcceptance = agent.EvaluateBrainAcceptance
+	}
 	return d.executeAndDrainProviderAttempt(ctx, backend, prompt, opts, taskLog, taskID, 1, 1, "unknown", codexHome, msgSeq, false)
 }
 

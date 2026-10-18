@@ -8,6 +8,7 @@ import (
 	"github.com/multica-ai/multica/server/internal/runtimeapps"
 	"github.com/multica-ai/multica/server/internal/taskauthority"
 	"github.com/multica-ai/multica/server/pkg/remotemcp"
+	"github.com/multica-ai/multica/server/pkg/taskpolicy"
 )
 
 // AgentEntry describes a single available agent CLI.
@@ -96,6 +97,7 @@ type Task struct {
 	WorkspaceSlug              string                             `json:"workspace_slug,omitempty"`
 	IssueIdentifier            string                             `json:"issue_identifier,omitempty"`
 	RemoteMCPConnections       []remotemcp.Connection             `json:"remote_mcp_connections,omitempty"`
+	ExecutionPolicy            *taskpolicy.ExecutionPolicy        `json:"execution_policy,omitempty"`
 	// RemoteMCPDaemonToken stays inside the daemon and authenticates the local
 	// broker's credential-resolution calls. It must never enter agent env/config.
 	RemoteMCPDaemonToken string `json:"remote_mcp_daemon_token,omitempty"`

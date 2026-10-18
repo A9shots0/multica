@@ -294,11 +294,9 @@ ORDER BY created_at DESC;
 -- the commit under review into the same context JSONB so the
 -- reviewer-loop dedup (HasPendingTaskForIssueAndAgent) can tell a pending run
 -- against an OLD head apart from a fresh request against a NEW head (TEN-356).
--- Context remains NULL only when both task_context and head_sha are empty,
--- preserving pre-TEN-356 behavior for ordinary tasks with neither controller
--- context nor a linked PR. Issue-linked tasks never hit quick-create context
--- parsing (parseQuickCreateContext short-circuits on IssueID.Valid), so these
--- keys ride harmlessly alongside.
+-- execution_policy carries an explicit one-task provider/tool restriction for
+-- manual reruns. Context remains NULL only when task_context, head_sha, and
+-- execution_policy are all empty, preserving ordinary-task behavior.
 -- id is minted by the application as a UUIDv7 (pkg/dbid) so consecutive
 -- enqueues cluster in a narrow contiguous primary-key range instead of
 -- scattering across the B-tree. On a table with existing v4 ids, that range
@@ -327,7 +325,10 @@ SELECT
             WHEN COALESCE(sqlc.narg('head_sha')::text, '') <> ''
             THEN jsonb_build_object('head_sha', sqlc.narg('head_sha')::text)
             ELSE '{}'::jsonb
-        END,
+        END ||
+        jsonb_strip_nulls(jsonb_build_object(
+            'execution_policy', sqlc.narg('execution_policy')::jsonb
+        )),
         '{}'::jsonb
     ),
     sqlc.narg(originator_user_id),
@@ -485,6 +486,8 @@ WHERE id = $1 AND issue_id IS NULL
 -- parent's complete planned comment batch and keeps the same squad-role
 -- provenance. delivered_comment_ids intentionally stays at its '{}' default:
 -- the child must earn its own delivery receipt at claim time.
+-- Restricted-policy tasks also start fresh: preserve the policy context but
+-- never inherit a provider session into another policy-bearing attempt.
 --
 -- originator_user_id is inherited so the Composio overlay decision sees the
 -- same top-of-chain human across the retry: the user behind the original
@@ -545,12 +548,18 @@ SELECT
     CASE WHEN sqlc.narg(fire_at)::timestamptz IS NOT NULL THEN 'deferred' ELSE 'queued' END,
     CASE WHEN p.chat_session_id IS NOT NULL THEN GREATEST(p.priority, 3) ELSE p.priority END,
     p.trigger_comment_id, p.coalesced_comment_ids, p.trigger_summary, p.context,
-    CASE WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity' THEN NULL ELSE p.session_id END,
+    CASE
+        WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
+          OR (p.context->'execution_policy' IS NOT NULL AND p.context->'execution_policy' <> 'null'::jsonb)
+        THEN NULL
+        ELSE p.session_id
+    END,
     CASE WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
                    AND p.continuation_root_task_id IS NULL THEN NULL ELSE p.work_dir END,
     p.attempt + 1, COALESCE(sqlc.narg(max_attempts)::int, p.max_attempts), p.id,
     p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
-      OR (p.continuation_root_task_id IS NOT NULL AND p.session_id IS NULL),
+      OR (p.continuation_root_task_id IS NOT NULL AND p.session_id IS NULL)
+      OR (p.context->'execution_policy' IS NOT NULL AND p.context->'execution_policy' <> 'null'::jsonb),
     p.is_leader_task,
     p.squad_id,
     p.originator_user_id,

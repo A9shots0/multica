@@ -215,6 +215,7 @@ func daemonCommonCapabilities() []string {
 		protocol.DaemonCapabilitySourceContextQuickCreateV1,
 		protocol.DaemonCapabilityRPCV1,
 		protocol.DaemonCapabilityPlatformSkillV1,
+		protocol.DaemonCapabilityTaskExecutionPolicyV1,
 		protocol.DaemonCapabilityContinuityCheckpointV1,
 		protocol.DaemonCapabilitySupervisorContextV1,
 	}

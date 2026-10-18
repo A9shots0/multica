@@ -51,6 +51,7 @@ func TestClient_IdentityHeaders_PostJSON(t *testing.T) {
 			// and a stale signpost, neither of which any other test would
 			// notice.
 			protocol.DaemonCapabilityPlatformSkillV1,
+			protocol.DaemonCapabilityTaskExecutionPolicyV1,
 			protocol.DaemonCapabilityContinuityCheckpointV1,
 			protocol.DaemonCapabilitySupervisorContextV1,
 		} {

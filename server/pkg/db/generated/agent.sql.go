@@ -2474,10 +2474,12 @@ SELECT
             WHEN COALESCE($13::text, '') <> ''
             THEN jsonb_build_object('head_sha', $13::text)
             ELSE '{}'::jsonb
-        END,
+        END ||
+        jsonb_strip_nulls(jsonb_build_object(
+            'execution_policy', $14::jsonb
+        )),
         '{}'::jsonb
     ),
-    $14,
     $15,
     $16,
     $17,
@@ -2487,7 +2489,8 @@ SELECT
     $21,
     $22,
     $23,
-    COALESCE($24::uuid, gen_random_uuid())
+    $24,
+    COALESCE($25::uuid, gen_random_uuid())
 WHERE lock_task_owner_rows($1, $3, $2)
 RETURNING id, agent_id, issue_id, status, priority, dispatched_at, started_at, completed_at, result, error, created_at, context, runtime_id, session_id, work_dir, trigger_comment_id, chat_session_id, autopilot_run_id, attempt, max_attempts, parent_task_id, failure_reason, trigger_summary, force_fresh_session, is_leader_task, wait_reason, initiator_user_id, handoff_note, prepare_lease_expires_at, squad_id, runtime_mcp_overlay, escalation_for_task_id, fire_at, originator_user_id, runtime_connected_apps, coalesced_comment_ids, delivered_comment_ids, chat_input_task_id, chat_finalize_deferred_at, originator_source, delegated_from_task_id, retry_of_task_id, rerun_of_task_id, rule_version_id, trigger_evidence_kind, trigger_evidence_ref_id, accountable_user_id, session_rollout_missing, retired_session_id, quick_actions_disabled, regenerate_quick_actions_for, branch_name, durable_work_dir, channel_context_revision, comment_thread_id, workflow_action_id, workflow_operation_id, workflow_branch_key, continuation_root_task_id, continuation_of_task_id, continuation_step, continuation_max_packages, continuation_checkpoint_sha256, continuation_execution_id, continuation_execution_revision, continuity_observation_enabled
 `
@@ -2506,6 +2509,7 @@ type CreateAgentTaskParams struct {
 	SquadID              pgtype.UUID   `json:"squad_id"`
 	TaskContext          []byte        `json:"task_context"`
 	HeadSha              pgtype.Text   `json:"head_sha"`
+	ExecutionPolicy      []byte        `json:"execution_policy"`
 	OriginatorUserID     pgtype.UUID   `json:"originator_user_id"`
 	AccountableUserID    pgtype.UUID   `json:"accountable_user_id"`
 	RuntimeMcpOverlay    []byte        `json:"runtime_mcp_overlay"`
@@ -2527,11 +2531,9 @@ type CreateAgentTaskParams struct {
 // the commit under review into the same context JSONB so the
 // reviewer-loop dedup (HasPendingTaskForIssueAndAgent) can tell a pending run
 // against an OLD head apart from a fresh request against a NEW head (TEN-356).
-// Context remains NULL only when both task_context and head_sha are empty,
-// preserving pre-TEN-356 behavior for ordinary tasks with neither controller
-// context nor a linked PR. Issue-linked tasks never hit quick-create context
-// parsing (parseQuickCreateContext short-circuits on IssueID.Valid), so these
-// keys ride harmlessly alongside.
+// execution_policy carries an explicit one-task provider/tool restriction for
+// manual reruns. Context remains NULL only when task_context, head_sha, and
+// execution_policy are all empty, preserving ordinary-task behavior.
 // id is minted by the application as a UUIDv7 (pkg/dbid) so consecutive
 // enqueues cluster in a narrow contiguous primary-key range instead of
 // scattering across the B-tree. On a table with existing v4 ids, that range
@@ -2554,6 +2556,7 @@ func (q *Queries) CreateAgentTask(ctx context.Context, arg CreateAgentTaskParams
 		arg.SquadID,
 		arg.TaskContext,
 		arg.HeadSha,
+		arg.ExecutionPolicy,
 		arg.OriginatorUserID,
 		arg.AccountableUserID,
 		arg.RuntimeMcpOverlay,
@@ -3200,12 +3203,18 @@ SELECT
     CASE WHEN $2::timestamptz IS NOT NULL THEN 'deferred' ELSE 'queued' END,
     CASE WHEN p.chat_session_id IS NOT NULL THEN GREATEST(p.priority, 3) ELSE p.priority END,
     p.trigger_comment_id, p.coalesced_comment_ids, p.trigger_summary, p.context,
-    CASE WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity' THEN NULL ELSE p.session_id END,
+    CASE
+        WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
+          OR (p.context->'execution_policy' IS NOT NULL AND p.context->'execution_policy' <> 'null'::jsonb)
+        THEN NULL
+        ELSE p.session_id
+    END,
     CASE WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
                    AND p.continuation_root_task_id IS NULL THEN NULL ELSE p.work_dir END,
     p.attempt + 1, COALESCE($3::int, p.max_attempts), p.id,
     p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
-      OR (p.continuation_root_task_id IS NOT NULL AND p.session_id IS NULL),
+      OR (p.continuation_root_task_id IS NOT NULL AND p.session_id IS NULL)
+      OR (p.context->'execution_policy' IS NOT NULL AND p.context->'execution_policy' <> 'null'::jsonb),
     p.is_leader_task,
     p.squad_id,
     p.originator_user_id,
@@ -3269,6 +3278,8 @@ type CreateRetryTaskParams struct {
 // parent's complete planned comment batch and keeps the same squad-role
 // provenance. delivered_comment_ids intentionally stays at its '{}' default:
 // the child must earn its own delivery receipt at claim time.
+// Restricted-policy tasks also start fresh: preserve the policy context but
+// never inherit a provider session into another policy-bearing attempt.
 //
 // originator_user_id is inherited so the Composio overlay decision sees the
 // same top-of-chain human across the retry: the user behind the original
