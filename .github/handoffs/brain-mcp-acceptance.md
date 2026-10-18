@@ -242,33 +242,34 @@ bounded server release, Mac Studio daemon activation, daemon-specific Claude
 2.1.295+ pin/authentication, dedicated acceptance agent and existing Mac Brain
 MCP assignment. The earlier owner-authorization blocker is therefore satisfied.
 
-Execution stopped at the repository integration gate the owner named in the
-resume instruction, before any production or shared-runtime mutation:
+The repository integration gate was advanced without invoking Actions:
 
 - The authenticated GitHub identity has `pull: true` but `push: false` on
   `multica-ai/multica`. Direct integration to upstream `main` is unavailable.
-- Upstream `.github/workflows/ci.yml` runs on every pull request targeting
-  `main`; its first job uses `ubuntu-latest` and the workflow contains the
-  repository's hosted platform jobs. Opening the only supported upstream pull
-  request route would therefore invoke GitHub-hosted Actions, which this task
-  explicitly forbids.
+- Upstream `.github/workflows/ci.yml` runs on pull requests to `main`, but has no
+  `pull_request_target` trigger. GitHub's supported `[skip actions]` HEAD marker
+  therefore allowed a draft integration PR without starting a workflow.
 - The fork has no GitHub Deployment or Environment records for the hosted API,
   and no supported fork-side action can publish this private branch to
   `api.multica.ai`. The hosted API still reports commit `18fa9f728`.
-- No upstream branch or pull request was created; no tag, merge, release,
-  workflow, deployment, installation, daemon restart, Claude/auth change,
-  agent creation, MCP assignment or live policy task was performed.
+- Clean upstream draft PR <https://github.com/multica-ai/multica/pull/9327>
+  contains the qualified code and developer documentation but omits this
+  Silver Mediums handoff. Its exact head is
+  `d28792e0df4a6d42934b951563146909922efc8e`, it is mergeable, has no check
+  rollup, and the repository Actions API reports zero runs for that head.
+- No tag, merge, release, deployment, installation, daemon restart,
+  Claude/auth change, agent creation, MCP assignment or live policy task has
+  yet been performed.
 
-Current blocker ID: `comp-rea-upstream-hosted-actions-integration-gate`.
+Current blocker ID: `comp-rea-upstream-maintainer-release-gate`.
 Blocked goal: release the server policy required before the real task-scoped
-5/5 run. Accountable system: `multica-ai/multica` upstream permissions and its
-mandatory pull-request workflow. Exact resume condition: an upstream maintainer
-provides a supported integration/deployment route that does not invoke
-GitHub-hosted Actions, or the owner explicitly changes the no-hosted-Actions
-constraint. Next safe action after that signal: integrate the already-qualified
-head, verify the hosted API revision, then continue the prepared Mac daemon,
-Claude, dedicated-agent and one-run live acceptance sequence. Do not activate
-the shared Mac lane before the server can dispatch the policy contract.
+5/5 run. Accountable system: `multica-ai/multica` upstream maintainers and the
+hosted `api.multica.ai` deployment. Exact resume condition: PR 9327 is merged
+and the hosted API reports a revision containing the policy, or an upstream
+maintainer provides another supported no-hosted-Actions deployment route. The
+next independent safe action is to prepare the authorized Mac daemon and Claude
+pin while preserving rollback; do not enqueue the policy task before the server
+can dispatch the contract.
 
 ## Exact safe resume command
 
