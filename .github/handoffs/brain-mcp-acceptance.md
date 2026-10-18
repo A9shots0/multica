@@ -235,6 +235,41 @@ resume signal occurred.
   binding, then enqueue one exact policy rerun and evaluate the live 5/5
   contract.
 
+## Authorized execution attempt and current integration gate
+
+Snapshot time: `2026-10-18T21:18:08Z`. The owner explicitly authorized the
+bounded server release, Mac Studio daemon activation, daemon-specific Claude
+2.1.295+ pin/authentication, dedicated acceptance agent and existing Mac Brain
+MCP assignment. The earlier owner-authorization blocker is therefore satisfied.
+
+Execution stopped at the repository integration gate the owner named in the
+resume instruction, before any production or shared-runtime mutation:
+
+- The authenticated GitHub identity has `pull: true` but `push: false` on
+  `multica-ai/multica`. Direct integration to upstream `main` is unavailable.
+- Upstream `.github/workflows/ci.yml` runs on every pull request targeting
+  `main`; its first job uses `ubuntu-latest` and the workflow contains the
+  repository's hosted platform jobs. Opening the only supported upstream pull
+  request route would therefore invoke GitHub-hosted Actions, which this task
+  explicitly forbids.
+- The fork has no GitHub Deployment or Environment records for the hosted API,
+  and no supported fork-side action can publish this private branch to
+  `api.multica.ai`. The hosted API still reports commit `18fa9f728`.
+- No upstream branch or pull request was created; no tag, merge, release,
+  workflow, deployment, installation, daemon restart, Claude/auth change,
+  agent creation, MCP assignment or live policy task was performed.
+
+Current blocker ID: `comp-rea-upstream-hosted-actions-integration-gate`.
+Blocked goal: release the server policy required before the real task-scoped
+5/5 run. Accountable system: `multica-ai/multica` upstream permissions and its
+mandatory pull-request workflow. Exact resume condition: an upstream maintainer
+provides a supported integration/deployment route that does not invoke
+GitHub-hosted Actions, or the owner explicitly changes the no-hosted-Actions
+constraint. Next safe action after that signal: integrate the already-qualified
+head, verify the hosted API revision, then continue the prepared Mac daemon,
+Claude, dedicated-agent and one-run live acceptance sequence. Do not activate
+the shared Mac lane before the server can dispatch the policy contract.
+
 ## Exact safe resume command
 
 From this checkout, without any real agent invocation:
