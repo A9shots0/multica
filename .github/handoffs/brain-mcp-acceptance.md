@@ -129,9 +129,14 @@ The evaluator enforces the full-precision monotonic pre/post hook interval as a
 conservative connector-time upper bound; it is not connector-internal telemetry
 or a live timing result.
 
-The source review and expanded Studio fixture are complete. No daemon release
-artifact was built or activated in this checkpoint. Authentication for the
-ordinary daemon lane is still unknown.
+The source review and expanded Studio fixture are complete. A Darwin/arm64
+daemon candidate was built from branch head `53ae560cf8a4554170be8342d7af6ca434a831e3`
+and copied to
+`/tmp/smi-claude-2295-readiness.nOtkzD/multica-comp-rea-53ae560cf-darwin-arm64`.
+It reports commit `53ae560cf8a4554170be8342d7af6ca434a831e3`, Go 1.26.6,
+and SHA-256
+`7978916f6113cff465225b6f8bb25cbbb8c2f13373f69664ccf6df4d330e1d50`.
+It has not been installed or activated.
 
 The owner has not approved upgrading shared Studio Claude or changing accounts,
 permissions, providers, shared settings, assignments, or daemon activation.
@@ -139,12 +144,46 @@ permissions, providers, shared settings, assignments, or daemon activation.
 a per-task executable selector. Ordinary execution uses the provider's discovered
 `AgentEntry`; custom runtime commands are rejected by this restricted policy.
 No qualifying task-local binary override was found. Fresh readback on the Mac
-Studio found `/opt/homebrew/bin/claude` at 2.1.259 and
-`MULTICA_CLAUDE_PATH` unset. The supported path is therefore an owner-approved
-upgrade or daemon-process-wide `MULTICA_CLAUDE_PATH` pin to a verified 2.1.295+
-built-in Claude binary, followed by daemon registration/activation and runtime
-readback. Do not add a per-task workaround or treat synthetic tests as spending
-authority.
+Studio found `/opt/homebrew/bin/claude` at 2.1.259,
+`MULTICA_CLAUDE_PATH` unset, and `claude auth status` reporting `loggedIn: false`.
+The supported path is therefore an owner-approved durable upgrade or
+daemon-process-wide `MULTICA_CLAUDE_PATH` pin to a verified 2.1.295+ built-in
+Claude binary, plus an approved account/API authentication path. Do not add a
+per-task workaround or treat synthetic tests as spending authority.
+
+## Current canonical blocker
+
+Snapshot time: `2026-10-18T19:42:30Z`. Blocker ID:
+`comp-rea-live-5of5-prerequisites`; validated continuity fingerprint:
+`847635b74c621ae035cbe097dab80ce4e4544fdbe3901fc2ad5360c9493054d4`.
+
+- Blocked goal: live A33/A36/A28/A49/event acceptance passes 5/5 through
+  Multica's task-scoped policy path.
+- Accountable role/system: Silver Mediums owner for the Mac Studio shared
+  Multica daemon, Claude account and HQ agent roster.
+- Current evidence: the production `silver-mediums` daemon is
+  `/opt/homebrew/bin/multica` v0.4.44 at commit
+  `17ebe8d89f2bcdc246f3669442f15e2d1bd9c3fb`. Its Studio Claude runtime is
+  `f0362694-e493-46b4-af3e-13fe75797497`, version 2.1.259. Its registered
+  capability list does not contain `task-execution-policy-v1`.
+- The production HQ workspace already has the intended Mac Brain server,
+  `silver-mediums-brain-mac-studio` ID
+  `af9d12d5-1662-4c3e-a3f9-11664cefe66f`, but no active or archived agent is
+  bound to the Studio Claude runtime. Company Guide and Company Auditor are on
+  another provider/runtime with the 8 GB Brain server. Reassigning them would
+  be an unrelated disruption; a dedicated acceptance agent is the bounded path.
+- The non-production Pilot workspace has a Studio Claude agent but no workspace
+  MCP server, so it does not remove the shared configuration decision.
+- Exact resume condition: the owner authorizes the production
+  `silver-mediums` lane changes—activate the exact daemon candidate above,
+  install or pin and authenticate Claude 2.1.295 or newer, and create a
+  dedicated acceptance agent on runtime
+  `f0362694-e493-46b4-af3e-13fe75797497` with the existing Mac Brain server
+  assigned.
+- Next safe action after authorization: snapshot the affected launch artifacts,
+  change only the `silver-mediums` cloud-Brain lane, verify daemon capability
+  and source identity plus Claude path/version/auth and agent/MCP binding, then
+  enqueue one exact policy rerun and evaluate the live 5/5 contract.
 
 ## Exact safe resume command
 
@@ -157,9 +196,10 @@ Set-Location server
 go test ./pkg/agent ./internal/daemon -run 'TestClaudeRestrictedTransientEvaluation|TestEvaluateBrainAcceptance|TestExecuteAndDrainRequiresTaskOwnedBrainAcceptance|TestRestrictedClaudeHookAcceptsBoundedFullRead|TestRestrictedClaudeHookRejectsBodyAbove' -count=1
 ```
 
-The remaining resume condition is the owner's decision on the shared Studio
-Claude path and daemon activation. After that decision, verify the discovered
-binary/version and authenticated runtime, then run the live A33/A36/A28/A49/
-event contract once. Installed-CLI tests require the documented opt-ins,
+The remaining resume condition is the owner decision recorded above. After that
+decision, verify the discovered daemon capability and source identity, the
+Claude binary/version/authenticated account, and the dedicated agent/MCP binding,
+then run the live A33/A36/A28/A49/event contract once. Installed-CLI tests
+require the documented opt-ins,
 explicit binary, fresh allowlisted environment, and an outer inherited network
 fence; `ANTHROPIC_BASE_URL` alone does not prevent public egress.
