@@ -33,17 +33,18 @@ func TestConnectedAppsForTaskClaimSuppressesRestrictedTaskApps(t *testing.T) {
 
 func TestRequestHasClientCapability(t *testing.T) {
 	tests := []struct {
-		name   string
-		header string
-		want   bool
+		name       string
+		header     string
+		capability string
+		want       bool
 	}{
-		{name: "absent"},
-		{name: "exact", header: protocol.DaemonCapabilityCoalescedCommentsV1, want: true},
-		{name: "comma separated and trimmed", header: "skill-bundles-v1,  coalesced-comments-v1  ", want: true},
-		{name: "task execution policy", header: protocol.DaemonCapabilityTaskExecutionPolicyV1, want: true},
-		{name: "substring", header: "xcoalesced-comments-v1", want: false},
-		{name: "case sensitive", header: "Coalesced-Comments-V1", want: false},
-		{name: "unknown", header: "future-comments-v2", want: false},
+		{name: "absent", capability: protocol.DaemonCapabilityCoalescedCommentsV1},
+		{name: "exact", header: protocol.DaemonCapabilityCoalescedCommentsV1, capability: protocol.DaemonCapabilityCoalescedCommentsV1, want: true},
+		{name: "comma separated and trimmed", header: "skill-bundles-v1,  coalesced-comments-v1  ", capability: protocol.DaemonCapabilityCoalescedCommentsV1, want: true},
+		{name: "task execution policy", header: protocol.DaemonCapabilityTaskExecutionPolicyV1, capability: protocol.DaemonCapabilityTaskExecutionPolicyV1, want: true},
+		{name: "substring", header: "xcoalesced-comments-v1", capability: protocol.DaemonCapabilityCoalescedCommentsV1},
+		{name: "case sensitive", header: "Coalesced-Comments-V1", capability: protocol.DaemonCapabilityCoalescedCommentsV1},
+		{name: "unknown", header: "future-comments-v2", capability: protocol.DaemonCapabilityCoalescedCommentsV1},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -51,8 +52,8 @@ func TestRequestHasClientCapability(t *testing.T) {
 			if tc.header != "" {
 				req.Header.Set("X-Client-Capabilities", tc.header)
 			}
-			if got := requestHasClientCapability(req, protocol.DaemonCapabilityCoalescedCommentsV1); got != tc.want {
-				t.Fatalf("requestHasClientCapability(%q) = %v, want %v", tc.header, got, tc.want)
+			if got := requestHasClientCapability(req, tc.capability); got != tc.want {
+				t.Fatalf("requestHasClientCapability(%q, %q) = %v, want %v", tc.header, tc.capability, got, tc.want)
 			}
 		})
 	}
