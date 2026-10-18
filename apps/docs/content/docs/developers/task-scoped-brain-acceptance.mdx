@@ -31,7 +31,7 @@ Default protocol tests use synthetic events and a fake CLI. A separate opt-in in
 
 ## Receipt limits and evidence boundaries
 
-Receipts are bounded by task-level call, count, and byte limits. Durable task history records only minimal operational metadata: server, tool, call ID, status, measured PreToolUse-to-PostToolUse hook interval, and result byte count. This hook interval is not a measurement from inside the MCP connector. Sanitized source identifiers, hashes, and revisions are transient verification evidence and are not persisted in task output.
+Receipts are bounded by task-level call, count, and byte limits. Full HTTP hook envelopes use the same 32 MiB ceiling as agent stream events, rather than a short-excerpt budget; larger bodies fail closed. Durable task history records only minimal operational metadata: server, tool, call ID, status, measured PreToolUse-to-PostToolUse hook interval, result byte count, and the evaluator's pass/fail aggregate. This hook interval is not a measurement from inside the MCP connector. Sanitized source identifiers, hashes, and revisions are transient verification evidence and are not persisted in task output.
 
 A successful receipt proves that the configured tool returned data matching the checked selector and response shape, and that the local hook observed the correlated call. It does not prove the underlying Brain record is true, complete, fresh beyond its reported metadata, or authoritative. The expected fixed HTTP 404 refusal is accepted only for its exact correlated request and response; it cannot distinguish a nonexistent resource from one hidden by access controls. Historical document reads are verified against the requested immutable revision and body hash, not against the current revision pointer.
 
@@ -39,20 +39,24 @@ The acceptance fixtures and selectors are versioned test contracts. They are not
 
 ## Transient answer evaluation
 
-Standalone harnesses can set `ExecOptions.EvaluateBrainAcceptance` on a restricted Claude execution. This synchronous callback is separate from `Session.Messages` and `Session.Result`; the daemon does not register it, and it is not serialized in execution options. It receives four bounded, structured answers and the correlated sanitized receipts only after successful retrieval and hook verification. Callback rejection fails the task with a fixed error; callback error text is withheld.
+The daemon's ordinary execution boundary always registers the task-owned `agent.EvaluateBrainAcceptance` consumer for a policy-bearing task, including retries. It cannot substitute a permissive callback. The synchronous `ExecOptions.EvaluateBrainAcceptance` callback is separate from `Session.Messages` and `Session.Result` and is not serialized in execution options. It receives four bounded, structured answers and the correlated sanitized receipts only after successful retrieval and hook verification. Callback rejection fails the task with a fixed error; callback error text is withheld. Standalone protocol tests may supply their own consumer, but operational receipt verification without this evaluator is not acceptance.
 
-Answers use a finite set of conclusion and uncertainty labels, plus project/document/revision citations correlated to both the exact scoped context question and a verified full immutable read. Unknown fields, arbitrary prose, reasoning, source bodies, uncited documents, wrong projects, and oversized answers are rejected before delivery. Wrong semantic choices are distinguishable from verified retrieval: the consumer must evaluate the answers against the frozen rubric, not grade the run from operational statuses. The callback must consume its argument in memory and must not log, serialize, or persist it. No retention permission is implied.
+Answers use a finite set of conclusion and uncertainty labels, plus project/document/revision citations correlated to both the exact scoped context question and a verified full immutable read. Unknown fields, arbitrary prose, reasoning, source bodies, uncited documents, wrong projects, and oversized answers are rejected before delivery. The task-owned consumer requires A33's full immutable retrieval conclusion, A36's rejection of self-asserted authority, A28's distinction between worker completion and owner acceptance, and A49's unknown/no-current-claim refusal. A49 must have unknown evidence state and no citations. Superseded source metadata requires a stale or unknown caveat, including when another read of the same immutable citation reports unverified freshness. Unsupported claims of conflict are not inferred from reference metadata. The exact refusal and bounded event check must both be present; one verified receipt cannot complete acceptance. The callback consumes its argument in memory and never logs, serializes, or persists it. No retention permission is implied.
 
 Transient read metadata is limited to the source-defined tier (`truth`, `working`, `history`), reference status (`reference_only`, `superseded_reference`, `superseded_revision`), freshness (`unverified`, `superseded`), `assured: false`, and an optional validated `recordedAt` timestamp. Missing or unsupported required metadata fails evaluation rather than granting assurance. A historical revision does not automatically change freshness, and a `truth` tier does not make a claim authoritative.
 
-The synthetic, no-account evaluation invocation is:
+Every observed MCP call must have a positive monotonic hook interval no greater than three seconds, compared at full duration precision. PreToolUse returns before dispatch and PostToolUse follows completion, so this interval conservatively encloses connector execution plus CLI/hook overhead. It is an upper-bound gate, not connector-only telemetry. No live timing result is implied by the gate's implementation.
+
+The synthetic, no-account ordinary-evaluator and daemon-wiring invocation is:
 
 ```bash
 cd server
-go test ./pkg/agent -run '^TestClaudeRestrictedTransientEvaluation$' -count=1
+go test ./pkg/agent ./internal/daemon \
+  -run 'TestClaudeRestrictedTransientEvaluation|TestEvaluateBrainAcceptance|TestExecuteAndDrainRequiresTaskOwnedBrainAcceptance' \
+  -count=1
 ```
 
-That test exercises answer/citation delivery and evaluator rejection while checking that neither answers nor source identifiers/bodies escape into durable messages, results, or logs. It is not a live semantic score. The event receipt currently validates only row identity and bounds, not canonical page/payload hashes. Hook timing is not connector-internal timing, so the original per-connector three-second requirement remains unverified.
+These tests exercise task-owned evaluator wiring, answer/citation delivery, incomplete/wrong-answer rejection, freshness consistency, and the timing boundary while checking that neither answers nor source identifiers/bodies escape into durable messages, results, or logs. They are not a live semantic score. The event receipt currently validates only row identity and bounds, not canonical page/payload hashes.
 
 ## Installed-CLI synthetic dispatch fixture
 
@@ -71,4 +75,6 @@ MULTICA_CLAUDE_FIXTURE_EXECUTABLE=/fixture/claude \
   -test.v -test.timeout=4m
 ```
 
-The allowed case must dispatch exactly once with correlated pre/post hooks. Denied arguments, refused hook connection, timeout, and malformed hook JSON must dispatch zero times. Native tools must not appear in API tool definitions. Scratch inspection rejects persisted conversation JSONL and prompt/source/final-answer canaries; operational MCP JSONL may still be created by Claude, so `--no-session-persistence` must not be described as disabling all CLI logs. Scratch directories and listeners are cleaned up. None of this authorizes production calls, provider spend, a shared CLI upgrade, or daemon activation.
+The nine-case matrix requires the allowed case to dispatch exactly once with correlated pre/post hooks. Denied arguments, refused hook connection, timeout, and malformed hook JSON must dispatch zero times. Native tools must not appear in API tool definitions. Four deliberately adversarial scripted calls inject the real native names `Bash`, `Read`, `Write`, and `Edit` despite their absence from definitions. Each runs once without the adapter's secondary gate to test the CLI registry, then replays through the actual backend with fresh HOME/config to require a failed task at the tool/correlation gate (not merely a missing final answer). Both must dispatch no MCP, leave the scratch sentinel unchanged, disclose no read canary, and create no execution/write marker. These injected calls test dispatch rejection, not model behavior.
+
+Scratch inspection rejects persisted conversation JSONL and prompt/source/final-answer canaries; operational MCP JSONL may still be created by Claude, so `--no-session-persistence` must not be described as disabling all CLI logs. Scratch directories and listeners are cleaned up. None of this authorizes production calls, provider spend, a shared CLI upgrade, or daemon activation.

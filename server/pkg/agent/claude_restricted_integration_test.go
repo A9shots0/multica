@@ -37,7 +37,7 @@ func TestClaudeRestrictedInstalledSyntheticDispatch(t *testing.T) {
 		t.Fatal("an explicit absolute fixture CLI path is required")
 	}
 	requireSyntheticNetworkFence(t)
-	for _, mode := range []string{"allow", "deny", "refused", "timeout", "malformed"} {
+	for _, mode := range []string{"allow", "deny", "refused", "timeout", "malformed", "native_bash", "native_read", "native_write", "native_edit"} {
 		t.Run(mode, func(t *testing.T) {
 			runClaudeSyntheticDispatch(t, executable, mode)
 		})
@@ -61,6 +61,12 @@ func requireSyntheticNetworkFence(t *testing.T) {
 
 func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 	t.Helper()
+	scratch := t.TempDir()
+	sentinel, marker := filepath.Join(scratch, "synthetic-sentinel"), filepath.Join(scratch, "forbidden-output")
+	const readCanary = "SYNTHETIC_FORBIDDEN_READ_CANARY"
+	if err := os.WriteFile(sentinel, []byte(readCanary), 0600); err != nil {
+		t.Fatal(err)
+	}
 	var dispatches, modelRequests, preHooks, postHooks atomic.Int32
 	var mu sync.Mutex
 	var protocolFailure string
@@ -70,9 +76,20 @@ func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 		mu.Unlock()
 	}
 	toolName := "mcp__brain__brain_projects"
+	injectedTool := toolName
 	input := map[string]any{}
 	if mode == "deny" {
 		input["project"] = "out-of-scope-synthetic-project"
+	}
+	switch mode {
+	case "native_bash":
+		injectedTool, input = "Bash", map[string]any{"command": "printf synthetic > " + marker}
+	case "native_read":
+		injectedTool, input = "Read", map[string]any{"file_path": sentinel}
+	case "native_write":
+		injectedTool, input = "Write", map[string]any{"file_path": marker, "content": "synthetic"}
+	case "native_edit":
+		injectedTool, input = "Edit", map[string]any{"file_path": sentinel, "old_string": readCanary, "new_string": "modified"}
 	}
 	mcp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -166,6 +183,9 @@ func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 		}
 		hasResult := false
 		for _, message := range request.Messages {
+			if bytes.Contains(message.Content, []byte(readCanary)) && mode != "native_edit" {
+				fail("forbidden local read disclosed the synthetic sentinel")
+			}
 			var blocks []struct {
 				Type string `json:"type"`
 			}
@@ -175,7 +195,7 @@ func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 				}
 			}
 		}
-		writeSyntheticClaudeSSE(w, toolName, input, hasResult)
+		writeSyntheticClaudeSSE(w, injectedTool, input, hasResult)
 	}))
 	defer api.Close()
 
@@ -240,7 +260,6 @@ func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	scratch := t.TempDir()
 	settingsPath, mcpPath := filepath.Join(scratch, "settings.json"), filepath.Join(scratch, "mcp.json")
 	config, _ := json.Marshal(map[string]any{"mcpServers": map[string]any{"brain": map[string]string{"type": "http", "url": mcp.URL}}})
 	for path, data := range map[string][]byte{settingsPath: settings, mcpPath: config} {
@@ -268,6 +287,13 @@ func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 		"PATH=/usr/bin:/bin", "ANTHROPIC_BASE_URL=" + api.URL, "ANTHROPIC_AUTH_TOKEN=synthetic-not-an-account",
 		"DISABLE_AUTOUPDATER=1", "DISABLE_UPDATES=1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1",
 		"IS_SANDBOX=1",
+	}
+	versionCmd := exec.CommandContext(ctx, executable, "--version")
+	versionCmd.Env, versionCmd.Dir = cmd.Env, scratch
+	versionOutput, err := versionCmd.Output()
+	version := strings.TrimSpace(string(versionOutput))
+	if err != nil || !claudeVersionAtLeast(version, minRestrictedClaudeVersion) {
+		t.Fatal("explicit fixture CLI does not meet the restricted version gate")
 	}
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -328,8 +354,57 @@ func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 		if preHooks.Load() != 1 || postHooks.Load() != 1 || hooks.Failure() != "" {
 			t.Fatalf("allowed dispatch was not correlated to pre/post hooks: pre=%d post=%d", preHooks.Load(), postHooks.Load())
 		}
-	} else if mode != "refused" && (preHooks.Load() != 1 || postHooks.Load() != 0) {
+	} else if mode != "refused" && !strings.HasPrefix(mode, "native_") && (preHooks.Load() != 1 || postHooks.Load() != 0) {
 		t.Fatalf("negative dispatch did not reach its HTTP hook exactly once: pre=%d post=%d", preHooks.Load(), postHooks.Load())
+	}
+	if strings.HasPrefix(mode, "native_") {
+		backendEnv := make(map[string]string)
+		for _, entry := range cmd.Env {
+			key, value, _ := strings.Cut(entry, "=")
+			backendEnv[key] = value
+		}
+		backendEnv["HOME"], backendEnv["CLAUDE_CONFIG_DIR"] = filepath.Join(scratch, "backend-home"), filepath.Join(scratch, "backend-config")
+		for _, path := range []string{backendEnv["HOME"], backendEnv["CLAUDE_CONFIG_DIR"]} {
+			if err := os.MkdirAll(path, 0700); err != nil {
+				t.Fatal(err)
+			}
+		}
+		backend, err := New("claude", Config{
+			ExecutablePath: executable, CLIVersion: version, BuiltinRuntime: true,
+			Env: backendEnv, Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		session, err := backend.Execute(ctx, "SYNTHETIC_PROMPT_CANARY", ExecOptions{
+			Cwd: scratch, ExecutionPolicy: brainAcceptancePolicy(t), McpConfig: config,
+			Timeout: 10 * time.Second, EvaluateBrainAcceptance: EvaluateBrainAcceptance,
+		})
+		if err != nil {
+			t.Fatal("native replay failed before task execution")
+		}
+		for message := range session.Messages {
+			if message.Type == MessageText || message.Type == MessageThinking || message.Input != nil ||
+				strings.Contains(message.Content, readCanary) {
+				t.Fatal("native replay exposed private content")
+			}
+		}
+		result := <-session.Result
+		rejectedTool := result.Error == "restricted Claude attempted a tool call outside the authorized read scope" ||
+			result.Error == "restricted Brain MCP execution returned an unverifiable tool result"
+		if result.Status != "failed" || !rejectedTool {
+			t.Fatalf("actual backend did not fail injected native action: status=%s error=%s", result.Status, result.Error)
+		}
+		if strings.Contains(result.Output+result.Error, readCanary) {
+			t.Fatal("native replay disclosed the read canary in the result")
+		}
+		content, err := os.ReadFile(sentinel)
+		if err != nil || string(content) != readCanary {
+			t.Fatal("injected native action modified the synthetic sentinel")
+		}
+		if _, err := os.Stat(marker); !os.IsNotExist(err) {
+			t.Fatal("injected native action executed or wrote a file")
+		}
 	}
 	if dispatches.Load() != wantDispatches {
 		t.Fatalf("hook mode=%s dispatched %d MCP calls; want %d", mode, dispatches.Load(), wantDispatches)

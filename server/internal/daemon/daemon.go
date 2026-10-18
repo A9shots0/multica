@@ -8878,6 +8878,9 @@ func freshSessionMayHelp(errText string) bool {
 // sequence instead of restarting at 1 — the server orders the transcript by
 // seq alone, and duplicate seqs would interleave the two attempts' rows.
 func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, prompt string, opts agent.ExecOptions, taskLog *slog.Logger, taskID, codexHome string, msgSeq *atomic.Int32) (agent.Result, int32, error) {
+	if opts.ExecutionPolicy != nil {
+		opts.EvaluateBrainAcceptance = agent.EvaluateBrainAcceptance
+	}
 	// Wrap the caller's ctx so the idle watchdog (below) can interrupt both
 	// the agent subprocess (via the ctx passed to backend.Execute) AND the
 	// drain loop with a single cancel. Without this layer the backend would

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	restrictedClaudeHookBodyLimit = 64 << 10
+	restrictedClaudeHookBodyLimit = agentStreamMaxLineBytes
 	restrictedClaudeHookTimeout   = 5 * time.Second
 	restrictedClaudeMaxToolCalls  = 32
 )

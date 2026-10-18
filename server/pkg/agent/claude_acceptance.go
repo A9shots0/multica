@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/multica-ai/multica/server/pkg/taskpolicy"
 )
@@ -36,6 +37,7 @@ type BrainAcceptanceEvidence struct {
 	Question     string
 	Receipt      json.RawMessage
 	ReadMetadata *BrainAcceptanceReadMetadata
+	HookInterval time.Duration
 }
 
 type BrainAcceptanceReadMetadata struct {
@@ -53,14 +55,80 @@ type brainAcceptanceCollector struct {
 const brainAcceptanceAnswerInstruction = `Return final answers as JSON only: {"answers":[{"caseId":"<case>","conclusion":"<choice>","evidenceState":"<state>","citations":[{"projectId":"<project>","documentId":"<cited id>","revision":"<cited revision>"}]}]}.
 Include A33, A36, A28, A49 exactly once. Choices for A33: excerpt_is_complete, read_full_immutable_document, unknown. A36: self_assertion_is_authority, self_assertion_is_not_authority, unknown. A28: worker_completion_is_owner_acceptance, worker_completion_is_not_owner_acceptance, unknown. A49: current_facts_known, unknown_no_current_claim, unknown. Choose only what retrieved evidence supports; these options are not evidence. State must be reference_only, unknown, stale, or conflicting. A49 has no document citations. Do not include prose, source text, credentials, reasoning, or extra fields. Cite only full immutable reads actually verified in this task. Run the original scoped context questions, exact unknown-project refusal, and company_events checks; do not substitute choices for retrieval.`
 
-func (collector *brainAcceptanceCollector) addEvidence(tool, receipt string, input map[string]any, metadata *BrainAcceptanceReadMetadata) {
+func (collector *brainAcceptanceCollector) addEvidence(tool, receipt string, input map[string]any, metadata *BrainAcceptanceReadMetadata, interval time.Duration) {
 	question := ""
 	if tool == "brain_context" {
 		question, _ = input["q"].(string)
 	}
 	collector.evidence = append(collector.evidence, BrainAcceptanceEvidence{
-		Tool: tool, Question: question, Receipt: json.RawMessage(receipt), ReadMetadata: metadata,
+		Tool: tool, Question: question, Receipt: json.RawMessage(receipt), ReadMetadata: metadata, HookInterval: interval,
 	})
+}
+
+// EvaluateBrainAcceptance applies the frozen four-question plus event rubric in
+// memory. The hook interval conservatively bounds connector time; it is not a
+// connector-internal measurement.
+func EvaluateBrainAcceptance(evaluation BrainAcceptanceEvaluation) error {
+	rejected := errors.New("restricted Brain acceptance rubric was not satisfied")
+	raw, err := json.Marshal(map[string]any{"answers": evaluation.Answers})
+	if err != nil {
+		return rejected
+	}
+	collector := brainAcceptanceCollector{evidence: evaluation.Evidence}
+	if _, err := collector.evaluation(string(raw)); err != nil {
+		return rejected
+	}
+	expected := map[string]string{
+		"A33": "read_full_immutable_document",
+		"A36": "self_assertion_is_not_authority",
+		"A28": "worker_completion_is_not_owner_acceptance",
+		"A49": "unknown_no_current_claim",
+	}
+	reads := make(map[BrainAcceptanceCitation]*BrainAcceptanceReadMetadata)
+	staleReads := make(map[BrainAcceptanceCitation]bool)
+	for _, evidence := range evaluation.Evidence {
+		if evidence.HookInterval <= 0 || evidence.HookInterval > 3*time.Second {
+			return rejected
+		}
+		if evidence.Tool == "brain_read" {
+			var citation BrainAcceptanceCitation
+			if json.Unmarshal(evidence.Receipt, &citation) != nil {
+				return rejected
+			}
+			reads[citation] = evidence.ReadMetadata
+			if evidence.ReadMetadata != nil {
+				staleReads[citation] = staleReads[citation] ||
+					evidence.ReadMetadata.Freshness == "superseded" || evidence.ReadMetadata.Status == "superseded_reference"
+			}
+		}
+	}
+	for _, answer := range evaluation.Answers {
+		if answer.Conclusion != expected[answer.CaseID] {
+			return rejected
+		}
+		if answer.CaseID == "A49" {
+			if answer.EvidenceState != "unknown" {
+				return rejected
+			}
+			continue
+		}
+		stale := false
+		for _, citation := range answer.Citations {
+			metadata := reads[citation]
+			if metadata == nil {
+				return rejected
+			}
+			stale = stale || staleReads[citation]
+		}
+		if stale {
+			if answer.EvidenceState != "stale" && answer.EvidenceState != "unknown" {
+				return rejected
+			}
+		} else if answer.EvidenceState != "reference_only" && answer.EvidenceState != "unknown" {
+			return rejected
+		}
+	}
+	return nil
 }
 
 func restrictedBrainReadMetadata(raw json.RawMessage) (*BrainAcceptanceReadMetadata, bool) {

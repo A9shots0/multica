@@ -461,10 +461,18 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 			}
 			acceptanceAnswer = ""
 			restrictedReceiptBudget.evaluation = nil
-			safeOutput, outputErr := json.Marshal(map[string]any{
+			summary := map[string]any{
 				"policy":   opts.ExecutionPolicy.Mode,
 				"receipts": restrictedReceipts,
-			})
+			}
+			if opts.EvaluateBrainAcceptance != nil {
+				acceptance := "failed"
+				if restrictedFailure == "" && finalStatus == "completed" {
+					acceptance = "passed"
+				}
+				summary["acceptance"] = map[string]string{"status": acceptance}
+			}
+			safeOutput, outputErr := json.Marshal(summary)
 			if outputErr != nil {
 				finalStatus = "failed"
 				finalError = "restricted Brain MCP receipt summary could not be encoded"

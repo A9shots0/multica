@@ -216,6 +216,41 @@ func TestRestrictedClaudeHookEnforcesTaskCallLimit(t *testing.T) {
 	}
 }
 
+func TestRestrictedClaudeHookAcceptsBoundedFullReadBeyond64KiB(t *testing.T) {
+	policy := brainAcceptancePolicy(t)
+	hooks, hookURL, err := startRestrictedClaudeHooks(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer hooks.Close()
+	body := strings.Repeat("synthetic full document\n", 4096)
+	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+	hooks.authorizedDocs["synthetic-doc\x00"+revision] = "brain"
+	if decision := postRestrictedHook(t, hookURL, restrictedClaudeHookEvent{
+		EventName: "PreToolUse", ToolName: "mcp__brain__brain_read", ToolUseID: "large-read",
+		ToolInput: map[string]any{"id": "synthetic-doc", "revision": revision},
+	}); decision != "allow" {
+		t.Fatal("authorized full read was denied")
+	}
+	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"document":{"id":"synthetic-doc","project":"brain","revision":%q,"body":%q,"bytes":%d,"truncated":false,"currentRevision":%q,"available":true}}`, revision, body, len(body), revision)
+	postRestrictedHook(t, hookURL, restrictedClaudeHookEvent{
+		EventName: "PostToolUse", ToolName: "mcp__brain__brain_read", ToolUseID: "large-read",
+		ToolResponse: mustMarshal(t, map[string]any{"content": []any{map[string]any{"type": "text", "text": payload}}}),
+	})
+	if _, ok := hooks.WaitDuration(t.Context(), "large-read", "brain_read"); !ok || hooks.Failure() != "" {
+		t.Fatal("complete full read above 64KiB failed hook verification")
+	}
+}
+
+func TestRestrictedClaudeHookRejectsBodyAboveAgentEventBudget(t *testing.T) {
+	hooks := &restrictedClaudeHooks{path: "/synthetic"}
+	req := httptest.NewRequest(http.MethodPost, "/synthetic", strings.NewReader(strings.Repeat(" ", agentStreamMaxLineBytes+1)))
+	hooks.serveHTTP(httptest.NewRecorder(), req)
+	if hooks.Failure() == "" {
+		t.Fatal("oversized hook body was accepted")
+	}
+}
+
 func TestRestrictedClaudeReceiptBudgetFailsOnAggregateCountAndBytes(t *testing.T) {
 	policy := brainAcceptancePolicy(t)
 	content := json.RawMessage(`[{"type":"text","text":"brain request rejected (HTTP 404)"}]`)

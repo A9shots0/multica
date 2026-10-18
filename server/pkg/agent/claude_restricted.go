@@ -244,7 +244,7 @@ func (b *claudeBackend) handleRestrictedUser(ctx context.Context, msg claudeSDKM
 					return "restricted Brain acceptance read metadata was missing or unsupported", receipts, true
 				}
 			}
-			budget.evaluation.addEvidence(call.tool, evidence, call.input, metadata)
+			budget.evaluation.addEvidence(call.tool, evidence, call.input, metadata, duration)
 		}
 		status := "verified"
 		if !verified {

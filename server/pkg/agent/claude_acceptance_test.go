@@ -44,12 +44,12 @@ func syntheticBrainAcceptanceCollector() *brainAcceptanceCollector {
 		{"brain", taskpolicy.BrainAuthorityQuestion},
 		{"multica", "A worker completed its task. Has the owner accepted the issue?"},
 	} {
-		collector.addEvidence("brain_context", fmt.Sprintf(`{"receiptVerified":true,"projectId":%q,"documents":[{"id":%q,"revision":%q}]}`, item.project, item.project+"-doc", revisionHashFixture()), map[string]any{"q": item.question}, nil)
+		collector.addEvidence("brain_context", fmt.Sprintf(`{"receiptVerified":true,"projectId":%q,"documents":[{"id":%q,"revision":%q}]}`, item.project, item.project+"-doc", revisionHashFixture()), map[string]any{"q": item.question}, nil, time.Millisecond)
 		collector.addEvidence("brain_read", fmt.Sprintf(`{"receiptVerified":true,"projectId":%q,"documentId":%q,"revision":%q}`, item.project, item.project+"-doc", revisionHashFixture()), nil,
-			&BrainAcceptanceReadMetadata{Tier: "working", Status: "reference_only", Freshness: "unverified"})
+			&BrainAcceptanceReadMetadata{Tier: "working", Status: "reference_only", Freshness: "unverified"}, time.Millisecond)
 	}
-	collector.addEvidence("brain_resolve", `{"receiptVerified":true,"expectedRefusal":true}`, nil, nil)
-	collector.addEvidence("company_events", `{"receiptVerified":true}`, nil, nil)
+	collector.addEvidence("brain_resolve", `{"receiptVerified":true,"expectedRefusal":true}`, nil, nil, time.Millisecond)
+	collector.addEvidence("company_events", `{"receiptVerified":true}`, nil, nil, time.Millisecond)
 	return collector
 }
 
@@ -117,20 +117,94 @@ func TestBrainAcceptanceReadMetadataUsesOnlySourceVerifiedFields(t *testing.T) {
 	}
 }
 
+func TestEvaluateBrainAcceptanceRequiresSemanticAndFreshnessConsistency(t *testing.T) {
+	makeEvaluation := func(t *testing.T) BrainAcceptanceEvaluation {
+		t.Helper()
+		evaluation, err := syntheticBrainAcceptanceCollector().evaluation(syntheticBrainAcceptanceAnswers())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return evaluation
+	}
+	if err := EvaluateBrainAcceptance(makeEvaluation(t)); err != nil {
+		t.Fatal(err)
+	}
+	for name, mutate := range map[string]func(*BrainAcceptanceEvaluation){
+		"wrong conclusion":                        func(e *BrainAcceptanceEvaluation) { e.Answers[0].Conclusion = "excerpt_is_complete" },
+		"self asserted authority":                 func(e *BrainAcceptanceEvaluation) { e.Answers[1].Conclusion = "self_assertion_is_authority" },
+		"worker completion called acceptance":     func(e *BrainAcceptanceEvaluation) { e.Answers[2].Conclusion = "worker_completion_is_owner_acceptance" },
+		"claimed current unknown facts":           func(e *BrainAcceptanceEvaluation) { e.Answers[3].Conclusion = "current_facts_known" },
+		"unknown project called reference":        func(e *BrainAcceptanceEvaluation) { e.Answers[3].EvidenceState = "reference_only" },
+		"stale source called reference":           func(e *BrainAcceptanceEvaluation) { e.Evidence[1].ReadMetadata.Freshness = "superseded" },
+		"superseded status called reference":      func(e *BrainAcceptanceEvaluation) { e.Evidence[1].ReadMetadata.Status = "superseded_reference" },
+		"missing fifth check":                     func(e *BrainAcceptanceEvaluation) { e.Evidence = e.Evidence[:len(e.Evidence)-1] },
+		"unmeasured duration":                     func(e *BrainAcceptanceEvaluation) { e.Evidence[0].HookInterval = 0 },
+		"individual interval above three seconds": func(e *BrainAcceptanceEvaluation) { e.Evidence[0].HookInterval = 3*time.Second + time.Nanosecond },
+	} {
+		t.Run(name, func(t *testing.T) {
+			evaluation := makeEvaluation(t)
+			mutate(&evaluation)
+			if EvaluateBrainAcceptance(evaluation) == nil {
+				t.Fatal("incomplete or inconsistent acceptance was approved")
+			}
+		})
+	}
+	exactLimit := makeEvaluation(t)
+	exactLimit.Evidence[0].HookInterval = 3 * time.Second
+	if err := EvaluateBrainAcceptance(exactLimit); err != nil {
+		t.Fatal("exact three-second interval was rejected")
+	}
+	historical := makeEvaluation(t)
+	for _, evidence := range historical.Evidence {
+		if evidence.ReadMetadata != nil {
+			evidence.ReadMetadata.Status = "superseded_revision"
+		}
+	}
+	if err := EvaluateBrainAcceptance(historical); err != nil {
+		t.Fatal("historical revision alone incorrectly changed source freshness")
+	}
+	stale := makeEvaluation(t)
+	for _, evidence := range stale.Evidence {
+		if evidence.ReadMetadata != nil {
+			evidence.ReadMetadata.Freshness = "superseded"
+		}
+	}
+	for index := range stale.Answers {
+		if stale.Answers[index].CaseID != "A49" {
+			stale.Answers[index].EvidenceState = "stale"
+		}
+	}
+	if err := EvaluateBrainAcceptance(stale); err != nil {
+		t.Fatal("explicit stale evidence caveat was rejected")
+	}
+}
+
 func TestClaudeRestrictedTransientEvaluation(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("POSIX fake executable")
 	}
-	for _, reject := range []bool{false, true} {
-		t.Run(fmt.Sprintf("reject=%t", reject), func(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		reject   bool
+		complete bool
+	}{
+		{name: "accepted", complete: true},
+		{name: "consumer rejected", complete: true, reject: true},
+		{name: "incomplete evidence"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
 			fakePath := filepath.Join(t.TempDir(), "claude")
 			writeTestExecutable(t, fakePath, []byte("#!/bin/sh\nexec "+shellQuote(os.Args[0])+" -test.run=^TestRestrictedClaudeFakeCLIHelper$ -- \"$@\"\n"))
 			var logs bytes.Buffer
+			evaluationMode := ""
+			if tc.complete {
+				evaluationMode = "1"
+			}
 			backend, err := New("claude", Config{
 				ExecutablePath: fakePath, CLIVersion: "2.1.300", BuiltinRuntime: true,
 				Env: map[string]string{
 					"IS_SANDBOX": "1", "MULTICA_RESTRICTED_CLAUDE_HELPER": "1",
-					"MULTICA_RESTRICTED_CLAUDE_EVALUATION": "1",
+					"MULTICA_RESTRICTED_CLAUDE_EVALUATION": evaluationMode,
 				},
 				Logger: slog.New(slog.NewTextHandler(&logs, nil)),
 			})
@@ -155,10 +229,10 @@ func TestClaudeRestrictedTransientEvaluation(t *testing.T) {
 							return errors.New("incorrect synthetic answer")
 						}
 					}
-					if reject {
+					if tc.reject {
 						return errors.New("SENSITIVE_EVALUATOR_ERROR")
 					}
-					return nil
+					return EvaluateBrainAcceptance(evaluation)
 				},
 			})
 			if err != nil {
@@ -169,11 +243,19 @@ func TestClaudeRestrictedTransientEvaluation(t *testing.T) {
 				messages = append(messages, message)
 			}
 			result := <-session.Result
-			if (result.Status == "completed") == reject {
-				t.Fatalf("evaluator rejection=%t status=%s error=%s", reject, result.Status, result.Error)
+			wantCompleted := tc.complete && !tc.reject
+			if (result.Status == "completed") != wantCompleted {
+				t.Fatalf("expected completed=%t status=%s error=%s", wantCompleted, result.Status, result.Error)
 			}
-			if len(observed.Answers) != 4 || len(observed.Evidence) != 8 {
+			if tc.complete && (len(observed.Answers) != 4 || len(observed.Evidence) != 8) {
 				t.Fatalf("transient evaluator did not receive all four answers and eight correlated receipts")
+			}
+			status := "failed"
+			if wantCompleted {
+				status = "passed"
+			}
+			if !strings.Contains(result.Output, `"acceptance":{"status":"`+status+`"}`) {
+				t.Fatal("durable result omitted the acceptance aggregate")
 			}
 			transient, _ := json.Marshal(observed)
 			if bytes.Contains(transient, []byte("SENSITIVE")) {
