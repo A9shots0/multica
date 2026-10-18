@@ -335,3 +335,92 @@ then run the live A33/A36/A28/A49/event contract once. Installed-CLI tests
 require the documented opt-ins,
 explicit binary, fresh allowlisted environment, and an outer inherited network
 fence; `ANTHROPIC_BASE_URL` alone does not prevent public egress.
+
+## A32 topology correction and server release
+
+Snapshot time: `2026-10-18T22:22:48Z`.
+
+- The owner identified A32, not `api.multica.ai`, as the company Multica and
+  Brain host. Direct runtime evidence confirmed the normal Mac Studio worker
+  points to `https://32s-mac-mini.tailda9924.ts.net`; the extra COMP-REA daemon
+  is disabled. The earlier upstream-maintainer blocker is therefore retired for
+  this company-runtime acceptance.
+- The sealed A32 production source was imported at health/source revision
+  `473dc74d63f6-local-662441fd7ee5`, integrated with the already-qualified
+  COMP-REA policy, and committed in the isolated integration repository as
+  `61c3425ddc51fcc7bd21f6fc0f78901c17d6e6c4` (tree
+  `04e1f845f7969bd8d0931a928c2c9e4747d396a3`). Focused policy, Claude,
+  daemon, handler, and retry suites passed on that baseline.
+- A32 release `comp-rea-20261018-r1` activated backend image
+  `sha256:08a97bad4263db315fa50e6a3eb46340d79a3f7740302cbaca26ccfbcc64b0a0`.
+  `/health` now reports exact commit `61c3425ddc51fcc7bd21f6fc0f78901c17d6e6c4`;
+  authenticated API, frontend route, WebSocket, database health, and issue
+  history verification passed. Frontend and PostgreSQL container IDs and image
+  identities were preserved.
+- Fresh rollback backup `20261018T222047Z-1f669dff` passed local, off-box, and
+  private-R2 verification. The prior backend image
+  `sha256:f7fbb8883c2427d2c0cb4348583a75ae493373cc3f8f4306741d89b983b23bbe`
+  and protected pre-release host environment remain the rollback target.
+
+Next boundary: activate the qualified daemon binary on the existing normal Mac
+Studio worker service, preserving its A32 workspace/runtime identity; verify
+Claude 2.1.295+ authentication and bind the dedicated A32 acceptance agent to
+the existing Brain MCP before the single live five-check run.
+
+## Normal worker activation and A32 agent binding
+
+Snapshot time: `2026-10-18T22:27:15Z`.
+
+- The existing normal Mac Studio worker daemon ID
+  `01a06d74-b96c-72e6-bc09-9cf50838ee84` now runs the qualified A32 binary
+  `v0.6.3-comp-rea.a32.61c3425dd` at commit
+  `61c3425ddc51fcc7bd21f6fc0f78901c17d6e6c4`; the additional COMP-REA daemon
+  remains disabled. A32 reports its Claude runtime
+  `bd6e5717-b6a7-4f9a-9d2b-25bb0b298c43` online with Claude `2.1.295` and
+  `task-execution-policy-v1`.
+- The daemon's process-local `MULTICA_CLAUDE_PATH` is pinned to the verified
+  `~/.multica/profiles/silver-mediums/bin/claude-2.1.295`. Claude still reports
+  `loggedIn: false`, `authMethod: none`.
+- Dedicated private agent `COMP-REA Brain Acceptance A32` ID
+  `97171ec2-38ed-45cb-aff8-a635f327b090` is bound to that runtime, model
+  `claude-opus-5`, concurrency 1. It has exactly one enabled workspace MCP:
+  `brain` ID `ac4d8655-2b13-4eec-9bb5-5efe8483b78e`, backed by the existing
+  connected Mac Brain client at
+  `/Users/silvermediums/.silver-mediums/brain/brain_client.py mcp`.
+- Worker rollback is
+  `~/.multica/rollback/comp-rea-a32-20261018T222500Z`; the activation receipt is
+  `~/.multica/candidates/comp-rea-a32-61c3425dd/activation-receipt.json`.
+
+Next boundary: prepare the one exact policy-bearing issue rerun, authenticate
+the already-pinned Claude account through an existing approved path, execute
+the run once, and capture the evaluator, timing, prohibited-tool, and post-run
+health evidence.
+
+## Prepared live run and remaining authentication boundary
+
+Snapshot time: `2026-10-18T22:29:10Z`.
+
+- Dedicated issue `SILV-105` ID
+  `01a15121-3fd5-738e-b3f0-dc548d68b21b` was created in Multica Platform and
+  assigned to the dedicated acceptance agent without starting a task.
+- The exact one-shot API rerun helper is staged at
+  `~/.multica/candidates/comp-rea-a32-61c3425dd/rerun-policy.py`, SHA-256
+  `96c63d8652c3dccae993f4a3b659a13339da8e1b11854f74351badd80110ca57`.
+  It submits only the frozen `brain_mcp_acceptance_v1` policy for `brain` and
+  `multica`; it has passed Python syntax validation but has not been executed.
+- No `ANTHROPIC_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, or
+  `ANTHROPIC_AUTH_TOKEN` is present in the normal Mac login/LaunchAgent
+  environment. The official Claude subscription OAuth flow reached its
+  authorization URL, but this chat's required built-in Browser reported
+  `Browser is not available: iab`. The waiting login was cancelled cleanly;
+  no acceptance task or provider call has run.
+
+Exact external access action from Windows PowerShell:
+
+```powershell
+ssh -t silvers-mac-studio '"$HOME/.multica/profiles/silver-mediums/bin/claude-2.1.295" auth login --claudeai'
+```
+
+Complete the existing company-approved Claude subscription sign-in and report
+only that the command succeeded. The next command is the staged one-shot rerun;
+do not create, assign, or reconfigure anything else.
