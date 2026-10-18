@@ -3,6 +3,7 @@ package agent
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -53,7 +54,7 @@ type brainAcceptanceCollector struct {
 }
 
 const brainAcceptanceAnswerInstruction = `Return final answers as JSON only: {"answers":[{"caseId":"<case>","conclusion":"<choice>","evidenceState":"<state>","citations":[{"projectId":"<project>","documentId":"<cited id>","revision":"<cited revision>"}]}]}.
-Include A33, A36, A28, A49 exactly once. Choices for A33: excerpt_is_complete, read_full_immutable_document, unknown. A36: self_assertion_is_authority, self_assertion_is_not_authority, unknown. A28: worker_completion_is_owner_acceptance, worker_completion_is_not_owner_acceptance, unknown. A49: current_facts_known, unknown_no_current_claim, unknown. Choose only what retrieved evidence supports; these options are not evidence. State must be reference_only, unknown, stale, or conflicting. A49 has no document citations. Do not include prose, source text, credentials, reasoning, or extra fields. Cite only full immutable reads actually verified in this task. Run the original scoped context questions, exact unknown-project refusal, and company_events checks; do not substitute choices for retrieval.`
+Include A33, A36, A28, A49 exactly once. Choices for A33: excerpt_is_complete, read_full_immutable_document, unknown. A36: self_assertion_is_authority, self_assertion_is_not_authority, unknown. A28: worker_completion_is_owner_acceptance, worker_completion_is_not_owner_acceptance, unknown. A49: current_facts_known, unknown_no_current_claim, unknown. Choose only what retrieved evidence supports; these options are not evidence. State must be reference_only, unknown, stale, or conflicting. A49 must use "citations":[] exactly. Do not include prose, source text, credentials, reasoning, or extra fields. Begin with { and end with }; do not use Markdown or code fences. For A33, A36, and A28, copy every projectId, documentId, and revision exactly from a brain_read you actually completed after the matching scoped brain_context call; never cite a context-only document. Run the original scoped context questions, exact unknown-project refusal, and company_events checks; do not substitute choices for retrieval.`
 
 func (collector *brainAcceptanceCollector) addEvidence(tool, receipt string, input map[string]any, metadata *BrainAcceptanceReadMetadata, interval time.Duration) {
 	question := ""
@@ -178,17 +179,26 @@ func validBrainReadMetadata(metadata *BrainAcceptanceReadMetadata) bool {
 }
 
 func (collector *brainAcceptanceCollector) evaluation(raw string) (BrainAcceptanceEvaluation, error) {
-	invalid := errors.New("restricted Brain acceptance answer was missing, out of scope, or not correlated to verified evidence")
+	invalid := func(reason string) error {
+		return fmt.Errorf("restricted Brain acceptance answer rejected: %s", reason)
+	}
 	if len(raw) == 0 || len(raw) > brainAcceptanceAnswerLimit {
-		return BrainAcceptanceEvaluation{}, invalid
+		return BrainAcceptanceEvaluation{}, invalid("missing_or_oversized")
+	}
+	raw = strings.TrimSpace(raw)
+	if strings.HasPrefix(raw, "```json\n") && strings.HasSuffix(raw, "\n```") {
+		raw = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(raw, "```json\n"), "\n```"))
 	}
 	var envelope struct {
 		Answers []BrainAcceptanceAnswer `json:"answers"`
 	}
 	decoder := json.NewDecoder(strings.NewReader(raw))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF || len(envelope.Answers) != 4 {
-		return BrainAcceptanceEvaluation{}, invalid
+	if decoder.Decode(&envelope) != nil || decoder.Decode(new(any)) != io.EOF {
+		return BrainAcceptanceEvaluation{}, invalid("invalid_json_or_extra_fields")
+	}
+	if len(envelope.Answers) != 4 {
+		return BrainAcceptanceEvaluation{}, invalid("answer_count")
 	}
 	reads := make(map[BrainAcceptanceCitation]bool)
 	contexts := make(map[string]map[BrainAcceptanceCitation]bool)
@@ -206,7 +216,7 @@ func (collector *brainAcceptanceCollector) evaluation(raw string) (BrainAcceptan
 			} `json:"documents"`
 		}
 		if json.Unmarshal(evidence.Receipt, &receipt) != nil || !receipt.ReceiptVerified {
-			return BrainAcceptanceEvaluation{}, invalid
+			return BrainAcceptanceEvaluation{}, invalid("verified_evidence_receipt")
 		}
 		switch evidence.Tool {
 		case "brain_context":
@@ -220,7 +230,7 @@ func (collector *brainAcceptanceCollector) evaluation(raw string) (BrainAcceptan
 			}
 		case "brain_read":
 			if !validBrainReadMetadata(evidence.ReadMetadata) {
-				return BrainAcceptanceEvaluation{}, invalid
+				return BrainAcceptanceEvaluation{}, invalid("read_metadata")
 			}
 			reads[BrainAcceptanceCitation{receipt.ProjectID, receipt.DocumentID, receipt.Revision}] = true
 		case "brain_resolve":
@@ -230,23 +240,23 @@ func (collector *brainAcceptanceCollector) evaluation(raw string) (BrainAcceptan
 		}
 	}
 	if !refusal || !event {
-		return BrainAcceptanceEvaluation{}, invalid
+		return BrainAcceptanceEvaluation{}, invalid("required_refusal_or_event")
 	}
 	seen := make(map[string]bool)
 	for _, answer := range envelope.Answers {
 		if seen[answer.CaseID] || !validBrainAcceptanceConclusion(answer.CaseID, answer.Conclusion) ||
 			!validBrainAcceptanceEvidenceState(answer.EvidenceState) || len(answer.Citations) > 4 {
-			return BrainAcceptanceEvaluation{}, invalid
+			return BrainAcceptanceEvaluation{}, invalid("case_or_enum")
 		}
 		seen[answer.CaseID] = true
 		if answer.CaseID == "A49" {
 			if len(answer.Citations) != 0 {
-				return BrainAcceptanceEvaluation{}, invalid
+				return BrainAcceptanceEvaluation{}, invalid("a49_citation")
 			}
 			continue
 		}
 		if len(answer.Citations) == 0 {
-			return BrainAcceptanceEvaluation{}, invalid
+			return BrainAcceptanceEvaluation{}, invalid("missing_citation")
 		}
 		project := "brain"
 		question := "How do I retrieve evidence beyond the short search excerpt?"
@@ -259,7 +269,7 @@ func (collector *brainAcceptanceCollector) evaluation(raw string) (BrainAcceptan
 		}
 		for _, citation := range answer.Citations {
 			if citation.ProjectID != project || !reads[citation] || !contexts[question][citation] {
-				return BrainAcceptanceEvaluation{}, invalid
+				return BrainAcceptanceEvaluation{}, invalid("uncorrelated_citation")
 			}
 		}
 	}

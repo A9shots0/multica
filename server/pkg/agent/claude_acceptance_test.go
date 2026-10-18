@@ -58,6 +58,9 @@ func TestBrainAcceptanceEvaluationRejectsUncorrelatedOrPrivateAnswers(t *testing
 	if _, err := syntheticBrainAcceptanceCollector().evaluation(valid); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := syntheticBrainAcceptanceCollector().evaluation("```json\n" + valid + "\n```"); err != nil {
+		t.Fatalf("single JSON code fence was not normalized: %v", err)
+	}
 	wrong := strings.Replace(valid, "read_full_immutable_document", "excerpt_is_complete", 1)
 	if observed, err := syntheticBrainAcceptanceCollector().evaluation(wrong); err != nil ||
 		observed.Answers[0].Conclusion != "excerpt_is_complete" {
