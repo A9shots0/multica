@@ -259,6 +259,9 @@ func (b *claudeBackend) handleRestrictedUser(ctx context.Context, msg claudeSDKM
 		}
 		duration, measured := hooks.WaitDuration(ctx, block.ToolUseID, call.tool)
 		if !measured {
+			if hookFailure := hooks.Failure(); hookFailure != "" {
+				return hookFailure, receipts, true
+			}
 			return "restricted Claude provider hook timing could not be correlated", receipts, true
 		}
 		if budget == nil || budget.count >= restrictedClaudeMaxReceipts {

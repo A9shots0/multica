@@ -346,6 +346,24 @@ func restrictedClaudeHookResponseBlocks(raw json.RawMessage) ([]any, bool) {
 		(response.IsError == nil || !*response.IsError) {
 		return response.Content, true
 	}
+	var blocks []any
+	if json.Unmarshal(raw, &blocks) == nil && blocks != nil {
+		return blocks, true
+	}
+	var direct map[string]any
+	if json.Unmarshal(raw, &direct) == nil && direct != nil {
+		if direct["type"] == "text" {
+			if _, ok := direct["text"].(string); ok {
+				return []any{direct}, true
+			}
+		}
+		if direct["schemaVersion"] == "silvermediums.brain.v2" {
+			encoded, err := json.Marshal(direct)
+			if err == nil {
+				return []any{map[string]any{"type": "text", "text": string(encoded)}}, true
+			}
+		}
+	}
 	var text string
 	if json.Unmarshal(raw, &text) == nil {
 		return []any{map[string]any{"type": "text", "text": text}}, true

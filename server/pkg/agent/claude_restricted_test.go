@@ -205,6 +205,29 @@ func TestRestrictedClaudeHooksBlockOutOfScopeCallsBeforeDispatch(t *testing.T) {
 	}
 }
 
+func TestRestrictedClaudeHookResponseBlocksAcceptsLiveResponseShapes(t *testing.T) {
+	payload := `{"schemaVersion":"silvermediums.brain.v2"}`
+	textBlock := map[string]any{"type": "text", "text": payload}
+	for name, raw := range map[string]json.RawMessage{
+		"mcp envelope":   json.RawMessage(`{"content":[{"type":"text","text":"{\"schemaVersion\":\"silvermediums.brain.v2\"}"}],"isError":false}`),
+		"content array":  json.RawMessage(`[{"type":"text","text":"{\"schemaVersion\":\"silvermediums.brain.v2\"}"}]`),
+		"content block":  json.RawMessage(`{"type":"text","text":"{\"schemaVersion\":\"silvermediums.brain.v2\"}"}`),
+		"direct payload": json.RawMessage(payload),
+		"string payload": json.RawMessage(`"{\"schemaVersion\":\"silvermediums.brain.v2\"}"`),
+	} {
+		t.Run(name, func(t *testing.T) {
+			blocks, ok := restrictedClaudeHookResponseBlocks(raw)
+			if !ok || len(blocks) != 1 {
+				t.Fatalf("response shape rejected: ok=%t blocks=%#v", ok, blocks)
+			}
+			block, ok := blocks[0].(map[string]any)
+			if !ok || !reflect.DeepEqual(block, textBlock) {
+				t.Fatalf("block = %#v, want %#v", blocks[0], textBlock)
+			}
+		})
+	}
+}
+
 func TestRestrictedClaudeHookEnforcesTaskCallLimit(t *testing.T) {
 	policy := brainAcceptancePolicy(t)
 	hooks, hookURL, err := startRestrictedClaudeHooks(policy)
