@@ -24,9 +24,8 @@ func TestExecuteAndDrainRequiresTaskOwnedBrainAcceptanceEvaluator(t *testing.T) 
 		opts := agent.ExecOptions{}
 		if restricted {
 			opts.ExecutionPolicy = policy
-			opts.EvaluateBrainAcceptance = func(agent.BrainAcceptanceEvaluation) error { return nil }
 		}
-		if _, _, err := d.executeAndDrain(context.Background(), backend, "synthetic", opts, slog.Default(), "synthetic-task", "", new(atomic.Int32)); err != nil {
+		if _, _, err := d.executeAndDrainProviderAttempt(context.Background(), backend, "synthetic", opts, slog.Default(), "synthetic-task", 1, 1, "claude", "", new(atomic.Int32), false); err != nil {
 			t.Fatal(err)
 		}
 		evaluate := backend.calls[0].EvaluateBrainAcceptance

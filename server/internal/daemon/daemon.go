@@ -9372,6 +9372,9 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 }
 
 func (d *Daemon) executeAndDrainProviderAttempt(ctx context.Context, backend agent.Backend, prompt string, opts agent.ExecOptions, taskLog *slog.Logger, taskID string, taskAttempt, providerAttempt int, provider, codexHome string, msgSeq *atomic.Int32, continuityObservationEnabled bool) (agent.Result, int32, error) {
+	if opts.ExecutionPolicy != nil {
+		opts.EvaluateBrainAcceptance = agent.EvaluateBrainAcceptance
+	}
 	phaseRecorder := taskPhaseRecorderFromContext(ctx)
 	// Wrap the caller's ctx so the idle watchdog (below) can interrupt both
 	// the agent subprocess (via the ctx passed to backend.Execute) AND the
