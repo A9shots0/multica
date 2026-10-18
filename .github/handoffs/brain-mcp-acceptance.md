@@ -304,6 +304,19 @@ deployed to the hosted API, and the existing company-approved Claude
 subscription must be interactively authenticated on the Mac Studio. No policy
 task has been enqueued; therefore no live result or provider spend occurred.
 
+The supported Claude subscription login reached its OAuth authorization step,
+but this chat's required built-in Browser was unavailable. The waiting CLI
+session was cancelled cleanly and authentication remains unchanged. Exact
+access action from Windows PowerShell (no purchase or Console/API billing):
+
+```powershell
+ssh -t silvers-mac-studio '"$HOME/.multica/profiles/silver-mediums/bin/claude-2.1.295" auth login --claudeai'
+```
+
+Complete the company-approved Claude sign-in page and return when the command
+reports success. Do not enqueue the acceptance task until both this auth check
+and the hosted server deployment are current.
+
 ## Exact safe resume command
 
 From this checkout, without any real agent invocation:
