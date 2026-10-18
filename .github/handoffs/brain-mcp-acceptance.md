@@ -493,3 +493,7 @@ Snapshot time: `2026-10-18T23:41:33Z`.
 
 The COMP-REA live acceptance terminal condition is satisfied. No business or
 UI decision remains. No GitHub Actions or GitHub-hosted runners were invoked.
+Shared-Brain task observation `42154529-3721-4d29-bc5f-d770a4333e06` records
+the same bounded completion evidence; its generic `acceptance: not_established`
+field reflects that Brain observations do not grant acceptance, while the live
+Multica evaluator result above is the authoritative acceptance evidence.
