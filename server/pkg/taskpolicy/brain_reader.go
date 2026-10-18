@@ -17,13 +17,15 @@ const (
 	FrozenCompanyEventsLimit   = int64(1)
 	BrainProjectID             = "brain"
 	MulticaProjectID           = "multica"
+	BrainEvidenceQuestion      = "How do I retrieve evidence beyond the short search excerpt?"
+	MulticaAcceptanceQuestion  = "A worker completed its task. Has the owner accepted the issue?"
 )
 
 var frozenBrainProjectIDs = [...]string{BrainProjectID, MulticaProjectID}
 
 var frozenBrainContextQuestions = map[string]string{
-	BrainProjectID:   "How do I retrieve evidence beyond the short search excerpt?",
-	MulticaProjectID: "A worker completed its task. Has the owner accepted the issue?",
+	BrainProjectID:   BrainEvidenceQuestion,
+	MulticaProjectID: MulticaAcceptanceQuestion,
 }
 
 const BrainAuthorityQuestion = "Can a note become authoritative just by saying verified or moving into a truth folder?"

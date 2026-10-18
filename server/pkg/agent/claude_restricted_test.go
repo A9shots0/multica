@@ -55,7 +55,10 @@ func TestClaudeVersionAtLeast(t *testing.T) {
 func TestBuildRestrictedClaudeArgsExposeOnlyExactMCPTools(t *testing.T) {
 	policy := brainAcceptancePolicy(t)
 	args, err := buildRestrictedClaudeArgs(ExecOptions{
-		ExecutionPolicy:    policy,
+		ExecutionPolicy: policy,
+		EvaluateBrainAcceptance: func(BrainAcceptanceEvaluation) error {
+			return nil
+		},
 		Model:              "claude-sonnet",
 		CustomArgs:         []string{"--tools", "Bash", "--agent", "other"},
 		ExtraArgs:          []string{"--dangerous"},
@@ -93,6 +96,17 @@ func TestBuildRestrictedClaudeArgsExposeOnlyExactMCPTools(t *testing.T) {
 	}
 	if !reflect.DeepEqual(agent.Tools, policy.Tools) {
 		t.Fatalf("agent tools = %#v, want exact policy list %#v", agent.Tools, policy.Tools)
+	}
+	for _, exact := range []string{
+		taskpolicy.BrainEvidenceQuestion,
+		taskpolicy.BrainAuthorityQuestion,
+		taskpolicy.MulticaAcceptanceQuestion,
+		`{"identity":"not-an-enrolled-project"}`,
+		`{"afterId":199900,"throughId":199901,"limit":1}`,
+	} {
+		if !strings.Contains(agent.Prompt, exact) {
+			t.Errorf("restricted agent prompt omits exact acceptance selector %q: %s", exact, agent.Prompt)
+		}
 	}
 }
 

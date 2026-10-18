@@ -100,7 +100,7 @@ func buildRestrictedClaudeArgs(opts ExecOptions) ([]string, error) {
 	}
 	prompt := "Use only the configured Brain MCP tools. Do not use local files, shell commands, or any other tools. Return no source bodies or private prose."
 	if opts.EvaluateBrainAcceptance != nil {
-		prompt += "\n" + brainAcceptanceAnswerInstruction
+		prompt += "\n" + brainAcceptanceToolInstruction(opts.ExecutionPolicy) + "\n" + brainAcceptanceAnswerInstruction
 	}
 	agents, err := json.Marshal(map[string]restrictedClaudeAgent{
 		restrictedClaudeAgentName: {
@@ -137,6 +137,21 @@ func buildRestrictedClaudeArgs(opts ExecOptions) ([]string, error) {
 		args = append(args, "--max-turns", fmt.Sprintf("%d", opts.MaxTurns))
 	}
 	return args, nil
+}
+
+func brainAcceptanceToolInstruction(policy *taskpolicy.ExecutionPolicy) string {
+	selector := policy.CompanyEventsSelector
+	return fmt.Sprintf(`Use the following exact MCP calls; do not paraphrase selectors or add fields:
+1. brain_context with {"project":%q,"q":%q}; then brain_read each cited document needed for A33 using its exact id and revision.
+2. brain_context with {"project":%q,"q":%q}; then brain_read each cited document needed for A36 using its exact id and revision.
+3. brain_context with {"project":%q,"q":%q}; then brain_read each cited document needed for A28 using its exact id and revision.
+4. brain_resolve with {"identity":"not-an-enrolled-project"}; this exact 404 refusal is the A49 evidence.
+5. company_events with {"afterId":%d,"throughId":%d,"limit":%d}.
+Do not call discovery tools unless one of these exact calls returns a documented unresolved-project lookup.`,
+		taskpolicy.BrainProjectID, taskpolicy.BrainEvidenceQuestion,
+		taskpolicy.BrainProjectID, taskpolicy.BrainAuthorityQuestion,
+		taskpolicy.MulticaProjectID, taskpolicy.MulticaAcceptanceQuestion,
+		selector.AfterID, selector.ThroughID, selector.Limit)
 }
 
 type restrictedClaudeCall struct {
