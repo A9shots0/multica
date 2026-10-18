@@ -35,6 +35,7 @@ import (
 	"github.com/multica-ai/multica/server/pkg/redact"
 	"github.com/multica-ai/multica/server/pkg/skillbundle"
 	"github.com/multica-ai/multica/server/pkg/taskfailure"
+	"github.com/multica-ai/multica/server/pkg/taskpolicy"
 )
 
 // claimPollHintMinDelay bounds a future mismatch between the hint query and
@@ -1601,6 +1602,13 @@ func parseRuntimeConnectedAppsForClaim(raw []byte, taskID pgtype.UUID) []runtime
 	return apps
 }
 
+func connectedAppsForTaskClaim(raw []byte, taskID pgtype.UUID, executionPolicy *taskpolicy.ExecutionPolicy) []runtimeapps.ConnectedApp {
+	if executionPolicy != nil {
+		return nil
+	}
+	return parseRuntimeConnectedAppsForClaim(raw, taskID)
+}
+
 // repairStaleCommentPlanIfNeeded handles the edit/delete race where a claimed
 // task's trigger_comment_id was cleared but coalesced_comment_ids survive: such
 // a task must never be dispatched as a generic assignment — its user-scoped MCP
@@ -2109,6 +2117,41 @@ func claimResponseAgentIdentityMatches(resp AgentTaskResponse) bool {
 func (h *Handler) buildClaimedTaskResponse(r *http.Request, task *db.AgentTaskQueue, runtime db.AgentRuntime, runtimeID, runtimeWorkspaceID string) (resp AgentTaskResponse, deliveredCommentIDs []pgtype.UUID, agentSkillCount, builtinSkillCount int, failure *claimBuildFailure) {
 	// Build response with fresh agent data (name + skills + custom_env + custom_args).
 	resp = taskToResponse(*task, runtimeWorkspaceID)
+	executionPolicy, policyErr := taskpolicy.FromTaskContext(task.Context)
+	if policyErr != nil {
+		slog.Error("daemon claim: invalid task execution policy; refusing dispatch",
+			"task_id", uuidToString(task.ID), "error", policyErr)
+		return resp, deliveredCommentIDs, agentSkillCount, builtinSkillCount, h.failClaimedTaskBeforeLaunch(
+			r.Context(), task,
+			"The task's restricted execution policy is invalid. Retry without that policy or correct the task.",
+			taskfailure.ReasonInvalidTaskIdentity,
+			"error_invalid_task_execution_policy", http.StatusConflict, "invalid task execution policy",
+		)
+	}
+	if executionPolicy != nil {
+		if !requestHasClientCapability(r, protocol.DaemonCapabilityTaskExecutionPolicyV1) {
+			return resp, deliveredCommentIDs, agentSkillCount, builtinSkillCount, h.failClaimedTaskBeforeLaunch(
+				r.Context(), task,
+				"This daemon does not support the restricted execution policy. Update the Multica daemon before retrying.",
+				taskfailure.ReasonInvalidTaskIdentity,
+				"error_task_execution_policy_unsupported", http.StatusConflict, "daemon lacks task execution policy support",
+			)
+		}
+	}
+	if executionPolicy != nil && runtime.Provider != executionPolicy.Provider {
+		slog.Error("daemon claim: task execution policy provider mismatch; refusing dispatch",
+			"task_id", uuidToString(task.ID),
+			"required_provider", executionPolicy.Provider,
+			"runtime_provider", runtime.Provider,
+		)
+		return resp, deliveredCommentIDs, agentSkillCount, builtinSkillCount, h.failClaimedTaskBeforeLaunch(
+			r.Context(), task,
+			"The task's restricted execution policy requires a Claude runtime. Retry it on a Claude-bound agent.",
+			taskfailure.ReasonInvalidTaskIdentity,
+			"error_task_execution_provider_mismatch", http.StatusConflict, "task execution policy requires Claude",
+		)
+	}
+	resp.ExecutionPolicy = executionPolicy
 	var issueNumber int32
 	// Claim-only capability: this server resolves the squad-leader role on the
 	// wire (is_leader_task / squad_id), so the daemon must not re-derive it
@@ -2119,7 +2162,7 @@ func (h *Handler) buildClaimedTaskResponse(r *http.Request, task *db.AgentTaskQu
 	// Agent-trigger plugin hooks, as tools. A failure here degrades to no
 	// tools rather than failing the claim: a plugin that cannot be listed must
 	// not stop an agent from working on the issue.
-	if h.PluginService != nil && h.pluginsV1Enabled(r.Context()) {
+	if executionPolicy == nil && h.PluginService != nil && h.pluginsV1Enabled(r.Context()) {
 		if tools, toolErr := h.PluginService.AgentHookTools(r.Context(), parseUUID(runtimeWorkspaceID)); toolErr != nil {
 			slog.Warn("plugins: could not list agent hook tools", "workspace_id", runtimeWorkspaceID, "error", toolErr)
 		} else {
@@ -2142,7 +2185,7 @@ func (h *Handler) buildClaimedTaskResponse(r *http.Request, task *db.AgentTaskQu
 	deliveredCommentIDs = []pgtype.UUID{}
 	composioMCPEnabled := h.composioMCPAppsEnabled(r.Context())
 	if composioMCPEnabled {
-		resp.ConnectedApps = parseRuntimeConnectedAppsForClaim(task.RuntimeConnectedApps, task.ID)
+		resp.ConnectedApps = connectedAppsForTaskClaim(task.RuntimeConnectedApps, task.ID, executionPolicy)
 	}
 	agent, err := h.Queries.GetAgent(r.Context(), task.AgentID)
 	if err != nil {

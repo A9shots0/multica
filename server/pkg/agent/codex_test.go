@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1321,7 +1322,7 @@ func TestCodexRawItemMCPToolCall(t *testing.T) {
 	}
 
 	c.handleLine(`{"jsonrpc":"2.0","method":"item/started","params":{"item":{"type":"mcpToolCall","id":"mcp-1","server":"plugin-exa-search","tool":"web_search_exa","arguments":{"query":"latest Multica news","credentials":{"api_key":"sk-12345678901234567890"}},"status":"inProgress"}}}`)
-	c.handleLine(`{"jsonrpc":"2.0","method":"item/completed","params":{"item":{"type":"mcpToolCall","id":"mcp-1","server":"plugin-exa-search","tool":"web_search_exa","arguments":{"query":"latest Multica news"},"status":"completed","durationMs":1429,"result":{"content":[{"type":"text","text":"private provider payload"}]}}}}`)
+	c.handleLine(`{"jsonrpc":"2.0","method":"item/completed","params":{"item":{"type":"mcpToolCall","id":"mcp-1","server":"plugin-exa-search","tool":"web_search_exa","arguments":{"query":"latest Multica news"},"status":"completed","durationMs":1429,"result":{"isError":false,"content":[{"type":"text","text":"private provider payload"}]}}}}`)
 
 	if len(messages) != 2 {
 		t.Fatalf("expected 2 messages, got %d", len(messages))
@@ -1347,11 +1348,156 @@ func TestCodexRawItemMCPToolCall(t *testing.T) {
 	if end.Type != MessageToolResult || end.Tool != "web_search_exa" || end.CallID != "mcp-1" || end.Status != "completed" {
 		t.Fatalf("unexpected complete message: %+v", end)
 	}
-	if end.Output != "completed\nduration: 1429 ms" {
+	if !strings.HasPrefix(end.Output, "completed\nduration: 1429 ms\nresult_is_error: false\nresult_content_blocks: 1\ncaller_duration_ms: ") {
 		t.Fatalf("unexpected MCP result summary: %q", end.Output)
+	}
+	if !end.DurationMeasured || end.DurationMS < 0 {
+		t.Fatalf("expected caller-measured MCP duration, got %+v", end)
+	}
+	if !strings.Contains(end.Output, fmt.Sprintf("caller_duration_ms: %d", end.DurationMS)) {
+		t.Fatalf("result summary does not include its measured duration: %q", end.Output)
 	}
 	if strings.Contains(end.Output, "private provider payload") {
 		t.Fatalf("MCP result content leaked into transcript summary: %q", end.Output)
+	}
+}
+
+func TestCodexBrainReaderSafeReceiptOmitsRequestAndDocumentBody(t *testing.T) {
+	t.Parallel()
+
+	c, _, _ := newTestCodexClient(t)
+	c.notificationProtocol = "raw"
+	var messages []Message
+	c.onMessage = func(msg Message) {
+		messages = append(messages, msg)
+	}
+
+	body := "private document body"
+	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+	resultJSON, err := json.Marshal(map[string]any{
+		"schemaVersion": "silvermediums.brain.v2",
+		"servedAt":      "2026-10-18T01:00:00Z",
+		"dataPolicy":    "metadata_only",
+		"connection": map[string]any{
+			"state":     "online",
+			"checkedAt": "2026-10-18T01:00:00Z",
+		},
+		"document": map[string]any{
+			"id":              "doc-123",
+			"project":         "silver-mediums",
+			"revision":        revision,
+			"currentRevision": revision,
+			"body":            body,
+			"bytes":           len([]byte(body)),
+			"truncated":       false,
+			"available":       true,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c.handleItemNotification("item/started", map[string]any{"item": map[string]any{
+		"type": "mcpToolCall", "id": "brain-read-1", "server": "brain", "tool": "brain_read",
+		"arguments": map[string]any{"documentId": "doc-123", "query": "private prompt"},
+	}})
+	c.handleItemNotification("item/completed", map[string]any{"item": map[string]any{
+		"type": "mcpToolCall", "id": "brain-read-1", "tool": "brain_read", "status": "completed",
+		"result": map[string]any{"isError": false, "content": []any{
+			map[string]any{"type": "text", "text": string(resultJSON)},
+		}},
+	}})
+
+	if len(messages) != 2 {
+		t.Fatalf("got %d messages, want tool call and result", len(messages))
+	}
+	if _, ok := messages[0].Input["arguments"]; ok {
+		t.Fatalf("Brain request details were retained: %#v", messages[0].Input)
+	}
+	if !messages[1].DurationMeasured || !strings.Contains(messages[1].Output, `"bodySha256Verified":true`) ||
+		!strings.Contains(messages[1].Output, `"byteLengthVerified":true`) {
+		t.Fatalf("missing measured duration or verified body receipt: %+v", messages[1])
+	}
+	if strings.Contains(messages[1].Output, body) || strings.Contains(messages[1].Output, "private prompt") {
+		t.Fatalf("private input or document content leaked into receipt: %q", messages[1].Output)
+	}
+	for _, safeField := range []string{`"documentId":"doc-123"`, `"revision":"` + revision + `"`, fmt.Sprintf(`"bytes":%d`, len([]byte(body))), `"truncated":false`} {
+		if !strings.Contains(messages[1].Output, safeField) {
+			t.Errorf("safe receipt omitted %s: %q", safeField, messages[1].Output)
+		}
+	}
+}
+
+func TestCodexBrainCompanyProjectsReceiptUsesOnlyKnownFields(t *testing.T) {
+	t.Parallel()
+
+	text := `{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-10-18T01:00:00Z","dataPolicy":"metadata_only","projects":[{"id":"phone-farm","portfolioClass":"company","portfolioClassification":{"sourceSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"name":"Private project name","description":"Private project description"}]}`
+	receipt := codexMCPBrainSafeReceipt("brain_company_projects", map[string]any{
+		"result": map[string]any{"isError": false, "content": []any{map[string]any{"type": "text", "text": text}}},
+	})
+
+	for _, safeField := range []string{`"projectId":"phone-farm"`, `"portfolioClass":"company"`, `"classificationSourceSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`} {
+		if !strings.Contains(receipt, safeField) {
+			t.Errorf("receipt omitted known safe field %s: %s", safeField, receipt)
+		}
+	}
+	if strings.Contains(receipt, "Private project") {
+		t.Fatalf("receipt retained arbitrary project prose: %s", receipt)
+	}
+}
+
+func TestCodexBrainCompanyEventsReceiptFailsClosedOnUnknownSchema(t *testing.T) {
+	t.Parallel()
+
+	text := `{"eventId":199901,"citation":"private evidence citation","body":"private event body"}`
+	receipt := codexMCPBrainSafeReceipt("company_events", map[string]any{
+		"result": map[string]any{"content": []any{map[string]any{"type": "text", "text": text}}},
+	})
+	if receipt != "" {
+		t.Fatalf("unverified company event fields must not be summarized: %s", receipt)
+	}
+}
+
+func TestCodexBrainCompanyEventsReceiptIncludesOnlyKnownEnvelope(t *testing.T) {
+	t.Parallel()
+
+	text := `{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-10-18T01:00:00Z","dataPolicy":"authorized","items":[{}],"next_after_id":199901,"snapshot_through_id":199901}`
+	receipt := codexMCPBrainSafeReceipt("company_events", map[string]any{
+		"result": map[string]any{"isError": false, "content": []any{map[string]any{"type": "text", "text": text}}},
+	})
+	for _, want := range []string{`"eventItemsTotal":1`, `"nextAfterId":199901`, `"snapshotThroughId":199901`, `"eventRowReceipt":"unavailable"`} {
+		if !strings.Contains(receipt, want) {
+			t.Fatalf("envelope receipt omitted %s: %s", want, receipt)
+		}
+	}
+	if strings.Contains(receipt, "eventSelector") || strings.Contains(receipt, "citation") || strings.Contains(receipt, "body") {
+		t.Fatalf("generic receipt inferred unobserved selector or event citation: %s", receipt)
+	}
+}
+
+func TestCodexRawItemMCPToolResultWithoutStartHasNoMeasuredDuration(t *testing.T) {
+	t.Parallel()
+
+	c, _, _ := newTestCodexClient(t)
+	c.notificationProtocol = "raw"
+
+	var result Message
+	c.onMessage = func(msg Message) {
+		if msg.Type == MessageToolResult {
+			result = msg
+		}
+	}
+
+	c.handleLine(`{"jsonrpc":"2.0","method":"item/completed","params":{"item":{"type":"mcpToolCall","id":"mcp-resumed","tool":"brain_read","status":"completed","result":{"isError":true,"content":[{"type":"text","text":"private document body"}]}}}}`)
+
+	if result.Type != MessageToolResult || result.DurationMeasured {
+		t.Fatalf("unexpected result without a matching start event: %+v", result)
+	}
+	if strings.Contains(result.Output, "caller_duration_ms") || strings.Contains(result.Output, "private document body") {
+		t.Fatalf("result summary contains an unmeasured duration or private payload: %q", result.Output)
+	}
+	if !strings.Contains(result.Output, "result_is_error: true") || !strings.Contains(result.Output, "result_content_blocks: 1") {
+		t.Fatalf("result summary omitted safe envelope metadata: %q", result.Output)
 	}
 }
 

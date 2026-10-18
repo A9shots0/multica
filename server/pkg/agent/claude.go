@@ -43,6 +43,18 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 	if execPath == "" {
 		execPath = "claude"
 	}
+	restricted := opts.ExecutionPolicy != nil
+	if restricted {
+		if opts.ResumeSessionID != "" {
+			return nil, errors.New("restricted Claude execution cannot resume a provider session")
+		}
+		filteredMcpConfig, err := validateRestrictedClaudeConfig(b.cfg, opts)
+		if err != nil {
+			return nil, fmt.Errorf("restricted Claude execution unavailable: %w", err)
+		}
+		opts.McpConfig = filteredMcpConfig
+		opts.ClaudeSettingsPath = ""
+	}
 	if _, err := exec.LookPath(execPath); err != nil {
 		return nil, fmt.Errorf("claude executable not found at %q: %w", execPath, err)
 	}
@@ -50,7 +62,17 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 	timeout := opts.Timeout
 	runCtx, cancel := runContext(ctx, timeout)
 
-	args := buildClaudeArgs(opts, b.cfg.Logger)
+	var args []string
+	if restricted {
+		var err error
+		args, err = buildRestrictedClaudeArgs(opts)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("build restricted Claude invocation: %w", err)
+		}
+	} else {
+		args = buildClaudeArgs(opts, b.cfg.Logger)
+	}
 
 	// If the caller provided an MCP config, write it to a temp file and pass
 	// --mcp-config <path> so the agent uses a controlled set of MCP servers
@@ -110,7 +132,11 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 	// exits unexpectedly. Without the tail, an exit-code-only failure looks
 	// like "claude exited with error: exit status 3" — which is useless for
 	// root-causing V8 aborts, Bun panics, or any other CLI-side crash.
-	stderrBuf := newStderrTail(newLogWriter(b.cfg.Logger, "[claude:stderr] "), agentStderrTailBytes)
+	stderrWriter := io.Writer(newLogWriter(b.cfg.Logger, "[claude:stderr] "))
+	if restricted {
+		stderrWriter = io.Discard
+	}
+	stderrBuf := newStderrTail(stderrWriter, agentStderrTailBytes)
 	cmd.Stderr = stderrBuf
 
 	if err := startOwnedProcessTree(cmd, b.cfg.Logger); err != nil {
@@ -169,6 +195,10 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 		resultIsError := false
 		terminalReasonError := ""
 		var sessionID string
+		restrictedCalls := make(map[string]restrictedClaudeCall)
+		var restrictedReceipts []json.RawMessage
+		restrictedFailure := ""
+		unverifiableRestrictedResult := false
 		sawAsyncLaunch := false
 		usage := make(map[string]TokenUsage)
 		eventCount := 0
@@ -227,33 +257,54 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 			switch msg.Type {
 			case "assistant":
 				assistantEventCount++
-				turn := b.handleAssistant(msg, msgCh, usage)
+				var turn assistantTurn
+				if restricted {
+					turn, restrictedFailure = b.handleRestrictedAssistant(msg, msgCh, usage, opts.ExecutionPolicy, restrictedCalls)
+					if restrictedFailure != "" {
+						cancel()
+					}
+				} else {
+					turn = b.handleAssistant(msg, msgCh, usage)
+				}
 				toolUseCount += turn.toolUses
 				if !turn.understood {
 					unreadableAssistantCount++
 				}
 				lastAssistantText = turn.resolveFallback(lastAssistantText)
 			case "user":
-				if b.handleUser(msg, msgCh) {
+				if restricted {
+					var newReceipts []json.RawMessage
+					var unverifiable bool
+					restrictedFailure, newReceipts, unverifiable = b.handleRestrictedUser(msg, msgCh, opts.ExecutionPolicy, restrictedCalls)
+					restrictedReceipts = append(restrictedReceipts, newReceipts...)
+					unverifiableRestrictedResult = unverifiableRestrictedResult || unverifiable
+					if restrictedFailure != "" {
+						cancel()
+					}
+				} else if b.handleUser(msg, msgCh) {
 					sawAsyncLaunch = true
 				}
 			case "system":
-				if msg.SessionID != "" {
+				if msg.SessionID != "" && !restricted {
 					sessionID = msg.SessionID
 				}
 				trySend(msgCh, Message{Type: MessageStatus, Status: "running", SessionID: sessionID})
 			case "result":
 				sawResult = true
-				finalResultText = msg.ResultText
+				if !restricted {
+					finalResultText = msg.ResultText
+				}
 				resultIsError = msg.IsError
-				terminalReasonError = claudeTerminalReasonFailure(msg.TerminalReason, msg.ResultText)
-				sessionID = msg.SessionID
+				if !restricted {
+					terminalReasonError = claudeTerminalReasonFailure(msg.TerminalReason, msg.ResultText)
+					sessionID = msg.SessionID
+				}
 				if resultUsage := claudeResultUsage(msg, opts.Model); len(resultUsage) > 0 {
 					usage = resultUsage
 				}
 				closeStdin()
 			case "log":
-				if msg.Log != nil {
+				if msg.Log != nil && !restricted {
 					trySend(msgCh, Message{
 						Type:    MessageLog,
 						Level:   msg.Log.Level,
@@ -261,7 +312,14 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 					})
 				}
 			case "control_request":
-				b.handleControlRequest(msg, stdin)
+				if restricted {
+					if controlFailure := b.handleRestrictedControlRequest(msg, stdin, opts.ExecutionPolicy); controlFailure != "" {
+						restrictedFailure = controlFailure
+						cancel()
+					}
+				} else {
+					b.handleControlRequest(msg, stdin)
+				}
 			}
 		}
 		scanErr := scanner.Err()
@@ -314,9 +372,42 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 		// stderrBuf.Tail() is safe to sample now. Attach the tail to any
 		// non-empty failure message; callers upstream surface this as the
 		// task's error field, which is the only place users see it.
-		stderrTail := stderrBuf.Tail()
-		if finalError != "" {
+		stderrTail := ""
+		if !restricted {
+			stderrTail = stderrBuf.Tail()
+		}
+		if finalError != "" && !restricted {
 			finalError = withAgentStderr(finalError, "claude", stderrTail)
+		}
+		if restricted {
+			if restrictedFailure == "" && hasUnfinishedRestrictedMCPCall(restrictedCalls) {
+				restrictedFailure = "restricted Brain MCP execution ended with an unfinished tool call"
+			}
+			if restrictedFailure == "" && unverifiableRestrictedResult {
+				restrictedFailure = "restricted Brain MCP execution returned an unverifiable tool result"
+			}
+			if restrictedFailure == "" && finalStatus == "completed" && len(restrictedReceipts) == 0 {
+				restrictedFailure = "restricted Brain MCP execution completed without a verifiable Brain receipt"
+			}
+			safeOutput, outputErr := json.Marshal(map[string]any{
+				"policy":   opts.ExecutionPolicy.Mode,
+				"receipts": restrictedReceipts,
+			})
+			if outputErr != nil {
+				finalStatus = "failed"
+				finalError = "restricted Brain MCP receipt summary could not be encoded"
+				finalOutput = `{"policy":"brain_mcp_read_only","receipts":[]}`
+			} else if restrictedFailure != "" {
+				finalStatus = "failed"
+				finalError = restrictedFailure
+			} else if finalStatus != "completed" {
+				finalError = "restricted Brain MCP execution failed; provider output was withheld"
+			} else {
+				finalError = ""
+			}
+			if outputErr == nil {
+				finalOutput = string(safeOutput)
+			}
 		}
 		logStreamProtocolObservation(b.cfg.Logger, streamProtocolObservation{
 			provider:                   "claude",
@@ -340,8 +431,12 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 
 		// The account-binding 400 arrives in the result event (finalError);
 		// "no conversation found" is printed to stderr. Check both.
-		resumeRejected := resumeWasRejected(opts.ResumeSessionID, sessionID, finalStatus == "failed", finalError, stderrTail)
-		reportedSessionID := resolveSessionID(opts.ResumeSessionID, sessionID, finalStatus == "failed", finalError, stderrTail)
+		resumeRejected := false
+		reportedSessionID := ""
+		if !restricted {
+			resumeRejected = resumeWasRejected(opts.ResumeSessionID, sessionID, finalStatus == "failed", finalError, stderrTail)
+			reportedSessionID = resolveSessionID(opts.ResumeSessionID, sessionID, finalStatus == "failed", finalError, stderrTail)
+		}
 		if resumeRejected {
 			b.cfg.Logger.Info("claude resume was rejected; dropping session id and signalling fresh-session retry",
 				"requested_resume", opts.ResumeSessionID,
@@ -674,6 +769,7 @@ type claudeContentBlock struct {
 	Input     json.RawMessage `json:"input,omitempty"`
 	ToolUseID string          `json:"tool_use_id,omitempty"`
 	Content   json.RawMessage `json:"content,omitempty"`
+	IsError   bool            `json:"is_error,omitempty"`
 }
 
 type claudeControlRequestPayload struct {

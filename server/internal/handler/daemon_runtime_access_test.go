@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -10,7 +11,58 @@ import (
 	"github.com/multica-ai/multica/server/internal/testutil"
 	db "github.com/multica-ai/multica/server/pkg/db/generated"
 	"github.com/multica-ai/multica/server/pkg/taskfailure"
+	"github.com/multica-ai/multica/server/pkg/taskpolicy"
 )
+
+func TestBuildClaimedTaskResponseRefusesRestrictedTaskWithoutCapability(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	ctx := context.Background()
+	runtimeID := createClaimReclaimRuntime(t, ctx, "Restricted task legacy daemon")
+	agentID, issueID := createClaimReclaimAgentAndIssue(t, ctx, runtimeID, "Restricted task legacy daemon")
+	taskID := seedQueuedIssueTask(t, ctx, agentID, runtimeID, issueID)
+	policy, err := taskpolicy.NewBrainMCPReadOnly(taskpolicy.Request{
+		Mode:      taskpolicy.BrainMCPReadOnlyMode,
+		MCPServer: "brain",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	policyJSON, err := json.Marshal(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbfx.Exec(t, `UPDATE agent_task_queue SET context = jsonb_build_object('execution_policy', $2::jsonb) WHERE id = $1`,
+		taskID, string(policyJSON))
+
+	task, err := testHandler.TaskService.ClaimTaskForRuntime(ctx, parseUUID(runtimeID))
+	if err != nil {
+		t.Fatalf("claim task: %v", err)
+	}
+	if task == nil || uuidToString(task.ID) != taskID {
+		t.Fatalf("claimed task = %+v, want %s", task, taskID)
+	}
+	runtime, err := testHandler.Queries.GetAgentRuntimeForWorkspace(ctx, db.GetAgentRuntimeForWorkspaceParams{
+		ID:          parseUUID(runtimeID),
+		WorkspaceID: parseUUID(testWorkspaceID),
+	})
+	if err != nil {
+		t.Fatalf("load runtime: %v", err)
+	}
+	req := newDaemonTokenRequest(http.MethodPost, "/api/daemon/runtimes/"+runtimeID+"/tasks/claim", nil,
+		testWorkspaceID, "restricted-task-legacy-daemon")
+	_, _, _, _, failure := testHandler.buildClaimedTaskResponse(req, task, runtime, runtimeID, testWorkspaceID)
+	if failure == nil || failure.status != http.StatusConflict || failure.outcome != "error_task_execution_policy_unsupported" {
+		t.Fatalf("failure = %+v, want unsupported-policy conflict", failure)
+	}
+
+	var status string
+	dbfx.QueryRow(t, `SELECT status FROM agent_task_queue WHERE id = $1`, taskID).Scan(&status)
+	if status != "failed" {
+		t.Fatalf("task status = %q, want failed before dispatch", status)
+	}
+}
 
 func TestClaimTaskByRuntime_OwnerlessAgentOnPrivateRuntimeFailsExplicitly(t *testing.T) {
 	if testHandler == nil || testPool == nil {

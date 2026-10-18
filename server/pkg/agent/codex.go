@@ -3,6 +3,7 @@ package agent
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -2218,9 +2219,16 @@ func logCodexAgentMessage(logger *slog.Logger, msg Message) {
 		"content_len", len(msg.Content),
 		"output_len", len(msg.Output),
 	}
+	if msg.DurationMeasured {
+		attrs = append(attrs, "caller_duration_ms", msg.DurationMS)
+	}
 	logger.Info("codex agent message received", attrs...)
 	if msg.Type == MessageToolResult {
-		logger.Info("codex tool_result observed", "tool", msg.Tool, "call_id", msg.CallID, "output_len", len(msg.Output))
+		resultAttrs := []any{"tool", msg.Tool, "call_id", msg.CallID, "output_len", len(msg.Output)}
+		if msg.DurationMeasured {
+			resultAttrs = append(resultAttrs, "caller_duration_ms", msg.DurationMS)
+		}
+		logger.Info("codex tool_result observed", resultAttrs...)
 	}
 }
 
@@ -2244,6 +2252,8 @@ type codexClient struct {
 	cfg                    Config
 	stdin                  interface{ Write([]byte) (int, error) }
 	mu                     sync.Mutex
+	toolTimingMu           sync.Mutex
+	toolCallStartedAt      map[string]time.Time
 	nextID                 int
 	pending                map[int]*pendingRPC
 	processDone            chan struct{}
@@ -2283,6 +2293,32 @@ type codexClient struct {
 
 	turnErrorMu sync.Mutex
 	turnError   string // captured from turn/completed status=failed or terminal error notifications
+}
+
+func (c *codexClient) startToolCallTimer(callID string) {
+	if callID == "" {
+		return
+	}
+	c.toolTimingMu.Lock()
+	defer c.toolTimingMu.Unlock()
+	if c.toolCallStartedAt == nil {
+		c.toolCallStartedAt = make(map[string]time.Time)
+	}
+	c.toolCallStartedAt[callID] = time.Now()
+}
+
+func (c *codexClient) finishToolCallTimer(callID string) (time.Duration, bool) {
+	if callID == "" {
+		return 0, false
+	}
+	c.toolTimingMu.Lock()
+	startedAt, ok := c.toolCallStartedAt[callID]
+	delete(c.toolCallStartedAt, callID)
+	c.toolTimingMu.Unlock()
+	if !ok {
+		return 0, false
+	}
+	return time.Since(startedAt), true
 }
 
 // codexTurnNotificationGate keeps resume-time history replay from mutating the
@@ -3078,10 +3114,19 @@ func codexMCPToolInput(item map[string]any) map[string]any {
 	if server, _ := item["server"].(string); strings.TrimSpace(server) != "" {
 		input["server"] = server
 	}
-	if arguments, ok := item["arguments"]; ok {
+	if arguments, ok := item["arguments"]; ok && !isCodexBrainReaderTool(codexMCPToolName(item)) {
 		input["arguments"] = arguments
 	}
 	return redact.InputMap(input)
+}
+
+func isCodexBrainReaderTool(tool string) bool {
+	switch tool {
+	case "brain_resolve", "brain_context", "brain_read", "brain_company_projects", "brain_projects", "company_events":
+		return true
+	default:
+		return false
+	}
 }
 
 func codexMCPToolName(item map[string]any) string {
@@ -3089,6 +3134,268 @@ func codexMCPToolName(item map[string]any) string {
 		return tool
 	}
 	return "mcp_tool"
+}
+
+func codexMCPBrainSafeReceipt(tool string, item map[string]any) string {
+	if !isCodexBrainReaderTool(tool) {
+		return ""
+	}
+	result, ok := item["result"].(map[string]any)
+	if !ok {
+		return ""
+	}
+	isError, ok := result["isError"].(bool)
+	if !ok || isError {
+		return ""
+	}
+	content, ok := result["content"].([]any)
+	if !ok {
+		return ""
+	}
+	var payload map[string]any
+	for _, block := range content {
+		blockMap, ok := block.(map[string]any)
+		if !ok {
+			continue
+		}
+		if blockMap["type"] != "text" {
+			continue
+		}
+		text, ok := blockMap["text"].(string)
+		if !ok {
+			continue
+		}
+		var candidate map[string]any
+		if json.Unmarshal([]byte(text), &candidate) != nil || candidate == nil {
+			continue
+		}
+		payload = candidate
+		break
+	}
+	if payload == nil {
+		return ""
+	}
+
+	schemaVersion, ok := payload["schemaVersion"].(string)
+	if !ok || schemaVersion != "silvermediums.brain.v2" {
+		return ""
+	}
+	servedAt, ok := safeBrainReceiptTimestamp(payload["servedAt"])
+	if !ok {
+		return ""
+	}
+	dataPolicy, ok := safeBrainReceiptToken(payload["dataPolicy"], 64)
+	if !ok {
+		return ""
+	}
+
+	receipt := map[string]any{
+		"tool":          tool,
+		"schemaVersion": schemaVersion,
+		"servedAt":      servedAt,
+		"dataPolicy":    dataPolicy,
+	}
+	if connection, ok := payload["connection"].(map[string]any); ok {
+		if state, ok := connection["state"].(string); ok && (state == "online" || state == "offline") {
+			receipt["connectionState"] = state
+		}
+		if checkedAt, ok := safeBrainReceiptTimestamp(connection["checkedAt"]); ok {
+			receipt["connectionCheckedAt"] = checkedAt
+		}
+	}
+
+	switch tool {
+	case "brain_resolve":
+		if project, ok := payload["project"].(map[string]any); ok {
+			addBrainProjectReceipt(receipt, project, false)
+		}
+	case "brain_context":
+		if project, ok := payload["project"].(map[string]any); ok {
+			if id, ok := safeBrainReceiptToken(project["id"], 256); ok {
+				receipt["projectId"] = id
+			}
+		}
+		if documents, ok := payload["documents"].([]any); ok {
+			items, incomplete := brainDocumentReceiptList(documents)
+			receipt["documents"] = items
+			receipt["documentsTotal"] = len(documents)
+			receipt["documentReceiptsIncomplete"] = incomplete
+		}
+	case "brain_read":
+		if document, ok := payload["document"].(map[string]any); ok {
+			addBrainDocumentReceipt(receipt, document)
+		}
+	case "brain_company_projects":
+		if projects, ok := payload["projects"].([]any); ok {
+			items, incomplete := brainProjectReceiptList(projects, true)
+			receipt["projects"] = items
+			receipt["projectsTotal"] = len(projects)
+			receipt["projectReceiptsIncomplete"] = incomplete
+		}
+	case "brain_projects":
+		if projects, ok := payload["projects"].([]any); ok {
+			items, incomplete := brainProjectReceiptList(projects, false)
+			receipt["projects"] = items
+			receipt["projectsTotal"] = len(projects)
+			receipt["projectReceiptsIncomplete"] = incomplete
+		}
+	case "company_events":
+		items, itemsOK := payload["items"].([]any)
+		nextAfterID, nextAfterOK := safeBrainReceiptInt(payload["next_after_id"])
+		snapshotThroughID, snapshotThroughOK := safeBrainReceiptInt(payload["snapshot_through_id"])
+		if !itemsOK || !nextAfterOK || !snapshotThroughOK {
+			return ""
+		}
+		receipt["eventItemsTotal"] = len(items)
+		receipt["nextAfterId"] = nextAfterID
+		receipt["snapshotThroughId"] = snapshotThroughID
+		receipt["eventRowReceipt"] = "unavailable"
+	}
+	encoded, err := json.Marshal(receipt)
+	if err != nil || len(encoded) > 4096 {
+		return ""
+	}
+	return string(encoded)
+}
+
+func safeBrainReceiptToken(value any, maxLen int) (string, bool) {
+	text, ok := value.(string)
+	if !ok || text == "" || len(text) > maxLen || strings.TrimSpace(text) != text {
+		return "", false
+	}
+	for _, r := range text {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("._:/-", r)) {
+			return "", false
+		}
+	}
+	return text, true
+}
+
+func safeBrainReceiptTimestamp(value any) (string, bool) {
+	text, ok := value.(string)
+	if !ok {
+		return "", false
+	}
+	if _, err := time.Parse(time.RFC3339Nano, text); err != nil {
+		return "", false
+	}
+	return text, true
+}
+
+func safeBrainReceiptHash(value any) (string, bool) {
+	text, ok := safeBrainReceiptToken(value, 64)
+	if !ok || len(text) != 64 {
+		return "", false
+	}
+	for _, r := range text {
+		if !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f' || r >= 'A' && r <= 'F') {
+			return "", false
+		}
+	}
+	return strings.ToLower(text), true
+}
+
+func safeBrainReceiptInt(value any) (int64, bool) {
+	number, ok := value.(float64)
+	if !ok || number < 0 || number >= float64(1<<63) || number != float64(int64(number)) {
+		return 0, false
+	}
+	return int64(number), true
+}
+
+func addBrainProjectReceipt(receipt map[string]any, project map[string]any, includeClassificationSource bool) {
+	if id, ok := safeBrainReceiptToken(project["id"], 256); ok {
+		receipt["projectId"] = id
+	}
+	if class, ok := project["portfolioClass"].(string); ok {
+		switch class {
+		case "company", "personal", "unknown":
+			receipt["portfolioClass"] = class
+		}
+	}
+	if includeClassificationSource {
+		if classification, ok := project["portfolioClassification"].(map[string]any); ok {
+			if hash, ok := safeBrainReceiptHash(classification["sourceSha256"]); ok {
+				receipt["classificationSourceSha256"] = hash
+			}
+		}
+	}
+}
+
+func brainProjectReceiptList(values []any, includeClassificationSource bool) ([]map[string]any, bool) {
+	const maxReceiptProjects = 32
+	projects := make([]map[string]any, 0, min(len(values), maxReceiptProjects))
+	for index, value := range values {
+		project, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		item := make(map[string]any, 3)
+		addBrainProjectReceipt(item, project, includeClassificationSource)
+		if _, ok := item["projectId"]; ok {
+			projects = append(projects, item)
+		}
+		if len(projects) == maxReceiptProjects {
+			return projects, len(projects) != index+1 || index < len(values)-1
+		}
+	}
+	return projects, len(projects) != len(values)
+}
+
+func brainDocumentReceiptList(values []any) ([]map[string]any, bool) {
+	const maxReceiptDocuments = 32
+	documents := make([]map[string]any, 0, min(len(values), maxReceiptDocuments))
+	for index, value := range values {
+		document, ok := value.(map[string]any)
+		if !ok {
+			continue
+		}
+		item := make(map[string]any, 2)
+		if id, ok := safeBrainReceiptToken(document["id"], 256); ok {
+			item["id"] = id
+		}
+		if revision, ok := safeBrainReceiptHash(document["revision"]); ok {
+			item["revision"] = revision
+		}
+		if len(item) > 0 {
+			documents = append(documents, item)
+		}
+		if len(documents) == maxReceiptDocuments {
+			return documents, len(documents) != index+1 || index < len(values)-1
+		}
+	}
+	return documents, len(documents) != len(values)
+}
+
+func addBrainDocumentReceipt(receipt, document map[string]any) {
+	if id, ok := safeBrainReceiptToken(document["id"], 256); ok {
+		receipt["documentId"] = id
+	}
+	if project, ok := safeBrainReceiptToken(document["project"], 256); ok {
+		receipt["projectId"] = project
+	}
+	if revision, ok := safeBrainReceiptHash(document["revision"]); ok {
+		receipt["revision"] = revision
+	}
+	if revision, ok := safeBrainReceiptHash(document["currentRevision"]); ok {
+		receipt["currentRevision"] = revision
+	}
+	if bytes, ok := safeBrainReceiptInt(document["bytes"]); ok {
+		receipt["bytes"] = bytes
+	}
+	if truncated, ok := document["truncated"].(bool); ok {
+		receipt["truncated"] = truncated
+	}
+	if available, ok := document["available"].(bool); ok {
+		receipt["available"] = available
+	}
+	if body, ok := document["body"].(string); ok {
+		digest := sha256.Sum256([]byte(body))
+		revision, revisionOK := safeBrainReceiptHash(document["revision"])
+		receipt["bodySha256Verified"] = revisionOK && revision == fmt.Sprintf("%x", digest)
+		byteCount, byteCountOK := safeBrainReceiptInt(document["bytes"])
+		receipt["byteLengthVerified"] = byteCountOK && byteCount == int64(len(body))
+	}
 }
 
 // codexMCPToolResultOutput deliberately excludes result.content and
@@ -3106,7 +3413,18 @@ func codexMCPToolResultOutput(item map[string]any) string {
 	if durationMS := codexInt64(item, "durationMs", "duration_ms"); durationMS > 0 {
 		segments = append(segments, fmt.Sprintf("duration: %d ms", durationMS))
 	}
-	if errMessage := extractNestedString(item, "error", "message"); strings.TrimSpace(errMessage) != "" {
+	if result, ok := item["result"].(map[string]any); ok {
+		if isError, ok := result["isError"].(bool); ok {
+			segments = append(segments, fmt.Sprintf("result_is_error: %t", isError))
+		}
+		if content, ok := result["content"].([]any); ok {
+			segments = append(segments, fmt.Sprintf("result_content_blocks: %d", len(content)))
+		}
+	}
+	if receipt := codexMCPBrainSafeReceipt(codexMCPToolName(item), item); receipt != "" {
+		segments = append(segments, "safe_result_receipt: "+receipt)
+	}
+	if errMessage := extractNestedString(item, "error", "message"); strings.TrimSpace(errMessage) != "" && !isCodexBrainReaderTool(codexMCPToolName(item)) {
 		segments = append(segments, "error: "+sanitizeCodexDiagnostic(errMessage))
 	}
 	return strings.Join(segments, "\n")
@@ -3365,6 +3683,7 @@ func (c *codexClient) handleItemNotification(method string, params map[string]an
 		}
 
 	case method == "item/started" && itemType == "mcpToolCall":
+		c.startToolCallTimer(itemID)
 		if c.onMessage != nil {
 			c.onMessage(Message{
 				Type:   MessageToolUse,
@@ -3376,13 +3695,20 @@ func (c *codexClient) handleItemNotification(method string, params map[string]an
 
 	case method == "item/completed" && itemType == "mcpToolCall":
 		status, _ := item["status"].(string)
+		elapsed, measured := c.finishToolCallTimer(itemID)
+		output := codexMCPToolResultOutput(item)
+		if measured {
+			output += fmt.Sprintf("\ncaller_duration_ms: %d", elapsed.Milliseconds())
+		}
 		if c.onMessage != nil {
 			c.onMessage(Message{
-				Type:   MessageToolResult,
-				Tool:   codexMCPToolName(item),
-				CallID: itemID,
-				Output: codexMCPToolResultOutput(item),
-				Status: codexNormalizePatchStatus(status),
+				Type:             MessageToolResult,
+				Tool:             codexMCPToolName(item),
+				CallID:           itemID,
+				Output:           output,
+				Status:           codexNormalizePatchStatus(status),
+				DurationMS:       elapsed.Milliseconds(),
+				DurationMeasured: measured,
 			})
 		}
 

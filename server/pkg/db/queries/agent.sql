@@ -286,10 +286,9 @@ ORDER BY created_at DESC;
 -- head_sha stamps the commit under review into the task's context JSONB so the
 -- reviewer-loop dedup (HasPendingTaskForIssueAndAgent) can tell a pending run
 -- against an OLD head apart from a fresh request against a NEW head (TEN-356).
--- Empty/absent head_sha leaves context NULL, preserving pre-TEN-356 behavior for
--- issues with no linked PR. Issue-linked tasks never hit quick-create context
--- parsing (parseQuickCreateContext short-circuits on IssueID.Valid), so this
--- key rides harmlessly alongside.
+-- execution_policy carries an explicit one-task provider/tool restriction for
+-- manual reruns. Both are omitted when unset, preserving NULL context for
+-- ordinary issue tasks.
 -- id is minted by the application as a UUIDv7 (pkg/dbid) so consecutive
 -- enqueues cluster in a narrow contiguous primary-key range instead of
 -- scattering across the B-tree. On a table with existing v4 ids, that range
@@ -312,11 +311,10 @@ SELECT
     COALESCE(sqlc.narg('is_leader_task')::boolean, FALSE),
     sqlc.narg(handoff_note),
     sqlc.narg(squad_id),
-    CASE
-        WHEN COALESCE(sqlc.narg('head_sha')::text, '') <> ''
-        THEN jsonb_build_object('head_sha', sqlc.narg('head_sha')::text)
-        ELSE NULL
-    END,
+    NULLIF(jsonb_strip_nulls(jsonb_build_object(
+        'head_sha', NULLIF(COALESCE(sqlc.narg('head_sha')::text, ''), ''),
+        'execution_policy', sqlc.narg('execution_policy')::jsonb
+    )), '{}'::jsonb),
     sqlc.narg(originator_user_id),
     sqlc.narg(accountable_user_id),
     sqlc.narg(runtime_mcp_overlay),

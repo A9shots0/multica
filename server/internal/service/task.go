@@ -34,6 +34,7 @@ import (
 	"github.com/multica-ai/multica/server/pkg/redact"
 	"github.com/multica-ai/multica/server/pkg/skillbundle"
 	"github.com/multica-ai/multica/server/pkg/taskfailure"
+	"github.com/multica-ai/multica/server/pkg/taskpolicy"
 )
 
 type TaskService struct {
@@ -1232,9 +1233,16 @@ func (s *TaskService) enqueueIssueTask(ctx context.Context, issue db.Issue, trig
 }
 
 func (s *TaskService) enqueueIssueTaskWithCommentPlan(ctx context.Context, issue db.Issue, triggerCommentID pgtype.UUID, coalescedCommentIDs []pgtype.UUID, forceFreshSession bool, handoffNote string, actorUserID pgtype.UUID, rerunOfTaskID pgtype.UUID, fireAt pgtype.Timestamptz) (db.AgentTaskQueue, error) {
+	return s.enqueueIssueTaskWithCommentPlanAndPolicy(ctx, issue, triggerCommentID, coalescedCommentIDs, forceFreshSession, handoffNote, actorUserID, rerunOfTaskID, fireAt, nil)
+}
+
+func (s *TaskService) enqueueIssueTaskWithCommentPlanAndPolicy(ctx context.Context, issue db.Issue, triggerCommentID pgtype.UUID, coalescedCommentIDs []pgtype.UUID, forceFreshSession bool, handoffNote string, actorUserID pgtype.UUID, rerunOfTaskID pgtype.UUID, fireAt pgtype.Timestamptz, executionPolicy []byte) (db.AgentTaskQueue, error) {
 	if !issue.AssigneeID.Valid {
 		slog.Error("task enqueue failed", "issue_id", util.UUIDToString(issue.ID), "error", "issue has no assignee")
 		return db.AgentTaskQueue{}, fmt.Errorf("issue has no assignee")
+	}
+	if fireAt.Valid && len(executionPolicy) > 0 {
+		return db.AgentTaskQueue{}, errors.New("deferred issue tasks cannot carry a task execution policy")
 	}
 
 	agent, err := s.Queries.GetAgent(ctx, issue.AssigneeID)
@@ -1288,6 +1296,7 @@ func (s *TaskService) enqueueIssueTaskWithCommentPlan(ctx context.Context, issue
 		DelegatedFromTaskID:  attrDelegatedFrom,
 		TriggerEvidenceKind:  attrEvidenceKind,
 		TriggerEvidenceRefID: attrEvidenceRef,
+		ExecutionPolicy:      executionPolicy,
 		// Stamp the reviewed head so dedup can distinguish this run's target
 		// from a later request against a new HEAD (TEN-356).
 		HeadSha: headShaText(s.ResolveIssueReviewSHA(ctx, issue.ID)),
@@ -1395,6 +1404,10 @@ func (s *TaskService) enqueueMentionTask(ctx context.Context, issue db.Issue, ag
 }
 
 func (s *TaskService) enqueueMentionTaskWithCommentPlan(ctx context.Context, issue db.Issue, agentID pgtype.UUID, triggerCommentID pgtype.UUID, coalescedCommentIDs []pgtype.UUID, isLeader bool, squadID pgtype.UUID, forceFreshSession bool, handoffNote string, actorUserID pgtype.UUID, rerunOfTaskID pgtype.UUID) (db.AgentTaskQueue, error) {
+	return s.enqueueMentionTaskWithCommentPlanAndPolicy(ctx, issue, agentID, triggerCommentID, coalescedCommentIDs, isLeader, squadID, forceFreshSession, handoffNote, actorUserID, rerunOfTaskID, nil)
+}
+
+func (s *TaskService) enqueueMentionTaskWithCommentPlanAndPolicy(ctx context.Context, issue db.Issue, agentID pgtype.UUID, triggerCommentID pgtype.UUID, coalescedCommentIDs []pgtype.UUID, isLeader bool, squadID pgtype.UUID, forceFreshSession bool, handoffNote string, actorUserID pgtype.UUID, rerunOfTaskID pgtype.UUID, executionPolicy []byte) (db.AgentTaskQueue, error) {
 	agent, err := s.Queries.GetAgent(ctx, agentID)
 	if err != nil {
 		slog.Error("mention task enqueue failed: agent not found", "issue_id", util.UUIDToString(issue.ID), "agent_id", util.UUIDToString(agentID), "error", err)
@@ -1447,6 +1460,7 @@ func (s *TaskService) enqueueMentionTaskWithCommentPlan(ctx context.Context, iss
 		DelegatedFromTaskID:  attrDelegatedFrom,
 		TriggerEvidenceKind:  attrEvidenceKind,
 		TriggerEvidenceRefID: attrEvidenceRef,
+		ExecutionPolicy:      executionPolicy,
 		// Stamp the reviewed head so dedup can distinguish this run's target
 		// from a later request against a new HEAD (TEN-356).
 		HeadSha: headShaText(s.ResolveIssueReviewSHA(ctx, issue.ID)),
@@ -5525,6 +5539,21 @@ var ErrRerunInvokeNotAllowed = errors.New("rerun: operator not allowed to invoke
 // rerun as a back door — and a blocked rerun mutates nothing. Pass nil only
 // from trusted internal callers (tests, backfill) that have already gated.
 func (s *TaskService) RerunIssue(ctx context.Context, issueID pgtype.UUID, sourceTaskID pgtype.UUID, triggerCommentID pgtype.UUID, actorUserID pgtype.UUID, canInvoke func(agent db.Agent) bool) (*db.AgentTaskQueue, error) {
+	return s.RerunIssueWithExecutionPolicy(ctx, issueID, sourceTaskID, triggerCommentID, actorUserID, canInvoke, nil)
+}
+
+func (s *TaskService) RerunIssueWithExecutionPolicy(ctx context.Context, issueID pgtype.UUID, sourceTaskID pgtype.UUID, triggerCommentID pgtype.UUID, actorUserID pgtype.UUID, canInvoke func(agent db.Agent) bool, executionPolicy *taskpolicy.ExecutionPolicy) (*db.AgentTaskQueue, error) {
+	var executionPolicyJSON []byte
+	if executionPolicy != nil {
+		if err := taskpolicy.Validate(executionPolicy); err != nil {
+			return nil, err
+		}
+		var err error
+		executionPolicyJSON, err = json.Marshal(executionPolicy)
+		if err != nil {
+			return nil, fmt.Errorf("encode task execution policy: %w", err)
+		}
+	}
 	issue, err := s.Queries.GetIssue(ctx, issueID)
 	if err != nil {
 		return nil, fmt.Errorf("load issue: %w", err)
@@ -5590,12 +5619,24 @@ func (s *TaskService) RerunIssue(ctx context.Context, issueID pgtype.UUID, sourc
 	// so a since-reassigned issue can't be used to re-fire a private agent the
 	// operator may only view. A block fails closed: no prior task is cancelled,
 	// no new task is created.
-	if canInvoke != nil {
+	if canInvoke != nil || executionPolicy != nil {
 		targetAgent, err := s.Queries.GetAgent(ctx, agentID)
 		if err != nil {
 			return nil, fmt.Errorf("load target agent: %w", err)
 		}
-		if !canInvoke(targetAgent) {
+		if executionPolicy != nil {
+			if !targetAgent.RuntimeID.Valid {
+				return nil, errors.New("Brain MCP read-only task policy requires an assigned Claude runtime")
+			}
+			targetRuntime, err := s.Queries.GetAgentRuntime(ctx, targetAgent.RuntimeID)
+			if err != nil {
+				return nil, fmt.Errorf("load target runtime for task execution policy: %w", err)
+			}
+			if targetRuntime.Provider != taskpolicy.BrainMCPReadOnlyProvider {
+				return nil, fmt.Errorf("Brain MCP read-only task policy requires a Claude runtime, got %q", targetRuntime.Provider)
+			}
+		}
+		if canInvoke != nil && !canInvoke(targetAgent) {
 			return nil, ErrRerunInvokeNotAllowed
 		}
 	}
@@ -5651,7 +5692,7 @@ func (s *TaskService) RerunIssue(ctx context.Context, issueID pgtype.UUID, sourc
 	// sourceTaskID is the rerun lineage: it rides the CreateAgentTask insert
 	// (rerun_of_task_id) so the queued event / daemon claim never sees a NULL
 	// lineage, and it stays distinct from system-retry's retry_of_task_id (§5).
-	task, err := s.enqueueRerunTask(ctx, issue, agentID, triggerCommentID, coalescedCommentIDs, isLeader, squadID, actorUserID, sourceTaskID)
+	task, err := s.enqueueRerunTask(ctx, issue, agentID, triggerCommentID, coalescedCommentIDs, isLeader, squadID, actorUserID, sourceTaskID, executionPolicyJSON)
 	if pendingSlotTakenErr(err) {
 		// The clear above and this enqueue are separate commits, so a system
 		// retry created by a concurrent FailTask can take the pending slot in
@@ -5667,7 +5708,7 @@ func (s *TaskService) RerunIssue(ctx context.Context, issueID pgtype.UUID, sourc
 			"agent_id", util.UUIDToString(agentID),
 		)
 		cancelledCount += clearPendingSlot()
-		task, err = s.enqueueRerunTask(ctx, issue, agentID, triggerCommentID, coalescedCommentIDs, isLeader, squadID, actorUserID, sourceTaskID)
+		task, err = s.enqueueRerunTask(ctx, issue, agentID, triggerCommentID, coalescedCommentIDs, isLeader, squadID, actorUserID, sourceTaskID, executionPolicyJSON)
 	}
 	if err != nil {
 		return nil, err
@@ -5747,12 +5788,12 @@ func (s *TaskService) promoteNewestSurvivingComment(ctx context.Context, ids []p
 // handler ignores this flag for reruns and instead reads the exact source task
 // (rerun_of_task_id) to reuse its workdir and, when the failure did not poison
 // the conversation, resume its session (MUL-4869).
-func (s *TaskService) enqueueRerunTask(ctx context.Context, issue db.Issue, agentID pgtype.UUID, triggerCommentID pgtype.UUID, coalescedCommentIDs []pgtype.UUID, isLeader bool, squadID pgtype.UUID, actorUserID pgtype.UUID, rerunOfTaskID pgtype.UUID) (db.AgentTaskQueue, error) {
+func (s *TaskService) enqueueRerunTask(ctx context.Context, issue db.Issue, agentID pgtype.UUID, triggerCommentID pgtype.UUID, coalescedCommentIDs []pgtype.UUID, isLeader bool, squadID pgtype.UUID, actorUserID pgtype.UUID, rerunOfTaskID pgtype.UUID, executionPolicy []byte) (db.AgentTaskQueue, error) {
 	if issue.AssigneeType.String == "agent" && issue.AssigneeID.Valid &&
 		util.UUIDToString(issue.AssigneeID) == util.UUIDToString(agentID) {
-		return s.enqueueIssueTaskWithCommentPlan(ctx, issue, triggerCommentID, coalescedCommentIDs, true, "", actorUserID, rerunOfTaskID, pgtype.Timestamptz{})
+		return s.enqueueIssueTaskWithCommentPlanAndPolicy(ctx, issue, triggerCommentID, coalescedCommentIDs, true, "", actorUserID, rerunOfTaskID, pgtype.Timestamptz{}, executionPolicy)
 	}
-	return s.enqueueMentionTaskWithCommentPlan(ctx, issue, agentID, triggerCommentID, coalescedCommentIDs, isLeader, squadID, true, "", actorUserID, rerunOfTaskID)
+	return s.enqueueMentionTaskWithCommentPlanAndPolicy(ctx, issue, agentID, triggerCommentID, coalescedCommentIDs, isLeader, squadID, true, "", actorUserID, rerunOfTaskID, executionPolicy)
 }
 
 // The bulk terminal writes below are the sweeper, archive and daemon-recovery
