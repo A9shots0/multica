@@ -9,9 +9,9 @@ import (
 
 func TestNewBrainMCPAcceptanceUsesFixedProviderAndExactToolSet(t *testing.T) {
 	policy, err := NewBrainMCPAcceptance(Request{
-		Mode:      BrainMCPAcceptanceMode,
-		MCPServer: "brain-reader",
-		ProjectID: "owner/repo",
+		Mode:       BrainMCPAcceptanceMode,
+		MCPServer:  "brain-reader",
+		ProjectIDs: []string{BrainProjectID, MulticaProjectID},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -36,8 +36,10 @@ func TestNewBrainMCPAcceptanceRejectsInvalidModeOrServerOrProject(t *testing.T) 
 	for _, request := range []Request{
 		{Mode: "other", MCPServer: "brain"},
 		{Mode: BrainMCPAcceptanceMode, MCPServer: ""},
-		{Mode: BrainMCPAcceptanceMode, MCPServer: "../brain", ProjectID: "alpha"},
+		{Mode: BrainMCPAcceptanceMode, MCPServer: "../brain", ProjectIDs: []string{BrainProjectID, MulticaProjectID}},
 		{Mode: BrainMCPAcceptanceMode, MCPServer: "brain"},
+		{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectIDs: []string{BrainProjectID}},
+		{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectIDs: []string{BrainProjectID, MulticaProjectID, "other"}},
 	} {
 		if _, err := NewBrainMCPAcceptance(request); err == nil {
 			t.Errorf("NewBrainMCPAcceptance(%+v) succeeded", request)
@@ -46,7 +48,7 @@ func TestNewBrainMCPAcceptanceRejectsInvalidModeOrServerOrProject(t *testing.T) 
 }
 
 func TestValidateRequiresExactUniqueAllowlist(t *testing.T) {
-	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectID: "alpha"})
+	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectIDs: []string{BrainProjectID, MulticaProjectID}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +77,7 @@ func TestIsBrainMCPReadOnlyToolFailsClosed(t *testing.T) {
 	if IsBrainMCPReadOnlyTool(nil, "mcp__brain__brain_read") {
 		t.Fatal("nil policy allowed a tool")
 	}
-	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectID: "alpha"})
+	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectIDs: []string{BrainProjectID, MulticaProjectID}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +92,7 @@ func TestIsBrainMCPReadOnlyToolFailsClosed(t *testing.T) {
 }
 
 func TestFromTaskContextReadsAndValidatesPolicy(t *testing.T) {
-	context := `{"head_sha":"abc","execution_policy":{"mode":"brain_mcp_acceptance_v1","provider":"claude","mcp_server":"brain","project_id":"alpha","tools":["mcp__brain__brain_resolve","mcp__brain__brain_context","mcp__brain__brain_read","mcp__brain__brain_company_projects","mcp__brain__brain_projects","mcp__brain__company_events"],"company_events_selector":{"afterId":199900,"throughId":199901,"limit":1}}}`
+	context := `{"head_sha":"abc","execution_policy":{"mode":"brain_mcp_acceptance_v1","provider":"claude","mcp_server":"brain","project_ids":["brain","multica"],"tools":["mcp__brain__brain_resolve","mcp__brain__brain_context","mcp__brain__brain_read","mcp__brain__brain_company_projects","mcp__brain__brain_projects","mcp__brain__company_events"],"company_events_selector":{"afterId":199900,"throughId":199901,"limit":1}}}`
 	policy, err := FromTaskContext([]byte(context))
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +103,7 @@ func TestFromTaskContextReadsAndValidatesPolicy(t *testing.T) {
 	if policy, err := FromTaskContext([]byte(`{"head_sha":"abc"}`)); err != nil || policy != nil {
 		t.Fatalf("ordinary task context: policy=%#v err=%v", policy, err)
 	}
-	if _, err := FromTaskContext([]byte(`{"execution_policy":{"mode":"brain_mcp_acceptance_v1","provider":"claude","mcp_server":"brain","project_id":"alpha","tools":["Bash"]}}`)); err == nil {
+	if _, err := FromTaskContext([]byte(`{"execution_policy":{"mode":"brain_mcp_acceptance_v1","provider":"claude","mcp_server":"brain","project_ids":["brain","multica"],"tools":["Bash"]}}`)); err == nil {
 		t.Fatal("accepted malformed policy in task context")
 	}
 }
@@ -109,7 +111,7 @@ func TestFromTaskContextReadsAndValidatesPolicy(t *testing.T) {
 func TestFilterMCPConfigRetainsOnlySelectedConfiguredServerWithoutMutation(t *testing.T) {
 	raw := json.RawMessage(`{"mcpServers":{"brain":{"type":"http","url":"https://brain.invalid/mcp"},"other":{"type":"http","url":"https://other.invalid/mcp"}},"globalSetting":true}`)
 	before := append(json.RawMessage(nil), raw...)
-	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectID: "alpha"})
+	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectIDs: []string{BrainProjectID, MulticaProjectID}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +134,7 @@ func TestFilterMCPConfigRetainsOnlySelectedConfiguredServerWithoutMutation(t *te
 }
 
 func TestFilterMCPConfigFailsClosedWhenSelectedServerMissing(t *testing.T) {
-	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectID: "alpha"})
+	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectIDs: []string{BrainProjectID, MulticaProjectID}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +150,7 @@ func TestFilterMCPConfigFailsClosedWhenSelectedServerMissing(t *testing.T) {
 }
 
 func TestAllowsToolInputPinsExactAcceptanceScopes(t *testing.T) {
-	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectID: "alpha"})
+	policy, err := NewBrainMCPAcceptance(Request{Mode: BrainMCPAcceptanceMode, MCPServer: "brain", ProjectIDs: []string{BrainProjectID, MulticaProjectID}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,10 +162,15 @@ func TestAllowsToolInputPinsExactAcceptanceScopes(t *testing.T) {
 		want  bool
 	}{
 		{"unknown project exact identity", "brain_resolve", map[string]any{"identity": "not-an-enrolled-project"}, true},
+		{"resolve scoped project", "brain_resolve", map[string]any{"identity": "brain"}, false},
 		{"resolve other identity", "brain_resolve", map[string]any{"identity": "another-project"}, false},
 		{"resolve path alternative", "brain_resolve", map[string]any{"path": "/tmp"}, false},
-		{"context exact project", "brain_context", map[string]any{"project": "alpha"}, true},
-		{"context query broadening", "brain_context", map[string]any{"project": "alpha", "q": "everything"}, false},
+		{"A33 scoped context", "brain_context", map[string]any{"project": "brain", "q": frozenBrainContextQuestions[BrainProjectID]}, true},
+		{"A36 scoped context", "brain_context", map[string]any{"project": "brain", "q": BrainAuthorityQuestion}, true},
+		{"A28 scoped context", "brain_context", map[string]any{"project": "multica", "q": frozenBrainContextQuestions[MulticaProjectID]}, true},
+		{"context question broadening", "brain_context", map[string]any{"project": "brain", "q": "everything"}, false},
+		{"context other project", "brain_context", map[string]any{"project": "other", "q": frozenBrainContextQuestions[BrainProjectID]}, false},
+		{"context missing question", "brain_context", map[string]any{"project": "brain"}, false},
 		{"read immutable selector", "brain_read", map[string]any{"id": "doc-1", "revision": revision}, true},
 		{"read missing revision", "brain_read", map[string]any{"id": "doc-1"}, false},
 		{"company projects exact empty args", "brain_company_projects", map[string]any{}, true},
@@ -178,7 +185,7 @@ func TestAllowsToolInputPinsExactAcceptanceScopes(t *testing.T) {
 			}
 		})
 	}
-	if AllowsToolInput(nil, "brain_context", map[string]any{"project": "alpha"}) {
+	if AllowsToolInput(nil, "brain_context", map[string]any{"project": "brain", "q": frozenBrainContextQuestions[BrainProjectID]}) {
 		t.Fatal("nil policy allowed a tool input")
 	}
 }

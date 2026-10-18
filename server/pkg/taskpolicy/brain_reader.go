@@ -15,7 +15,18 @@ const (
 	FrozenCompanyEventsAfter   = int64(199900)
 	FrozenCompanyEventsThrough = int64(199901)
 	FrozenCompanyEventsLimit   = int64(1)
+	BrainProjectID             = "brain"
+	MulticaProjectID           = "multica"
 )
+
+var frozenBrainProjectIDs = [...]string{BrainProjectID, MulticaProjectID}
+
+var frozenBrainContextQuestions = map[string]string{
+	BrainProjectID:   "How do I retrieve evidence beyond the short search excerpt?",
+	MulticaProjectID: "A worker completed its task. Has the owner accepted the issue?",
+}
+
+const BrainAuthorityQuestion = "Can a note become authoritative just by saying verified or moving into a truth folder?"
 
 var brainMCPServerNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`)
 var brainMCPRevisionPattern = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
@@ -32,9 +43,9 @@ var brainMCPToolNames = [...]string{
 // Request is the minimal owner-authorized opt-in accepted on a one-task rerun.
 // The tool set and provider are fixed by this server-side policy.
 type Request struct {
-	Mode      string `json:"mode"`
-	MCPServer string `json:"mcp_server"`
-	ProjectID string `json:"project_id"`
+	Mode       string   `json:"mode"`
+	MCPServer  string   `json:"mcp_server"`
+	ProjectIDs []string `json:"project_ids"`
 }
 
 type CompanyEventsSelector struct {
@@ -48,7 +59,7 @@ type ExecutionPolicy struct {
 	Mode                  string                `json:"mode"`
 	Provider              string                `json:"provider"`
 	MCPServer             string                `json:"mcp_server"`
-	ProjectID             string                `json:"project_id"`
+	ProjectIDs            []string              `json:"project_ids"`
 	Tools                 []string              `json:"tools"`
 	CompanyEventsSelector CompanyEventsSelector `json:"company_events_selector"`
 }
@@ -60,15 +71,15 @@ func NewBrainMCPAcceptance(request Request) (*ExecutionPolicy, error) {
 	if !brainMCPServerNamePattern.MatchString(request.MCPServer) {
 		return nil, errors.New("task execution policy requires a valid MCP server name")
 	}
-	if !validBrainProjectID(request.ProjectID) {
-		return nil, errors.New("task execution policy requires an exact Brain project id")
+	if !equalStrings(request.ProjectIDs, frozenBrainProjectIDs[:]) {
+		return nil, errors.New("task execution policy requires the exact frozen brain and multica project scope")
 	}
 	return &ExecutionPolicy{
-		Mode:      BrainMCPAcceptanceMode,
-		Provider:  BrainMCPReadOnlyProvider,
-		MCPServer: request.MCPServer,
-		ProjectID: request.ProjectID,
-		Tools:     BrainMCPToolIDs(request.MCPServer),
+		Mode:       BrainMCPAcceptanceMode,
+		Provider:   BrainMCPReadOnlyProvider,
+		MCPServer:  request.MCPServer,
+		ProjectIDs: append([]string(nil), request.ProjectIDs...),
+		Tools:      BrainMCPToolIDs(request.MCPServer),
 		CompanyEventsSelector: CompanyEventsSelector{
 			AfterID:   FrozenCompanyEventsAfter,
 			ThroughID: FrozenCompanyEventsThrough,
@@ -90,8 +101,8 @@ func Validate(policy *ExecutionPolicy) error {
 	if !brainMCPServerNamePattern.MatchString(policy.MCPServer) {
 		return errors.New("task execution policy requires a valid MCP server name")
 	}
-	if !validBrainProjectID(policy.ProjectID) {
-		return errors.New("task execution policy requires an exact Brain project id")
+	if !equalStrings(policy.ProjectIDs, frozenBrainProjectIDs[:]) {
+		return errors.New("task execution policy requires the exact frozen brain and multica project scope")
 	}
 	expected := BrainMCPToolIDs(policy.MCPServer)
 	if len(policy.Tools) != len(expected) {
@@ -129,10 +140,21 @@ func AllowsToolInput(policy *ExecutionPolicy, tool string, input map[string]any)
 	switch tool {
 	case "brain_resolve":
 		identity, ok := input["identity"].(string)
-		return len(input) == 1 && ok && identity == "not-an-enrolled-project"
+		if len(input) != 1 || !ok {
+			return false
+		}
+		return identity == "not-an-enrolled-project"
 	case "brain_context":
-		project, ok := input["project"].(string)
-		return len(input) == 1 && ok && project == policy.ProjectID
+		project, projectOK := input["project"].(string)
+		question, questionOK := input["q"].(string)
+		if len(input) != 2 || !projectOK || !questionOK || !containsString(policy.ProjectIDs, project) {
+			return false
+		}
+		if project == BrainProjectID {
+			return question == frozenBrainContextQuestions[BrainProjectID] ||
+				question == BrainAuthorityQuestion
+		}
+		return question == frozenBrainContextQuestions[MulticaProjectID]
 	case "brain_read":
 		id, idOK := input["id"].(string)
 		revision, revisionOK := input["revision"].(string)
@@ -145,6 +167,27 @@ func AllowsToolInput(policy *ExecutionPolicy, tool string, input map[string]any)
 	default:
 		return false
 	}
+}
+
+func equalStrings(got, want []string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			return false
+		}
+	}
+	return true
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }
 
 func allowsCompanyEventsInput(policy *ExecutionPolicy, input map[string]any) bool {

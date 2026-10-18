@@ -22,9 +22,9 @@ import (
 func brainAcceptancePolicy(t *testing.T) *taskpolicy.ExecutionPolicy {
 	t.Helper()
 	policy, err := taskpolicy.NewBrainMCPAcceptance(taskpolicy.Request{
-		Mode:      taskpolicy.BrainMCPAcceptanceMode,
-		MCPServer: "brain",
-		ProjectID: "project-1",
+		Mode:       taskpolicy.BrainMCPAcceptanceMode,
+		MCPServer:  "brain",
+		ProjectIDs: []string{taskpolicy.BrainProjectID, taskpolicy.MulticaProjectID},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -135,11 +135,11 @@ func TestRestrictedClaudeHooksBlockOutOfScopeCallsBeforeDispatch(t *testing.T) {
 	}
 
 	revision := strings.Repeat("a", 64)
-	contextPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":"project-1"},"documents":[{"id":"doc-1","revision":%q}]}`, revision)
+	contextPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":"brain"},"documents":[{"id":"doc-1","revision":%q}]}`, revision)
 	contextResponse := map[string]any{"content": []any{map[string]any{"type": "text", "text": contextPayload}}}
 	preContext := restrictedClaudeHookEvent{
 		EventName: "PreToolUse", ToolName: "mcp__brain__brain_context",
-		ToolInput: map[string]any{"project": "project-1"}, ToolUseID: "ctx-call",
+		ToolInput: map[string]any{"project": "brain", "q": "How do I retrieve evidence beyond the short search excerpt?"}, ToolUseID: "ctx-call",
 	}
 	if decision := postRestrictedHook(t, hookURL, preContext); decision != "allow" {
 		t.Fatalf("exact context request decision = %q, want allow", decision)
@@ -151,7 +151,7 @@ func TestRestrictedClaudeHooksBlockOutOfScopeCallsBeforeDispatch(t *testing.T) {
 	if decision := postRestrictedHook(t, hookURL, postContext); decision != "" {
 		t.Fatalf("context completion returned a permission decision: %q", decision)
 	}
-	if len(hooks.authorizedDocs) != 1 || hooks.authorizedDocs["doc-1"] != revision {
+	if len(hooks.authorizedDocs) != 1 || hooks.authorizedDocs["doc-1\x00"+revision] != "brain" {
 		t.Fatalf("hook retained unexpected context state: %#v", hooks.authorizedDocs)
 	}
 
@@ -169,7 +169,7 @@ func TestRestrictedClaudeHooksBlockOutOfScopeCallsBeforeDispatch(t *testing.T) {
 	}{
 		{"uncited document", "mcp__brain__brain_read", map[string]any{"id": "other", "revision": revision}},
 		{"wrong revision", "mcp__brain__brain_read", map[string]any{"id": "doc-1", "revision": strings.Repeat("b", 64)}},
-		{"query broadening", "mcp__brain__brain_context", map[string]any{"project": "project-1", "q": "everything"}},
+		{"query broadening", "mcp__brain__brain_context", map[string]any{"project": "brain", "q": "everything"}},
 		{"broader event range", "mcp__brain__company_events", map[string]any{"afterId": float64(1), "throughId": float64(199901), "limit": float64(1)}},
 	} {
 		t.Run(denied.name, func(t *testing.T) {
@@ -416,7 +416,7 @@ func TestRestrictedClaudeReceiptOmitsDocumentBodyAndAcceptsHistoricalRevision(t 
 	body := "private document body"
 	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
 	currentRevision := strings.Repeat("e", 64)
-	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-04-01T12:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-04-01T12:00:00Z"},"document":{"id":"doc-1","project":"project-1","revision":"%s","body":%q,"bytes":%d,"truncated":false,"currentRevision":"%s","available":true}}`, revision, body, len(body), currentRevision)
+	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-04-01T12:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-04-01T12:00:00Z"},"document":{"id":"doc-1","project":"brain","revision":"%s","body":%q,"bytes":%d,"truncated":false,"currentRevision":"%s","available":true}}`, revision, body, len(body), currentRevision)
 	content := json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
 	policy := brainAcceptancePolicy(t)
 	input := map[string]any{"id": "doc-1", "revision": revision}
@@ -424,7 +424,7 @@ func TestRestrictedClaudeReceiptOmitsDocumentBodyAndAcceptsHistoricalRevision(t 
 	if !verified {
 		t.Fatalf("Brain read receipt not verified: %s", got)
 	}
-	for _, want := range []string{`"documentId":"doc-1"`, `"projectId":"project-1"`, `"revision":"` + revision + `"`, `"currentRevision":"` + currentRevision + `"`, `"bodySha256Verified":true`, `"byteLengthVerified":true`, `"durationMs":1500`, `"durationSource":"pre_post_tool_hook_monotonic"`} {
+	for _, want := range []string{`"documentId":"doc-1"`, `"projectId":"brain"`, `"revision":"` + revision + `"`, `"currentRevision":"` + currentRevision + `"`, `"bodySha256Verified":true`, `"byteLengthVerified":true`, `"durationMs":1500`, `"durationSource":"pre_post_tool_hook_monotonic"`} {
 		if !strings.Contains(got, want) {
 			t.Errorf("receipt omits %s: %s", want, got)
 		}
@@ -438,7 +438,7 @@ func TestRestrictedClaudeReadReceiptCorrelatesRequestedDocumentAndRevision(t *te
 	body := "synthetic body"
 	documentID := "docs/synthetic report.md"
 	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
-	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-04-01T12:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-04-01T12:00:00Z"},"document":{"id":%q,"project":"project-1","revision":"%s","body":%q,"bytes":%d,"truncated":false,"currentRevision":"%s","available":true}}`, documentID, revision, body, len(body), strings.Repeat("e", 64))
+	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-04-01T12:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-04-01T12:00:00Z"},"document":{"id":%q,"project":"brain","revision":"%s","body":%q,"bytes":%d,"truncated":false,"currentRevision":"%s","available":true}}`, documentID, revision, body, len(body), strings.Repeat("e", 64))
 	content := json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
 	policy := brainAcceptancePolicy(t)
 	for _, input := range []map[string]any{
@@ -473,7 +473,7 @@ func TestRestrictedClaudeExpectedUnknownProject404IsVerifiedWithoutErrorText(t *
 	if strings.Contains(got, "brain request rejected") {
 		t.Fatalf("raw refusal prose escaped: %s", got)
 	}
-	success := json.RawMessage(`[{"type":"text","text":"{\"schemaVersion\":\"silvermediums.brain.v2\",\"servedAt\":\"2000-01-01T00:00:00Z\",\"dataPolicy\":\"reference-only\",\"connection\":{\"state\":\"online\",\"checkedAt\":\"2000-01-01T00:00:00Z\"},\"project\":{\"id\":\"alpha\"}}"}]`)
+	success := json.RawMessage(`[{"type":"text","text":"{\"schemaVersion\":\"silvermediums.brain.v2\",\"servedAt\":\"2000-01-01T00:00:00Z\",\"dataPolicy\":\"reference-only\",\"connection\":{\"state\":\"online\",\"checkedAt\":\"2000-01-01T00:00:00Z\"},\"project\":{\"id\":\"brain\"}}"}]`)
 	if got, verified := restrictedClaudeReceiptWithInput("brain_resolve", "resolve-call", success, false, time.Second, input, policy); verified {
 		t.Fatalf("successful resolution incorrectly satisfied the fixed unknown-project refusal: %s", got)
 	}
@@ -504,15 +504,35 @@ func TestRestrictedClaudeContextReceiptCorrelatesProjectAndOnlineState(t *testin
 		payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":%q,"checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":%q},"documents":[{"id":"doc-1","revision":%q}]}`, state, project, revision)
 		return json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
 	}
-	input := map[string]any{"project": "project-1"}
-	got, verified := restrictedClaudeReceiptWithInput("brain_context", "context-call", makeContent("project-1", "online"), false, time.Second, input, policy)
-	if !verified || !strings.Contains(got, `"projectId":"project-1"`) {
+	input := map[string]any{"project": "brain", "q": "How do I retrieve evidence beyond the short search excerpt?"}
+	got, verified := restrictedClaudeReceiptWithInput("brain_context", "context-call", makeContent("brain", "online"), false, time.Second, input, policy)
+	if !verified || !strings.Contains(got, `"projectId":"brain"`) {
 		t.Fatalf("exact online context was rejected: verified=%t receipt=%s", verified, got)
 	}
-	for _, content := range []json.RawMessage{makeContent("different-project", "online"), makeContent("project-1", "offline")} {
+	for _, content := range []json.RawMessage{makeContent("multica", "online"), makeContent("brain", "offline")} {
 		if got, verified := restrictedClaudeReceiptWithInput("brain_context", "context-call", content, false, time.Second, input, policy); verified {
 			t.Fatalf("mismatched context was accepted: %s", got)
 		}
+	}
+}
+
+func TestRestrictedClaudeReadHookCorrelatesCitationProject(t *testing.T) {
+	body := "synthetic cited document"
+	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"document":{"id":"doc-1","project":"brain","revision":%q,"body":%q,"bytes":%d,"truncated":false,"currentRevision":%q,"available":true}}`, revision, body, len([]byte(body)), revision)
+	response := json.RawMessage(fmt.Sprintf(`{"content":[{"type":"text","text":%q}],"isError":false}`, payload))
+	hooks := &restrictedClaudeHooks{
+		policy:         brainAcceptancePolicy(t),
+		authorizedDocs: map[string]string{"doc-1\x00" + revision: "brain"},
+	}
+	input := map[string]any{"id": "doc-1", "revision": revision}
+	if !hooks.matchesAuthorizedRead(response, input) {
+		t.Fatal("cited document from its authorized project was rejected")
+	}
+	wrongProjectPayload := strings.Replace(payload, `"project":"brain"`, `"project":"multica"`, 1)
+	wrongProjectResponse := json.RawMessage(fmt.Sprintf(`{"content":[{"type":"text","text":%q}],"isError":false}`, wrongProjectPayload))
+	if hooks.matchesAuthorizedRead(wrongProjectResponse, input) {
+		t.Fatal("valid self-hashed read from a different project was accepted")
 	}
 }
 
@@ -595,7 +615,7 @@ func TestRestrictedBrainReceiptRequiresCompleteEvidence(t *testing.T) {
 	validRead := map[string]any{
 		"dataPolicyPresent":  true,
 		"documentId":         "doc-1",
-		"projectId":          "project-1",
+		"projectId":          "brain",
 		"revision":           strings.Repeat("a", 64),
 		"currentRevision":    strings.Repeat("a", 64),
 		"bytes":              float64(10),
@@ -922,10 +942,10 @@ func TestRestrictedClaudeFakeCLIHelper(t *testing.T) {
 	_, _ = bufio.NewReader(os.Stdin).ReadString('\n')
 
 	revision := revisionHashFixture()
-	contextPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":"project-1"},"documents":[{"id":"doc-1","revision":%q}]}`, revision)
+	contextPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":"brain"},"documents":[{"id":"doc-1","revision":%q}]}`, revision)
 	body := "SENSITIVE_DOCUMENT_BODY"
 	documentRevision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
-	readPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"document":{"id":"doc-1","project":"project-1","revision":%q,"body":%q,"bytes":%d,"truncated":false,"currentRevision":%q,"available":true}}`, documentRevision, body, len([]byte(body)), strings.Repeat("e", 64))
+	readPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"document":{"id":"doc-1","project":"brain","revision":%q,"body":%q,"bytes":%d,"truncated":false,"currentRevision":%q,"available":true}}`, documentRevision, body, len([]byte(body)), strings.Repeat("e", 64))
 	toolCall := func(name, id string, input any, text string) {
 		send(restrictedClaudeHookEvent{EventName: "PreToolUse", ToolName: "mcp__brain__" + name, ToolInput: input.(map[string]any), ToolUseID: id})
 		response := map[string]any{"content": []any{map[string]any{"type": "text", "text": text}}}
@@ -938,7 +958,7 @@ func TestRestrictedClaudeFakeCLIHelper(t *testing.T) {
 		}}})
 	}
 	emit(map[string]any{"type": "system", "subtype": "init", "session_id": "SENSITIVE_SESSION"})
-	toolCall("brain_context", "context-call", map[string]any{"project": "project-1"}, contextPayload)
+	toolCall("brain_context", "context-call", map[string]any{"project": "brain", "q": "How do I retrieve evidence beyond the short search excerpt?"}, contextPayload)
 	toolCall("brain_read", "read-call", map[string]any{"id": "doc-1", "revision": documentRevision}, readPayload)
 	emit(map[string]any{"type": "assistant", "message": map[string]any{"content": []any{
 		map[string]any{"type": "text", "text": "SENSITIVE_ASSISTANT_TEXT"},

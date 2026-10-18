@@ -14,16 +14,16 @@ Send the policy on `POST /api/issues/{id}/rerun`:
   "execution_policy": {
     "mode": "brain_mcp_acceptance_v1",
     "mcp_server": "brain",
-    "project_id": "exact-enrolled-project-id"
+    "project_ids": ["brain", "multica"]
   }
 }
 ```
 
-The mode and provider are fixed. `mcp_server` must name an already configured managed MCP server, and `project_id` must be the exact project identity selected for this task. The daemon accepts the task only when it supports execution policies. Policy-bearing reruns and retries start without a prior provider session; they must not be retried without the policy as an equivalent fallback.
+The mode and provider are fixed. `mcp_server` must name an already configured managed MCP server, and `project_ids` must exactly equal the frozen `brain` and `multica` scope, in that order. The daemon accepts the task only when it supports execution policies. Policy-bearing reruns and retries start without a prior provider session; they must not be retried without the policy as an equivalent fallback.
 
 ## Fixed acceptance scope
 
-The policy permits only Claude and the named MCP server. Its tool input gate is fixed to the versioned acceptance checks: resolve one fixed unknown identity; read context for the selected project; read an immutable cited document revision; list the caller's company projects and projects; and fetch the one frozen `company_events` range. Other tool names, selectors, and inputs are denied before MCP dispatch. A cited document ID and revision must come from the verified context for the selected project.
+The policy permits only Claude and the named MCP server. Its tool input gate is fixed to the versioned acceptance checks: read `brain` context for the exact A33 and A36 questions, read `multica` context for the exact A28 question, resolve only the fixed unknown identity, read an immutable cited document revision, list the caller's company projects and projects, and fetch the one frozen `company_events` range. Other tool names, projects, questions, selectors, and inputs are denied before MCP dispatch. A cited document ID and revision must come from the verified context for that same project, and the immutable read response must match the requested document ID and revision.
 
 Claude must support the fail-closed task-local hook configuration (minimum CLI version `2.1.295`). The hook is configured to deny out-of-scope tool names and inputs before dispatch and correlate completed calls for receipt verification. A failed or unavailable hook, incompatible CLI, unmanaged server configuration, unsupported daemon, or missing verification evidence fails the restricted task; it does not silently downgrade to unrestricted execution.
 

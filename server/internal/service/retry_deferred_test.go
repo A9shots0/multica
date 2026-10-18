@@ -100,9 +100,9 @@ func TestCreateRetryTaskPreservesPolicyAndDropsProviderSession(t *testing.T) {
 		t.Fatalf("read agent runtime: %v", err)
 	}
 	policy, err := taskpolicy.NewBrainMCPAcceptance(taskpolicy.Request{
-		Mode:      taskpolicy.BrainMCPAcceptanceMode,
-		MCPServer: "brain",
-		ProjectID: "alpha",
+		Mode:       taskpolicy.BrainMCPAcceptanceMode,
+		MCPServer:  "brain",
+		ProjectIDs: []string{taskpolicy.BrainProjectID, taskpolicy.MulticaProjectID},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -145,8 +145,10 @@ func TestCreateRetryTaskPreservesPolicyAndDropsProviderSession(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse retry policy: %v", err)
 	}
-	if retryPolicy == nil || retryPolicy.ProjectID != "alpha" {
-		t.Fatalf("retry policy = %+v, want preserved alpha policy", retryPolicy)
+	if retryPolicy == nil || len(retryPolicy.ProjectIDs) != 2 ||
+		retryPolicy.ProjectIDs[0] != taskpolicy.BrainProjectID ||
+		retryPolicy.ProjectIDs[1] != taskpolicy.MulticaProjectID {
+		t.Fatalf("retry policy = %+v, want preserved frozen project policy", retryPolicy)
 	}
 }
 

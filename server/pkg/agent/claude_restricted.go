@@ -402,12 +402,15 @@ func restrictedBrainReceiptMatchesInput(tool string, receipt, input map[string]a
 		return false
 	}
 	switch tool {
+	case "brain_resolve":
+		return receipt["projectId"] == input["identity"] &&
+			containsRestrictedProject(policy, receipt["projectId"])
 	case "brain_context":
-		return receipt["projectId"] == policy.ProjectID
+		return receipt["projectId"] == input["project"]
 	case "brain_read":
 		return receipt["documentId"] == input["id"] &&
 			receipt["revision"] == input["revision"] &&
-			receipt["projectId"] == policy.ProjectID
+			containsRestrictedProject(policy, receipt["projectId"])
 	case "company_events":
 		rows, ok := receipt["eventRows"].([]any)
 		if !ok || len(rows) != 1 || receipt["eventItemsTotal"] != float64(1) ||
@@ -422,6 +425,19 @@ func restrictedBrainReceiptMatchesInput(tool string, receipt, input map[string]a
 	default:
 		return true
 	}
+}
+
+func containsRestrictedProject(policy *taskpolicy.ExecutionPolicy, value any) bool {
+	projectID, ok := value.(string)
+	if !ok || policy == nil {
+		return false
+	}
+	for _, allowed := range policy.ProjectIDs {
+		if projectID == allowed {
+			return true
+		}
+	}
+	return false
 }
 
 func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) bool {

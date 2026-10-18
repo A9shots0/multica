@@ -229,9 +229,12 @@ func (hooks *restrictedClaudeHooks) handlePostToolUse(w http.ResponseWriter, eve
 	close(call.done)
 	hooks.mu.Unlock()
 	if call.tool == "brain_context" {
-		if !hooks.captureContextDocuments(event.ToolResponse) {
+		project, _ := call.input["project"].(string)
+		if !hooks.captureContextDocuments(event.ToolResponse, project) {
 			hooks.setFailure("restricted Claude could not verify the scoped Brain context response")
 		}
+	} else if call.tool == "brain_read" && !hooks.matchesAuthorizedRead(event.ToolResponse, call.input) {
+		hooks.setFailure("restricted Claude Brain read did not match its authorized context citation")
 	}
 	hooks.writeDecision(w, "")
 }
@@ -262,10 +265,11 @@ func (hooks *restrictedClaudeHooks) allowsToolInput(tool string, input map[strin
 	}
 	hooks.mu.Lock()
 	defer hooks.mu.Unlock()
-	return hooks.authorizedDocs[id] == revision
+	_, authorized := hooks.authorizedDocs[id+"\x00"+revision]
+	return authorized
 }
 
-func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage) bool {
+func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage, requestedProject string) bool {
 	blocks, ok := restrictedClaudeHookResponseBlocks(raw)
 	if !ok {
 		return false
@@ -279,7 +283,8 @@ func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage)
 	var parsed map[string]any
 	if json.Unmarshal([]byte(receipt), &parsed) != nil ||
 		parsed["connectionState"] != "online" ||
-		parsed["projectId"] != hooks.policy.ProjectID ||
+		parsed["projectId"] != requestedProject ||
+		!containsRestrictedProject(hooks.policy, parsed["projectId"]) ||
 		!restrictedBrainReceiptIsVerifiable("brain_context", parsed) {
 		return false
 	}
@@ -287,8 +292,7 @@ func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage)
 	if !ok {
 		return false
 	}
-	hooks.mu.Lock()
-	defer hooks.mu.Unlock()
+	authorized := make(map[string]string, len(documents))
 	for _, item := range documents {
 		document, ok := item.(map[string]any)
 		if !ok {
@@ -296,12 +300,51 @@ func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage)
 		}
 		id, idOK := document["id"].(string)
 		revision, revisionOK := document["revision"].(string)
-		if !idOK || !revisionOK {
+		if !idOK || id == "" || !revisionOK || revision == "" {
 			return false
 		}
-		hooks.authorizedDocs[id] = revision
+		authorized[id+"\x00"+revision] = requestedProject
+	}
+	hooks.mu.Lock()
+	defer hooks.mu.Unlock()
+	for key, project := range authorized {
+		if existing, exists := hooks.authorizedDocs[key]; exists && existing != project {
+			return false
+		}
+	}
+	for key, project := range authorized {
+		hooks.authorizedDocs[key] = project
 	}
 	return true
+}
+
+func (hooks *restrictedClaudeHooks) matchesAuthorizedRead(raw json.RawMessage, input map[string]any) bool {
+	id, idOK := input["id"].(string)
+	revision, revisionOK := input["revision"].(string)
+	if !idOK || !revisionOK {
+		return false
+	}
+	hooks.mu.Lock()
+	requestedProject, authorized := hooks.authorizedDocs[id+"\x00"+revision]
+	hooks.mu.Unlock()
+	if !authorized {
+		return false
+	}
+	blocks, ok := restrictedClaudeHookResponseBlocks(raw)
+	if !ok {
+		return false
+	}
+	receipt := codexMCPBrainSafeReceipt("brain_read", map[string]any{
+		"result": map[string]any{"isError": false, "content": blocks},
+	})
+	if receipt == "" {
+		return false
+	}
+	var parsed map[string]any
+	return json.Unmarshal([]byte(receipt), &parsed) == nil &&
+		parsed["documentId"] == id &&
+		parsed["revision"] == revision &&
+		parsed["projectId"] == requestedProject
 }
 
 func restrictedClaudeHookResponseBlocks(raw json.RawMessage) ([]any, bool) {

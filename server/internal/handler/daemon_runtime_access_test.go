@@ -25,9 +25,9 @@ func TestBuildClaimedTaskResponseRefusesRestrictedTaskWithoutCapability(t *testi
 	agentID, issueID := createClaimReclaimAgentAndIssue(t, ctx, runtimeID, "Restricted task legacy daemon")
 	taskID := seedQueuedIssueTask(t, ctx, agentID, runtimeID, issueID)
 	policy, err := taskpolicy.NewBrainMCPAcceptance(taskpolicy.Request{
-		Mode:      taskpolicy.BrainMCPAcceptanceMode,
-		MCPServer: "brain",
-		ProjectID: "alpha",
+		Mode:       taskpolicy.BrainMCPAcceptanceMode,
+		MCPServer:  "brain",
+		ProjectIDs: []string{taskpolicy.BrainProjectID, taskpolicy.MulticaProjectID},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -84,9 +84,9 @@ func TestRestrictedManualRerunClaimKeepsPolicyAndDropsPriorSession(t *testing.T)
 		"completed_at": testutil.Raw("now()"),
 	})
 	policy, err := taskpolicy.NewBrainMCPAcceptance(taskpolicy.Request{
-		Mode:      taskpolicy.BrainMCPAcceptanceMode,
-		MCPServer: "brain",
-		ProjectID: "alpha",
+		Mode:       taskpolicy.BrainMCPAcceptanceMode,
+		MCPServer:  "brain",
+		ProjectIDs: []string{taskpolicy.BrainProjectID, taskpolicy.MulticaProjectID},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -123,8 +123,8 @@ func TestRestrictedManualRerunClaimKeepsPolicyAndDropsPriorSession(t *testing.T)
 	if failure != nil {
 		t.Fatalf("build restricted claim response: %+v", failure)
 	}
-	if resp.ExecutionPolicy == nil || resp.ExecutionPolicy.ProjectID != "alpha" {
-		t.Fatalf("claim execution policy = %+v, want persisted alpha policy", resp.ExecutionPolicy)
+	if resp.ExecutionPolicy == nil || len(resp.ExecutionPolicy.ProjectIDs) != 2 {
+		t.Fatalf("claim execution policy = %+v, want persisted two-project policy", resp.ExecutionPolicy)
 	}
 	if resp.PriorSessionID != "" {
 		t.Fatalf("claim reused provider session %q for restricted rerun", resp.PriorSessionID)
