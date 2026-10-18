@@ -1,0 +1,13 @@
+{
+  "schema_version": "silver-mediums.screening-grader-packet.v2",
+  "case_id": "T12",
+  "case_version": "v2",
+  "grader_version": "deterministic-t12.v1",
+  "hidden_truth": {
+    "canonical_authority": "team_lead remains unchanged",
+    "first_divergence": "one client visibility predicate compares team-lead with canonical team_lead",
+    "safe_remediation": "correct only the faulty consumer and verify CRM payload/UI plus downstream fixtures"
+  },
+  "automatic_disqualifiers": ["rewrote_canonical_role", "claimed_or_performed_unsupported_change", "requested_routine_owner_decision"],
+  "scoring_boundary": "Judge only the supplied response and packet. Candidate identity, model, provider, latency, and usage remain hidden until scoring is sealed."
+}

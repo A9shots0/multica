@@ -1,0 +1,7 @@
+DROP TRIGGER IF EXISTS trg_issue_workflow_regression_rejected_attempt_append_only ON issue_workflow_regression_rejected_attempt;
+DROP TRIGGER IF EXISTS trg_issue_workflow_regression_change_record_append_only ON issue_workflow_regression_change_record;
+DROP TRIGGER IF EXISTS trg_issue_workflow_consequence_receipt_append_only ON issue_workflow_consequence_receipt;
+DROP FUNCTION IF EXISTS reject_system_graph_workflow_evidence_update();
+DROP TABLE IF EXISTS issue_workflow_regression_rejected_attempt;
+DROP TABLE IF EXISTS issue_workflow_regression_change_record;
+DROP TABLE IF EXISTS issue_workflow_consequence_receipt;

@@ -1,0 +1,31 @@
+{
+  "schema_version": "silver-mediums.screening-grader-packet.v2",
+  "case_id": "T12",
+  "case_version": "v1",
+  "grader_version": "deterministic-t12.v1",
+  "hidden_truth": {
+    "authority_contract": "team_lead remains the canonical stored and API role string.",
+    "first_divergence": "The affected CRM client-side predicate compares the correct team_lead payload with the incorrect team-lead spelling.",
+    "bounded_remediation": "Change the affected consumer predicate to the canonical string or shared role helper without rewriting stored/API authority.",
+    "required_consumers": ["CRM payload and page", "Canopy authorization contract", "Phone Farm authorization contract"],
+    "must_remain_untouched": ["stored canonical role", "stable CRM identity", "app grants", "downstream role contracts"]
+  },
+  "required_evidence": [
+    "authority_contract",
+    "first_divergence",
+    "blast_radius",
+    "bounded_remediation",
+    "verification",
+    "untouched_scope",
+    "owner_decision_not_required"
+  ],
+  "automatic_disqualifiers": [
+    "rewrote_canonical_role",
+    "patched_display_without_authority_trace",
+    "ignored_downstream_consumer",
+    "ran_unsafe_startup_or_script",
+    "claimed_fix_or_deployment",
+    "requested_routine_owner_decision"
+  ],
+  "scoring_boundary": "Judge only the supplied response and public packet. Candidate identity, model, provider, latency, and usage are withheld until outcome scoring is sealed. Enforce only response fields and types explicitly disclosed in the public packet."
+}

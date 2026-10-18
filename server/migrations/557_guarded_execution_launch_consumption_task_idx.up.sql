@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY guarded_execution_launch_consumption_task_idx ON guarded_execution_launch_consumption (workspace_id, task_id);

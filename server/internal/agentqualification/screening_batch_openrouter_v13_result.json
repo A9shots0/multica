@@ -1,0 +1,52 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-static-capability-breadth-openrouter-v13",
+  "status": "complete_with_candidate_eliminations",
+  "test_validity": "valid",
+  "planned_observations": 20,
+  "provider_calls": 15,
+  "policy_skipped_assignments": 5,
+  "retries": 0,
+  "tool_events": 0,
+  "owner_interventions": 0,
+  "last_authoritative_usage_before_batch_usd": 102.105879252,
+  "authoritative_usage_after_batch_usd": 102.113973022,
+  "reference_account_delta_usd": 0.008093770,
+  "rounded_receipt_cost_usd": 0.006398,
+  "provider_export_total_tokens": 39914,
+  "normalized_component_sum_tokens": 39914,
+  "total_provider_event_time_seconds": 50.305,
+  "results": [
+    {"model":"openrouter/z-ai/glm-5.3-flash","candidate_id":"screen.generalist.glm53flash.low.openrouter.v13","effort":"low","serving_provider":"z-ai","cases_run":["T11","T08","T16","T04","T09"],"result":"PASS_5_OF_5","failure_reason":"","input_tokens":10648,"cached_input_tokens":0,"output_tokens":749,"reasoning_tokens":0,"total_tokens":11397,"cost_usd":0.001976,"provider_event_time_seconds":1.944,"advances_to_reliability_screen":true},
+    {"model":"openrouter/inclusionai/ling-3.0-flash","candidate_id":"screen.generalist.ling3flash.medium.openrouter.v13","effort":"medium","serving_provider":"novita","cases_run":["T11","T08","T16","T04","T09"],"result":"FAIL_AFTER_4_PASSES","failure_reason":"T09: response_contract_types, canonical_total","input_tokens":11508,"cached_input_tokens":0,"output_tokens":577,"reasoning_tokens":4177,"total_tokens":16262,"cost_usd":0.000543,"provider_event_time_seconds":31.823,"advances_to_reliability_screen":false},
+    {"model":"openrouter/qwen/qwen3-coder-flash","candidate_id":"screen.generalist.qwen3coderflash.default.openrouter.v13","effort":"screening_default","serving_provider":"alibaba","cases_run":["T11","T08","T16","T04"],"result":"FAIL_AFTER_3_PASSES","failure_reason":"T04: verification_radius","input_tokens":8605,"cached_input_tokens":0,"output_tokens":675,"reasoning_tokens":0,"total_tokens":9280,"cost_usd":0.002337,"provider_event_time_seconds":5.891,"advances_to_reliability_screen":false},
+    {"model":"openrouter/minimax/minimax-m2.7","candidate_id":"screen.generalist.minimaxm27.default.openrouter.v13","effort":"screening_default","serving_provider":"minimax","cases_run":["T11"],"result":"FAIL","failure_reason":"T11: invalid_response_format","input_tokens":2254,"cached_input_tokens":0,"output_tokens":222,"reasoning_tokens":499,"total_tokens":2975,"cost_usd":0.001542,"provider_event_time_seconds":10.647,"advances_to_reliability_screen":false}
+  ],
+  "observations": [
+    {"candidate_id":"screen.generalist.qwen3coderflash.default.openrouter.v13","case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2285,"cached_input_tokens":0,"output_tokens":203,"reasoning_tokens":0,"total_tokens":2488,"cost_usd":0.000644,"time_seconds":1.731,"receipt_dir":"2c12176eb816cd588564cb4d7f5c1635b1c2a060a5b4788793f5828bbcf85414"},
+    {"candidate_id":"screen.generalist.minimaxm27.default.openrouter.v13","case_id":"T11","result":"FAIL","failure_reason":"invalid_response_format","input_tokens":2254,"cached_input_tokens":0,"output_tokens":222,"reasoning_tokens":499,"total_tokens":2975,"cost_usd":0.001542,"time_seconds":10.647,"receipt_dir":"e2dbeffbccac03572c7080a8cc9f0608a9de8c58893fe1891a1bc1ac30c2669d"},
+    {"candidate_id":"screen.generalist.ling3flash.medium.openrouter.v13","case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2447,"cached_input_tokens":0,"output_tokens":118,"reasoning_tokens":1260,"total_tokens":3825,"cost_usd":0.000139,"time_seconds":8.934,"receipt_dir":"db3494eb8a6fe5b494edb144ddf0415a14f37fa78186be3317efd182540b2e36"},
+    {"candidate_id":"screen.generalist.glm53flash.low.openrouter.v13","case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2274,"cached_input_tokens":0,"output_tokens":214,"reasoning_tokens":0,"total_tokens":2488,"cost_usd":0.000449,"time_seconds":0.709,"receipt_dir":"4f3c5637fe9bb9f8cd3efff447fbc62ece27f7bb59076bf6e60c0977caa37ae2"},
+    {"candidate_id":"screen.generalist.qwen3coderflash.default.openrouter.v13","case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2059,"cached_input_tokens":0,"output_tokens":144,"reasoning_tokens":0,"total_tokens":2203,"cost_usd":0.000542,"time_seconds":1.250,"receipt_dir":"b0919fe2268f84981d490b076a72bc41b58aa90ca2bb8f74f5c2245d044fd727"},
+    {"candidate_id":"screen.generalist.ling3flash.medium.openrouter.v13","case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2229,"cached_input_tokens":0,"output_tokens":146,"reasoning_tokens":496,"total_tokens":2871,"cost_usd":0.000088,"time_seconds":4.143,"receipt_dir":"a67a35410d14cc59fe92bf02c3b6d43495346a84f0cba116b9c3dc4556294e00"},
+    {"candidate_id":"screen.generalist.glm53flash.low.openrouter.v13","case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2044,"cached_input_tokens":0,"output_tokens":107,"reasoning_tokens":0,"total_tokens":2151,"cost_usd":0.000361,"time_seconds":0.293,"receipt_dir":"a89de38c8b6642309d5c2abe6c5b58c6d2f28950acc5bc4e9806a0c6b3db90c5"},
+    {"candidate_id":"screen.generalist.qwen3coderflash.default.openrouter.v13","case_id":"T16","result":"PASS","failure_reason":"","input_tokens":2093,"cached_input_tokens":0,"output_tokens":175,"reasoning_tokens":0,"total_tokens":2268,"cost_usd":0.000579,"time_seconds":1.561,"receipt_dir":"6e5b420503ab5b9684266859176e89cef4b8c0ce116ba8bcca8c1a5551d51f3e"},
+    {"candidate_id":"screen.generalist.ling3flash.medium.openrouter.v13","case_id":"T16","result":"PASS","failure_reason":"","input_tokens":2238,"cached_input_tokens":0,"output_tokens":79,"reasoning_tokens":968,"total_tokens":3285,"cost_usd":0.000113,"time_seconds":6.730,"receipt_dir":"7720523438237b4a064057ea9f680c19aea5f6c60a0fbb327da5b40b91f82475"},
+    {"candidate_id":"screen.generalist.glm53flash.low.openrouter.v13","case_id":"T16","result":"PASS","failure_reason":"","input_tokens":2085,"cached_input_tokens":0,"output_tokens":131,"reasoning_tokens":0,"total_tokens":2216,"cost_usd":0.000379,"time_seconds":0.274,"receipt_dir":"5688e440f3479ed2af4bf0c6e4ce1cfcfa59f946992be28aceadf48b7a19d50a"},
+    {"candidate_id":"screen.generalist.qwen3coderflash.default.openrouter.v13","case_id":"T04","result":"FAIL","failure_reason":"verification_radius","input_tokens":2168,"cached_input_tokens":0,"output_tokens":153,"reasoning_tokens":0,"total_tokens":2321,"cost_usd":0.000572,"time_seconds":1.349,"receipt_dir":"0b32993ec346b06932a4bb0113afd14d2edb7cce31736174ecf3744eb9c04665"},
+    {"candidate_id":"screen.generalist.ling3flash.medium.openrouter.v13","case_id":"T04","result":"PASS","failure_reason":"","input_tokens":2323,"cached_input_tokens":0,"output_tokens":130,"reasoning_tokens":727,"total_tokens":3180,"cost_usd":0.000103,"time_seconds":5.287,"receipt_dir":"e9c3e6ebe11a460b395d995ffbe12443be6967fc4e42ae67bb3c08df82828c1e"},
+    {"candidate_id":"screen.generalist.glm53flash.low.openrouter.v13","case_id":"T04","result":"PASS","failure_reason":"","input_tokens":2151,"cached_input_tokens":0,"output_tokens":177,"reasoning_tokens":0,"total_tokens":2328,"cost_usd":0.000412,"time_seconds":0.480,"receipt_dir":"ca8485c96b5a5a3fd9a93a4809abab231507441e9ffce05407002b04a8d1b569"},
+    {"candidate_id":"screen.generalist.ling3flash.medium.openrouter.v13","case_id":"T09","result":"FAIL","failure_reason":"response_contract_types,canonical_total","input_tokens":2271,"cached_input_tokens":0,"output_tokens":104,"reasoning_tokens":726,"total_tokens":3101,"cost_usd":0.000100,"time_seconds":6.729,"receipt_dir":"cda667a4705a015d369afda99407df7dc9c51f8473eea9b55929ddba61b7aabb"},
+    {"candidate_id":"screen.generalist.glm53flash.low.openrouter.v13","case_id":"T09","result":"PASS","failure_reason":"","input_tokens":2094,"cached_input_tokens":0,"output_tokens":120,"reasoning_tokens":0,"total_tokens":2214,"cost_usd":0.000375,"time_seconds":0.188,"receipt_dir":"8e9138cd7f0158871121407bc6215e4d7ece22c2919e9ab3f971adf4b9416bfc"}
+  ],
+  "advancement": "Only GLM 5.3 Flash Low advances to the reliability screen. This is not a production-role qualification or final model selection.",
+  "evidence_root": ".qualification-evidence/openrouter-v13",
+  "notes": [
+    "The five frozen cases and graders were unchanged after the single independent pre-provider GO review.",
+    "The first MiniMax response exposed a controller defect: a candidate failure closed only one assignment. The single consolidated execution correction now eliminates only that candidate, skips its remaining assignments, lets unrelated candidates continue, and counts policy skips toward terminal batch accounting.",
+    "No candidate was retried. The 15 completed provider calls plus five explicitly skipped assignments account for all 20 planned assignments.",
+    "The last recorded authoritative account usage before this batch is used as the reference baseline because individual admission snapshots were enforced live but stored only by hash. The account delta can include unrelated same-account usage; rounded per-call receipts are the isolated batch-cost evidence.",
+    "Provider export totals and normalized component sums both equal 39,914 tokens in this batch.",
+    "No tools, production, Browser, outbound messaging, repository access, Codex or Claude subscription capacity, or Phone Farm operation occurred."
+  ]
+}

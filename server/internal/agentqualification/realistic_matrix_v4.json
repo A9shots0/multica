@@ -1,0 +1,26 @@
+{
+  "schema_version": "silver-mediums.realistic-run-matrix.v1",
+  "matrix_id": "realistic-foundation-screen-v4",
+  "status": "frozen_reviewed",
+  "execution_order": ["R01", "R03", "R04"],
+  "deferred_cases": ["R02"],
+  "candidates": [
+    {"configuration_id":"realistic.mercury25.default.r01v2.v4","model":"openrouter/inception/mercury-2.5","effort":"screening_default","serving_provider":"inception"},
+    {"configuration_id":"realistic.claudesonnet5.medium.anchor.r01v2.v4","model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic"},
+    {"configuration_id":"realistic.gpt54.medium.anchor.r01v2.v4","model":"openrouter/openai/gpt-5.4","effort":"medium","serving_provider":"openai"},
+    {"configuration_id":"realistic.nemotron3super.free.low.r01v2.v4","model":"openrouter/nvidia/nemotron-3-super-120b-a12b:free","effort":"low","serving_provider":"nvidia"}
+  ],
+  "selection_reason": "rerun only configurations whose prior R01 competence result depended on the hidden ordered-proof requirement; GLM remains failed without retry by owner direction",
+  "stage_policy": "all_candidates_run_R01_once_then_only_valid_passes_continue_R03_R04_in_order",
+  "reliability_policy": "no_repeat_until_one_valid_paid_group_pass_then_repeat_same_frozen_paid_group",
+  "max_incremental_spend_micros": 5000000,
+  "max_total_tokens": 200000,
+  "per_observation_generated_token_ceiling": 20000,
+  "retries": 0,
+  "owner_interventions": 0,
+  "provider_fallbacks": false,
+  "global_halt_reasons": ["test_invalidity", "evidence_integrity_failure", "unsafe_execution", "provider_transport_failure", "budget_breach"],
+  "candidate_elimination_reasons": ["competence_failure", "hard_disqualifier", "response_or_tool_protocol_failure"],
+  "shared_failure_policy": "same_case_failure_by_two_unrelated_candidates_pauses_that_case_for_fixture_grader_runner_audit_without_halting_unrelated_valid_cases",
+  "advancement_policy": "testing_evidence_only_no_role_assignment_no_production_promotion"
+}

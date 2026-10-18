@@ -1,0 +1,54 @@
+{
+  "task_id": "crm-pulse-batch-integrity",
+  "title": "Stop CRM Pulse losing whole telemetry batches at page changes",
+  "repository": "C:/Users/a9sho/.claude/jobs/79575380/tmp/crm-pulse/crm",
+  "recorded_defect": "Owner report: CRM Pulse does not accurately show activity from everyone. Audit on SMCrm origin/main 1291141: the collector (static/js/crm-telemetry.js) queues events for up to 4 seconds and sends them in one batch. services/crm_pulse.py record_events validates the batch as a unit, so one invalid event rejects every event in it with HTTP 400, and the collector ignores the failure. In-app links use partial navigation (static/js/partial-navigation.js), which changes body.dataset.crmPageKey and pushes the new URL before the queue is sent. The click and page-fetch events still carry the old page key while the POST referrer is already the new page, so parse_event raises 'pageKey does not match the current CRM page' and the batch, including the new page's page_view and the active time sample, is dropped. Reproduced with the Flask test client: a four-event partial-navigation batch returned 400 and stored 0 events. A HEAD request event or a request lasting more than 300000 ms drops its batch the same way, and a request to a path that only matches with a trailing slash makes the endpoint return a 308 redirect instead of recording anything.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "services/crm_pulse.py",
+    "static/js/crm-telemetry.js",
+    "tests/test_crm_pulse_batch_integrity.py",
+    "tests/crm_pulse_navigation_flush.test.mjs"
+  ],
+  "verification_command": [
+    "C:/Dev/CRM/.venv/Scripts/python.exe",
+    "-m",
+    "pytest",
+    "tests/test_crm_pulse_batch_integrity.py",
+    "-q",
+    "-p",
+    "no:cacheprovider"
+  ],
+  "verification_cwd": ".",
+  "dependencies": "none",
+  "max_turns": 60,
+  "objective": "CRM Pulse loses real activity because telemetry batches are validated all-or-nothing and the browser collector sends events from the previous page after a partial navigation has already switched the URL. Fix both sides, within these limits: do not change any route, database column, model, migration, status string or template; keep the ingest response keys `recorded` and `eventCount`; do not relax any per-event validation rule in parse_event (the pageKey must still match the referrer page, same-origin referrer still required).\n\nServer, services/crm_pulse.py:\n1. record_events must validate each event on its own. Store every valid event from the batch. Skip invalid events instead of rejecting the batch. If no event in the batch is valid, keep raising PulseValidationError with the first event's error, so the endpoint still answers 400. The batch shape checks (object with only `events`, 1 to 30 items) stay as they are. Add a `rejectedCount` to what the endpoint reports only if you can do it without editing blueprints/crm_pulse.py; otherwise leave the response unchanged.\n2. _resolve_endpoint must treat a werkzeug RequestRedirect from url_map matching (for example a path that only matches with a trailing slash) as a PulseValidationError, never an unhandled redirect.\n\nCollector, static/js/crm-telemetry.js:\n3. Listen for the existing `silver:before-page-replace` window event, which partial-navigation.js dispatches before it changes body.dataset.crmPageKey and before history.pushState. In that listener, record active time for the outgoing page and flush the queue immediately, so those events are sent while the referrer and page key still belong to the outgoing page. The `silver:partial-load` listener must no longer record active time (that time belonged to the previous page), but it must still reset the active-time tick and still record the partial page_view with the new page key. Keep the literal text window.addEventListener('silver:partial-load' in the file; an existing test checks it.\n4. For request events, only enqueue methods GET, POST, PUT, PATCH and DELETE, and cap durationMs at 300000.\nDo not change anything else in the collector. It must stay free of textContent, FormData and input.value.\n\nTests:\n- Write tests/test_crm_pulse_batch_integrity.py (pytest, using the existing app and admin_client fixtures from tests/conftest.py, posting with a Referer header as tests/test_crm_pulse.py does). It must show:\n  (a) a batch mixing valid events for the referrer page with an event whose pageKey is another page stores exactly the valid events and returns 201;\n  (b) a batch with a HEAD request event, or a durationMs above 300000, still stores its other valid events;\n  (c) a batch whose only event is invalid still returns 400;\n  (d) a request event whose targetPath only matches a route with a trailing slash does not produce a 3xx or 5xx: find such a route from app.url_map at test time, and skip that case if none exists.\n- Write tests/crm_pulse_navigation_flush.test.mjs (node:test with node:vm, modelled on tests/crm_telemetry_collector.test.mjs). It must show:\n  (e) events queued on a page are sent in a POST made during `silver:before-page-replace`, before the page key changes;\n  (f) after `silver:partial-load` the partial page_view carries the new page key, and no active_ms event carries the new page key for time spent before the navigation;\n  (g) a HEAD fetch is not enqueued, and a very long request's durationMs is capped at 300000.\nYou can run the node tests yourself with `node --test tests/crm_pulse_navigation_flush.test.mjs tests/crm_telemetry_collector.test.mjs`. You cannot run pytest; the harness runs it.",
+  "regression_commands": [
+    {
+      "command": [
+        "C:/Dev/CRM/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "tests/test_crm_pulse.py",
+        "tests/test_crm_pulse_telemetry_assets.py",
+        "tests/test_partial_navigation_session_identity.py",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "cwd": "."
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/crm_telemetry_collector.test.mjs",
+        "tests/partial_navigation_lifecycle.test.mjs",
+        "tests/crm_pulse_frontend.test.mjs",
+        "tests/crm_pulse_navigation_flush.test.mjs"
+      ],
+      "cwd": "."
+    }
+  ],
+  "verification_note": "Runs against a scratch clone of SMCrm origin/main; C:/Dev/CRM is not touched. The CRM test suite uses SQLite from tests/conftest.py; the launcher sets CRM_TEST_DB_PATH outside the worktree and PYTHONDONTWRITEBYTECODE=1."
+}

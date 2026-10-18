@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY owner_notification_attempt_notification_idx ON owner_notification_attempt (notification_id, created_at DESC);

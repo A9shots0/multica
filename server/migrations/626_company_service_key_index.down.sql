@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS company_service_key;

@@ -1,0 +1,1 @@
+ALTER TABLE issue_workflow_regression_change_record ADD CONSTRAINT issue_workflow_regression_change_record_pkey PRIMARY KEY USING INDEX issue_workflow_regression_change_pkey_idx;

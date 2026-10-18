@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS owner_notification_binding_pkey_idx;

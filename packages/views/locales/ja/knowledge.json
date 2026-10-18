@@ -1,0 +1,48 @@
+{
+  "page": {
+    "title": "ナレッジ",
+    "tab_hub": "会社のナレッジ",
+    "tab_intelligence": "データと指標"
+  },
+  "hub": {
+    "not_configured": "ナレッジハブはこの環境に接続されていません。",
+    "no_files": "ドキュメントが見つかりません。",
+    "select_prompt": "ドキュメントを選択すると内容が表示されます。",
+    "loading": "読み込み中…",
+    "load_failed": "このドキュメントを読み込めませんでした。",
+    "untitled": "無題",
+    "projects_loading": "プロジェクトを読み込み中…",
+    "no_projects": "登録されたプロジェクトはまだありません。",
+    "no_summary": "概要はまだありません。開いて確認してください。",
+    "browse_all_files": "すべてのファイルを見る",
+    "back_to_projects": "プロジェクト一覧",
+    "tab_overview": "概要",
+    "tab_changelog": "最近の動き",
+    "tab_technical": "技術資料",
+    "no_changelog": "このプロジェクトの変更履歴はありません。",
+    "recent_activity": "最近の動き",
+    "view_all_activity": "すべて見る"
+  },
+  "intelligence": {
+    "not_configured": "Silver Mediums Intelligence はこの環境に接続されていません。",
+    "unavailable": "現在 Intelligence のデータベースに接続できません。",
+    "no_events": "まだイベントが記録されていません。",
+    "total_events": "イベント合計",
+    "table_producer": "ソース",
+    "table_event_type": "イベント種別",
+    "event_type_count": "種類のイベント",
+    "total_followers": "フォロワー合計",
+    "across_accounts": "追跡中の{count}アカウント合計",
+    "active_clients": "稼働中のクライアント",
+    "active_accounts": "稼働中のSNSアカウント",
+    "new_subscribers_7d": "新規購読者(直近7日)",
+    "sync_health": "データ同期の状態",
+    "raw_ledger": "生のイベント台帳",
+    "table_count": "件数",
+    "table_latest": "最終同期",
+    "table_earliest": "初回検出"
+  },
+  "operational_copy": {
+    "accepted": "受け入れ済み"
+  }
+}

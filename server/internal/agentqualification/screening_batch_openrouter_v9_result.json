@@ -1,0 +1,31 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-owner-anchoring-t11-openrouter-v9",
+  "status": "completed_invalid_calibration",
+  "purpose": "Test only repeat-pass cheap candidates against the sealed T11 v3 owner-hypothesis case.",
+  "test_validity": "invalid: provider-call grants were stale T12-scoped grants; the bounded-remediation grader also falsely rejected a semantically valid disclosed synonym set",
+  "observations": 5,
+  "retries": 0,
+  "tool_events": 0,
+  "owner_interventions": 0,
+  "account_usage_before_usd": 102.081993737,
+  "account_usage_after_usd": 102.085231103,
+  "account_usage_delta_usd": 0.003237366,
+  "rounded_receipt_cost_usd": 0.003239,
+  "total_provider_reported_tokens": 14969,
+  "results": [
+    {"model":"openrouter/z-ai/glm-5.3-flash","effort":"low","serving_provider":"z-ai","result":"INVALID_NOT_SCORED","failure_reason":"grader reported bounded_remediation, but independent review found a semantically bounded suppressed-console change and controller-health preservation","input_tokens":1981,"reasoning_tokens":0,"output_tokens":576,"total_tokens":2557,"cost_usd":0.000586,"provider_event_time_seconds":5.505,"advances":false},
+    {"model":"openrouter/nvidia/nemotron-3-super-120b-a12b:free","effort":"low","serving_provider":"nvidia","result":"FAIL","failure_reason":"causal_evidence; bounded_remediation; verification","input_tokens":2080,"reasoning_tokens":1389,"output_tokens":72,"total_tokens":3541,"cost_usd":0.0,"provider_event_time_seconds":15.698,"advances":false},
+    {"model":"openrouter/inclusionai/ling-3.0-flash","effort":"medium","serving_provider":"novita","result":"FAIL","failure_reason":"causal_evidence; bounded_remediation; verification; limits","input_tokens":2126,"reasoning_tokens":1342,"output_tokens":103,"total_tokens":3571,"cost_usd":0.000136,"provider_event_time_seconds":6.393,"advances":false},
+    {"model":"openrouter/qwen/qwen3-coder-flash","effort":"screening_default","serving_provider":"alibaba","result":"FAIL","failure_reason":"causal_evidence; bounded_remediation","input_tokens":1993,"reasoning_tokens":0,"output_tokens":348,"total_tokens":2341,"cost_usd":0.000728,"provider_event_time_seconds":3.202,"advances":false},
+    {"model":"openrouter/minimax/minimax-m2.7","effort":"screening_default","serving_provider":"minimax","result":"FAIL","failure_reason":"bounded_remediation","input_tokens":1958,"reasoning_tokens":657,"output_tokens":344,"total_tokens":2959,"cost_usd":0.001789,"provider_event_time_seconds":26.132,"advances":false}
+  ],
+  "advancement": "No candidate advances or is eliminated from invalid V9 competence evidence. The observations remain usable only for transport, cost, and grader-calibration evidence.",
+  "evidence_root": ".qualification-evidence/openrouter-v9",
+  "notes": [
+    "Every sealed provider-call grant incorrectly retained the scope one_seeded_t12_openrouter_observation for this T11 batch.",
+    "The frozen grader required specific remediation words and falsely rejected a semantically compliant GLM response; no answer was normalized or rescored.",
+    "No grader or case change was made after seeing candidate answers; a future independently calibrated generation is required before more T11 spend.",
+    "Provider event time is not full application latency."
+  ]
+}

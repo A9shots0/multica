@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS issue_workflow_regression_change_pkey_idx;

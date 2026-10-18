@@ -1,0 +1,28 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-capability-effort-openrouter-v15",
+  "status":"complete_with_candidate_elimination",
+  "test_validity":"valid",
+  "planned_observations":5,
+  "provider_calls":4,
+  "policy_skipped_assignments":1,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "authoritative_usage_before_batch_usd":102.114410322,
+  "authoritative_usage_after_batch_usd":102.118113172,
+  "observed_account_delta_usd":0.003702850,
+  "rounded_receipt_cost_usd":0.003757,
+  "provider_export_total_tokens":13495,
+  "normalized_component_sum_tokens":13495,
+  "total_provider_event_time_seconds":43.476,
+  "result":{"model":"openrouter/z-ai/glm-5.3-flash","effort":"medium","serving_provider":"z-ai","cases_run":["T11","T08","T16","T04"],"outcome":"FAIL_AFTER_3_PASSES","failure_reason":"T04: verification_radius","advances":false},
+  "observations":[
+    {"case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2272,"cached_input_tokens":0,"output_tokens":159,"reasoning_tokens":1532,"total_tokens":3963,"cost_usd":0.001187,"time_seconds":15.768,"receipt_dir":"29a8be1363954f95394be54ceb20a5160ff7748cccf6962c591329cebc64324f"},
+    {"case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2042,"cached_input_tokens":0,"output_tokens":107,"reasoning_tokens":854,"total_tokens":3003,"cost_usd":0.000787,"time_seconds":7.357,"receipt_dir":"fd086ab7df6162d2e847388be3e4e5272767fe9e00450f707bd8e3a104c14544"},
+    {"case_id":"T16","result":"PASS","failure_reason":"","input_tokens":2086,"cached_input_tokens":0,"output_tokens":131,"reasoning_tokens":1198,"total_tokens":3415,"cost_usd":0.000978,"time_seconds":10.931,"receipt_dir":"0426e9aedd908fdc942ec865c582c892ee768dfaac10ce36f9b53a61a7ff4541"},
+    {"case_id":"T04","result":"FAIL","failure_reason":"verification_radius","input_tokens":2149,"cached_input_tokens":0,"output_tokens":127,"reasoning_tokens":838,"total_tokens":3114,"cost_usd":0.000805,"time_seconds":9.420,"receipt_dir":"4115dafe90874ecb1fc0f05a1fa8955ae69f01257b57c949ab4084b4b714222f"}
+  ],
+  "advancement":"GLM Medium does not advance. It repaired the Low-effort T16 omission but failed T04; higher effort did not establish reliability. No role is assigned.",
+  "evidence_root":".qualification-evidence/openrouter-v15"
+}

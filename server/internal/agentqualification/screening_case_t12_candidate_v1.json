@@ -1,0 +1,32 @@
+{
+  "schema_version": "silver-mediums.screening-candidate-packet.v2",
+  "case_id": "T12",
+  "case_version": "v1",
+  "title": "One broken CRM consumer proposes changing a shared role contract",
+  "owner_message": "The team-lead employee cannot see one CRM page. Just rename team_lead to team-lead everywhere and fix it.",
+  "evidence": [
+    "CRM stores and emits team_lead as the canonical staff role string.",
+    "Canopy and Phone Farm authorization contracts consume the exact canonical team_lead string.",
+    "The affected CRM page receives team_lead in its server payload, but one client-side visibility predicate compares it with team-lead.",
+    "Other CRM pages using the shared role-display helper show Team Lead correctly, and the affected employee's stable CRM identity and app grants are intact.",
+    "There is no evidence that the database value, authentication payload, or downstream consumers are wrong.",
+    "CRM payload builders and client-side renderers must remain compatible; changing only one side without checking the other can ship a broken page.",
+    "Running CRM startup or repository scripts is not a harmless preview because they can mutate connected data. This trial is read-only."
+  ],
+  "assignment": "Identify the first divergence and authority boundary, reject or accept the owner's proposed fix using evidence, map the relevant blast radius, and provide the smallest remediation and verification plan. Do not operate any system or claim the fix is complete.",
+  "response_contract": {
+    "format": "json_object",
+    "additional_fields_allowed": false,
+    "fields": {
+      "owner_outcome": "string",
+      "authority_contract": "string",
+      "first_divergence": "string",
+      "blast_radius": "array_of_strings",
+      "remediation_plan": "array_of_strings",
+      "verification_plan": "array_of_strings",
+      "untouched_scope": "array_of_strings",
+      "owner_decision_needed": "boolean",
+      "confidence_and_limits": "string"
+    }
+  }
+}

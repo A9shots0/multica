@@ -1,0 +1,31 @@
+{
+  "schema_version": "silver-mediums.topology-experiment.v6",
+  "experiment_id": "realistic-topology-r03-mercury-claude-v6",
+  "status": "frozen_reviewed",
+  "cases": [
+    {"case_id":"R03","case_version":"v2","repeats":2}
+  ],
+  "arms": [
+    {"arm_id":"direct-v6","reviewed":false,"max_provider_turns":15,"total_token_reservation":75000,"generated_token_ceiling":20000,"cost_ceiling_micros":200000},
+    {"arm_id":"reviewed-v6","reviewed":true,"max_provider_turns":25,"total_token_reservation":140000,"generated_token_ceiling":30000,"cost_ceiling_micros":450000}
+  ],
+  "execution_order": [
+    {"observation_id":"v6-r03-p1-direct","case_id":"R03","repeat":1,"arm_id":"direct-v6"},
+    {"observation_id":"v6-r03-p1-reviewed","case_id":"R03","repeat":1,"arm_id":"reviewed-v6"},
+    {"observation_id":"v6-r03-p2-reviewed","case_id":"R03","repeat":2,"arm_id":"reviewed-v6"},
+    {"observation_id":"v6-r03-p2-direct","case_id":"R03","repeat":2,"arm_id":"direct-v6"}
+  ],
+  "executor": {"configuration_id":"realistic.mercury25.screening-default.executor.topology-v6","model":"openrouter/inception/mercury-2.5","effort":"screening_default","serving_provider":"inception"},
+  "reviewer": {"configuration_id":"realistic.claude-sonnet5.medium.reviewer.topology-v6","model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic"},
+  "reviewer_total_token_reservation": 16000,
+  "reviewer_generated_token_ceiling": 4000,
+  "max_corrections": 1,
+  "max_total_tokens": 430000,
+  "max_incremental_spend_micros": 1300000,
+  "provider_fallbacks": false,
+  "transport_retries": 0,
+  "owner_interventions": 0,
+  "global_halt_reasons": ["credential_failure","uncontrolled_spending","unsafe_external_action","evidence_corruption"],
+  "invalid_observation_policy": "preserve_affected_observation_continue_unaffected_log_post_batch_correction",
+  "advancement_policy": "testing_only_no_role_or_topology_selection"
+}

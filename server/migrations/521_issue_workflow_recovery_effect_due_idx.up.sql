@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY idx_issue_workflow_recovery_effect_due ON issue_workflow_action_receipt (not_before, lease_expires_at, created_at, id) WHERE action_type IN ('monitor_exact_release', 'rollback_exact_release', 'verify_restoration_exact_release') AND state IN ('admitted', 'retry_wait', 'reconciling', 'leased');

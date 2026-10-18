@@ -1,0 +1,23 @@
+{
+  "environment_allowlist_names": [
+    "APPDATA",
+    "COMSPEC",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "LOCALAPPDATA",
+    "PATH",
+    "PATHEXT",
+    "SystemDrive",
+    "SystemRoot",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
+    "WINDIR",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+  ],
+  "executable_sha256": "a4321c59b1d5c8cdfaedd25730e3b8cc940718ab594b9697b62f0bea5337fd43",
+  "provider_invocation": 1,
+  "runtime_version": "2.1.270 (Claude Code)",
+  "started_at": "2026-09-13T12:05:57.6829047Z",
+  "working_directory_policy": "new_empty_temporary_directory"
+}

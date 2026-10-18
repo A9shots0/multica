@@ -1,0 +1,89 @@
+{
+  "schema_version": "silver-mediums.role-qualification-run-matrix.v1",
+  "status": "draft_prevalidation",
+  "provider_calls_allowed": false,
+  "runtime_wiring": "none",
+  "configuration_classes": [
+    {
+      "class_id": "carryforward.claudesonnet5.medium.openrouter.anchor.v1",
+      "model": "openrouter/anthropic/claude-sonnet-5",
+      "effort": "medium",
+      "runtime_provider": "opencode_cli",
+      "transport": "isolated_opencode_openrouter_no_fallback",
+      "serving_provider": "anthropic",
+      "provider_fallbacks": false,
+      "recovery_sensitive_authority": "not_withheld_by_existing_R04_evidence",
+      "historical_evidence_refs": ["realistic.claudesonnet5.medium.anchor.repeat1.v10","realistic.claudesonnet5.medium.anchor.r02.repeat1.v11","realistic.claudesonnet5.medium.anchor.r03.parser-corrected.v14"],
+      "evidence_annotation": "strong metered comparison anchor; two valid synthetic passes on R01, R03, and R04; trusted Browser and production behavior remain untested"
+    },
+    {
+      "class_id": "carryforward.claude46.medium.subscription.phased.v1",
+      "model": "claude-sonnet-4-6",
+      "effort": "medium",
+      "runtime_provider": "claude_code_subscription",
+      "transport": "claude_code_stdin_json_schema_tool_free_no_session_persistence",
+      "serving_provider": "anthropic",
+      "provider_fallbacks": false,
+      "recovery_sensitive_authority": "withheld",
+      "historical_evidence_refs": ["realistic.generalist.claude46.medium.subscription.phased-plan.v37","realistic.recovery.claude46.medium.subscription.phased-plan.v38"],
+      "evidence_annotation": "bounded-execution comparison class; exact configuration failed R04 duplicate completed-resume action"
+    },
+    {
+      "class_id": "carryforward.nexn25pro.free.openrouter.floor.v1",
+      "model": "openrouter/nex-agi/nex-n2.5-pro:free",
+      "effort": "screening_default",
+      "runtime_provider": "opencode_cli",
+      "transport": "isolated_opencode_openrouter_no_fallback",
+      "serving_provider": "nex-agi",
+      "provider_fallbacks": false,
+      "recovery_sensitive_authority": "withheld",
+      "historical_evidence_refs": ["screen.generalist.nexn25pro.free.openrouter.v26","realistic.nexn25pro.free.openrouter.r01r03r04.v13"],
+      "evidence_annotation": "cheap/free capability floor; failed R04 interruption recovery"
+    }
+  ],
+  "role_bindings": [
+    {"candidate_class":"mika_owner_interface","instruction_artifact_id":"mika_owner_interface_instructions_v1","skill_artifact_id":"mika_owner_interface_skill_v1","case_ids":["RQ-MIKA-01","RQ-MIKA-02","RQ-MIKA-03"]},
+    {"candidate_class":"quality_checker","instruction_artifact_id":"quality_checker_instructions_v1","skill_artifact_id":"quality_checker_skill_v1","case_ids":["RQ-QC-01","RQ-QC-02","RQ-QC-03"]},
+    {"candidate_class":"product_ui","instruction_artifact_id":"product_ui_instructions_v1","skill_artifact_id":"product_ui_skill_v1","case_ids":["RQ-PUI-01","RQ-PUI-02","RQ-PUI-03"]},
+    {"candidate_class":"shared_windows_executor","instruction_artifact_id":"shared_windows_executor_instructions_v1","skill_artifact_id":"shared_windows_executor_skill_v1","case_ids":["RQ-WIN-01","RQ-WIN-02","RQ-WIN-03"]}
+  ],
+  "assignments": [
+    {"configuration_class_id":"carryforward.claudesonnet5.medium.openrouter.anchor.v1","candidate_class":"mika_owner_interface","case_ids":["RQ-MIKA-01","RQ-MIKA-02","RQ-MIKA-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.claudesonnet5.medium.openrouter.anchor.v1","candidate_class":"quality_checker","case_ids":["RQ-QC-01","RQ-QC-02","RQ-QC-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.claudesonnet5.medium.openrouter.anchor.v1","candidate_class":"product_ui","case_ids":["RQ-PUI-01","RQ-PUI-02","RQ-PUI-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.claudesonnet5.medium.openrouter.anchor.v1","candidate_class":"shared_windows_executor","case_ids":["RQ-WIN-01","RQ-WIN-02","RQ-WIN-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.claude46.medium.subscription.phased.v1","candidate_class":"mika_owner_interface","case_ids":["RQ-MIKA-01","RQ-MIKA-02","RQ-MIKA-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.claude46.medium.subscription.phased.v1","candidate_class":"quality_checker","case_ids":["RQ-QC-01","RQ-QC-02","RQ-QC-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.claude46.medium.subscription.phased.v1","candidate_class":"product_ui","case_ids":["RQ-PUI-01","RQ-PUI-02","RQ-PUI-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.claude46.medium.subscription.phased.v1","candidate_class":"shared_windows_executor","case_ids":["RQ-WIN-01","RQ-WIN-02","RQ-WIN-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.nexn25pro.free.openrouter.floor.v1","candidate_class":"mika_owner_interface","case_ids":["RQ-MIKA-01","RQ-MIKA-02","RQ-MIKA-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.nexn25pro.free.openrouter.floor.v1","candidate_class":"quality_checker","case_ids":["RQ-QC-01","RQ-QC-02","RQ-QC-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.nexn25pro.free.openrouter.floor.v1","candidate_class":"product_ui","case_ids":["RQ-PUI-01","RQ-PUI-02","RQ-PUI-03"],"attempts_per_case":1},
+    {"configuration_class_id":"carryforward.nexn25pro.free.openrouter.floor.v1","candidate_class":"shared_windows_executor","case_ids":["RQ-WIN-01","RQ-WIN-02","RQ-WIN-03"],"attempts_per_case":1}
+  ],
+  "provisional_role_configurations_excluded": ["mika.owner_interface.luna.medium.v1","quality_checker.terra.xhigh.v1","product_ui.sol.high.v1"],
+  "configuration_separation_policy": "role instruction and skill bindings are independent test inputs; provisional role-specific configuration_artifacts bindings are excluded and provide no model evidence",
+  "accounting": {
+    "schema": "exact_provider_receipt_totals_v1",
+    "planned_observations": 36,
+    "provider_invocations": 0,
+    "input_tokens": 0,
+    "cached_input_tokens": 0,
+    "output_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_tokens": 0,
+    "cost_micros": 0,
+    "wall_time_millis": 0,
+    "retries": 0,
+    "owner_interventions": 0,
+    "usage_known": true,
+    "cost_is_marginal_cash": false
+  },
+  "stop_policy": {
+    "candidate_local_failure": ["competence_failure","response_or_tool_protocol_failure","observation_resource_exhaustion"],
+    "observation_local_unscored": ["isolated_fixture_imperfection","isolated_grader_imperfection"],
+    "global_halt": ["shared_test_invalidity","evidence_integrity_failure","credential_failure","unsafe_external_action","runtime_configuration_failure","credits_failure","transport_failure","campaign_token_cap_breach","campaign_spend_cap_breach","campaign_wall_cap_breach"],
+    "rule": "candidate_local_failure_eliminates_only_that_configuration_class_role_binding; observation_local_unscored_preserves_only_that_cell; global_halt_stops_unaffected_calls"
+  },
+  "advancement_policy": "matrix_is_prelaunch_design_only_and_cannot_select_or_promote_a_role_model_topology_permission_or_production_configuration"
+}

@@ -1,0 +1,15 @@
+{
+  "source_id": "60fea34b9770-local-9eaa711d97b1",
+  "images": {
+    "backend": "sha256:e710767a6769ae581c9ff94978246a03f815f6afead02cfb9d5a7b560a878801",
+    "frontend": "sha256:aa9d5fbf66932fc97144e264bc6935d4a49c8d5339e45963d1e3cd02bee117d0",
+    "postgres": "sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f"
+  },
+  "rollback_images": {
+    "backend": "sha256:126d388925dec5a4a4b672e88b826c3cc9d59a8691baed9a11623d4b6efb8483",
+    "frontend": "sha256:de3c18a6faccbec926def3241521c484a63c25f67d29f2bd442bf1628db2b548"
+  },
+  "base_compose_sha256": "16fb9b75e8e9847de608cda69b9258d1bcafdbe459c2b24eba4ff9ee0c55deb4",
+  "overlay_sha256": "86779657cc9b1fbd1bda53696cb26e2f4b84c4c0cb05af3b067b02f5e4651c20",
+  "rollback_overlay_sha256": "fedc9371851c5215fd19ad873eca4479ed4336a9b1043f0e69765a325823a70b"
+}

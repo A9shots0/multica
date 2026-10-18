@@ -1,0 +1,19 @@
+{
+  "task_id": "preview-allowlist-source",
+  "title": "Give the text-preview allowlist one source of truth",
+  "recorded_defect": "packages/views/editor/utils/preview.ts:96 and server/internal/handler/file.go:1327 both carry TODO(follow-up): extract the text-preview allowlist to a JSON single source of truth and generate the TypeScript side, mirroring the reserved-slugs pattern. Today the same extension, content-type and basename lists are hand-copied in TypeScript and Go under a KEEP IN SYNC comment.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "packages/views/editor/",
+    "server/internal/handler/",
+    "scripts/generate-",
+    "package.json"
+  ],
+  "verification_command": ["npx", "vitest", "run", "editor/utils/preview-allowlist.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/views",
+  "verification_note": "Targets a test file that does not exist yet, so the baseline legitimately fails. The harness runs this itself. The executor's Bash allowlist does not include go, so it cannot compile or test the Go side itself; the Go change is checked by the reviewer and then by go test before any patch is applied. That handicap is recorded, not widened during the trial.",
+  "install_scope": "@multica/views...",
+  "max_turns": 60,
+  "trial_role": "Task 4. A recorded structural debt with an existing in-repo precedent to follow. Tests whether the lane can make a coordinated cross-language change and follow a house pattern rather than invent a new one.",
+  "objective": "The text-preview allowlist is duplicated by hand: packages/views/editor/utils/preview.ts defines TEXT_EXTENSIONS, TEXT_CONTENT_TYPES and TEXT_BASENAMES, and server/internal/handler/file.go defines the same lists inside isTextPreviewable. Both files carry a TODO asking for a JSON single source of truth with a generated TypeScript side, following the existing reserved-slugs pattern: server/internal/handler/reserved_slugs.json, scripts/generate-reserved-slugs.mjs, the generated packages/core/paths/reserved-slugs.ts, and the generate:reserved-slugs script in the root package.json. Study that pattern before designing anything.\n\nImplement the same shape for the preview allowlist: one JSON file beside file.go that both sides derive from, a generator script, a generated TypeScript module that preview.ts imports, and a root package.json script to regenerate it. The Go side must read the same JSON (go:embed is the natural fit) instead of its hand-written switch statements. Behaviour must not change: every extension, content type and basename accepted today must still be accepted, and nothing new may be added. Remove the two TODO comments and the KEEP IN SYNC warnings once they are no longer true.\n\nWrite a test at exactly packages/views/editor/utils/preview-allowlist.test.ts that fails if the generated TypeScript module ever drifts from the JSON source. You cannot run go in this session, so write the Go change carefully and say in your summary exactly what you could not verify."
+}

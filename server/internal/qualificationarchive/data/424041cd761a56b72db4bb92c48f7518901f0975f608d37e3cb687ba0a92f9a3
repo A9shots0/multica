@@ -1,0 +1,41 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-static-freeze.v34",
+  "freeze_id": "claude-subscription-static-breadth-reliability-freeze-v34",
+  "status": "frozen_reviewed",
+  "review_outcome": "passed_after_consolidated_correction",
+  "provider_calls_allowed": true,
+  "definition_sha256": "ef4df685412808704f8b5ed1adaf64f1dcdaaf7ec26f38914a31111f6e9fd05c",
+  "execution_order": ["T12:v4", "T11:v4", "T08:v3", "T16:v3", "T04:v1", "T09:v2"],
+  "local_components": {
+    "claude_subscription_static_v34.json": "ef4df685412808704f8b5ed1adaf64f1dcdaaf7ec26f38914a31111f6e9fd05c",
+    "claude_subscription_static_v34.go": "9f2cadb52b4514b65976fe793d20f68ccd8911dd142c56db1263fa880514f410",
+    "claude_subscription_static_v34_test.go": "b5dfa25fe24589323b4d317bedfe479e25d71511e1ec2240404e8e2b112e2de6",
+    "claude_subscription_static_v34_freeze.go": "a175684c2f3a48c41c36c52eb2af4868fed4b348dd4c949c8b5d3d87c41b4c3e",
+    "claude_subscription_static_v34_freeze_test.go": "857a2b0ff0df9b070ea885bbc1d354c1f6fa5ede29e6819d710b8999d5759684",
+    "claude_subscription_static_v34_antecedents.json": "48eac52cdd0504aa6bbc00490b7aefb4391fc12322d6d2106885e05f7f5aef35",
+    "transport_catalog_v1.json": "d2c68953d96d6ac067976b1d028287addb9f878e057e03b9395fd0b3fe5638c5"
+  },
+  "shared_components": {
+    "claude_transport.go": "d3f84877dcc07262fce2e42efb1823619ea75c4df71b0436d826a10eaf06d06b",
+    "claude_receipt.go": "63ed9c1cf73762fe5c14d89f0cdece6fae2d8bea74fdc87138f7c034f4a78b70",
+    "execution_normalizer.go": "3c800042c0040b95fbe59e7bf33c35f13047ff4eff269c670eb5b6d1f8b80cfc",
+    "execution_receipt.go": "fbd4fbf6bc93dd04e7cef165ed61ab6d5f7e513613b0d226a5d0468a3f711dd7",
+    "batch.go": "7b3f9446568a007f3af65a3b41ce16cfb4e4d4b944c46fde1ec1fe87a66bbea2",
+    "grader.go": "f05409de3d62ca6b081d1c1e5772fe2c4ce002638db01c0a77af945da5db96e8",
+    "claude_transport_test.go": "f13478bff53c0ac64a2da5c5823bc616a14b3930e5341c3cd2e2b449c5f0d211",
+    "claude_receipt_test.go": "c3160a81d5268c590ed4bd0f1a8d6e6812ec9a959f5aaaa1031a2e7099ea50a5",
+    "execution_normalizer_test.go": "6ebfca0d7d9894b11972ffceedfe9afc57bd8f43f0d752454bdabeb5e63207a2",
+    "execution_receipt_test.go": "81eec6c4e2c4d1932585acc70051bde877de51fa6cb6ea158ed960a9c8244b12",
+    "grader_test.go": "c81194d3e44ee1cc3dd3393b2997c7c60cb1bbb7c39706bf6726a65448d10589",
+    "grader_capability_group_test.go": "079e7ab6cdbb3e0eeec69ada2e33b7807373e87de3ec1650ec99dc68ad74f0f8",
+    "grader_t09_v2_test.go": "690cd66df8f1e030542346e246f32b2887575d916e2d38207569b0e3af360f5d"
+  },
+  "command_sources": {
+    "claude-subscription-static-v34/main.go": "786650d718eb398c46dbd8b0117d6c371cb8951006d0694f3f78047d30815771",
+    "claude-subscription-static-v34/lifecycle.go": "f88bd3949cd703dce9092b1110d7afc4c14bcce8bf7ee2bcf23f9e5a54d7dc16",
+    "claude-subscription-static-v34/lifecycle_test.go": "be7945c51edcfc741147a45cc356236dd823ca8e00d26167e6100f21bf9e82d4"
+  },
+  "documents": {
+    "docs/silver-mediums/ITEM-14-CLAUDE-SUBSCRIPTION-STATIC-V34-PREVALIDATION.md": "574b9d6273279fffc5da6e4e801b9a9e483e8e3a7c4156563dcb553f4d65e8fc"
+  }
+}

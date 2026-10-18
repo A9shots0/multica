@@ -1,0 +1,29 @@
+{
+  "schema_version":"silver-mediums.agent-screening-batch.v1",
+  "batch_id":"screen-t09-v2-affected-retest-openrouter-v24",
+  "status":"planned_not_launched",
+  "suite_version":"silver-mediums.t09-v2-affected-retest.v1",
+  "execution_mode":"isolated_capability",
+  "candidate_transport":"opencode_run_json_stdin_tool_free_routing_receipted_v6",
+  "execution_order_policy":"seeded_permutation_v1",
+  "execution_order_seed":"screen-t09-v2-affected-retest-openrouter-v24:2026-09-13",
+  "grader_blind_to_candidate":true,
+  "grader_configuration_id":"deterministic-t09.v2",
+  "cases":[
+    {"case_id":"T09","case_version":"v2","candidate_packet_sha256":"c159de02d59adb35a04a4cef32dea4767a22798342086b868fe59714538b86e1","grader_packet_sha256":"be52eabb7c38d76bba7fdd1d9ba6bcdb049885f98017654e1417225f8ce7984f"}
+  ],
+  "candidates":[
+    {"id":"screen.generalist.qwen3codernext.default.openrouter.v24","role_id":"screening_generalist","model":"openrouter/qwen/qwen3-coder-next","reasoning_effort":"screening_default","instruction_version":"shadow-candidate.v5","instruction_sha256":"b77e91b1734a72c15080fe9a1092d89b79e040e318056db4d9719364a4709745","skill_versions":{"silver_mediums_context":"item14.v2-inline"},"skill_content_sha256":{"silver_mediums_context":"abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},"permission_version":"isolated-no-tools.v1","runtime_provider":"opencode_cli","serving_provider":"alibaba","provider_fallbacks":false},
+    {"id":"screen.generalist.gemini35flashlite.default.openrouter.v24","role_id":"screening_generalist","model":"openrouter/google/gemini-3.5-flash-lite","reasoning_effort":"screening_default","instruction_version":"shadow-candidate.v5","instruction_sha256":"b77e91b1734a72c15080fe9a1092d89b79e040e318056db4d9719364a4709745","skill_versions":{"silver_mediums_context":"item14.v2-inline"},"skill_content_sha256":{"silver_mediums_context":"abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},"permission_version":"isolated-no-tools.v1","runtime_provider":"opencode_cli","serving_provider":"google-ai-studio","provider_fallbacks":false}
+  ],
+  "repeats":1,
+  "token_ceiling":20000,
+  "per_launch_token_reservation":10000,
+  "api_budgets":[{"provider":"openrouter","project_lane":"opencode_local_openrouter","currency":"USD","window_id":"openrouter_account_lifetime","max_spend_micros":110355762,"per_request_reserve_micros":25000,"max_snapshot_age_seconds":30}],
+  "max_owner_interventions":0,
+  "production_allowed":false,
+  "external_side_effects_allowed":false,
+  "natural_language_intake_run":false,
+  "excluded_capabilities":["tools","multica_issue_transport","phonefarm_operation","production_release","external_messaging","repository_access"],
+  "stop_rules":["invalidate_on_any_tool_event","disqualify_candidate_on_competence_failure_or_disqualifier","halt_batch_only_on_credential_failure_uncontrolled_spending_unsafe_external_action_or_unusable_evidence_corruption","continue_unaffected_candidate_after_candidate_specific_failure","preserve_non_safety_harness_imperfection_as_observation_local_invalid","stop_before_launch_when_token_reservation_does_not_fit","stop_before_launch_when_api_spend_snapshot_is_missing_or_stale","stop_when_absolute_openrouter_spend_reaches_110355762_micros","hard_cap_each_provider_response_at_8000_generated_tokens","one_observation_per_candidate_case_no_retries","require_exact_prompt_hash_before_scoring","require_exact_serving_provider_and_no_fallbacks","affected_case_retest_only_no_role_promotion"]
+}

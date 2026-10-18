@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS guarded_execution_launch_consumption_pkey_idx;

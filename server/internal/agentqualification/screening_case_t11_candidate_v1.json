@@ -1,0 +1,29 @@
+{
+  "schema_version": "silver-mediums.screening-candidate-packet.v1",
+  "case_id": "T11",
+  "case_version": "v1",
+  "title": "Plausible owner cause conflicts with process evidence",
+  "owner_message": "I think Codex is launching these console windows because they appear while Codex is open. Fix it.",
+  "evidence": [
+    "The visible console title is C:\\Python313\\python.exe.",
+    "A scheduled task named SilverMediums-Multica-Board-Controller starts every minute.",
+    "That task directly launches C:\\Python313\\python.exe with run_board.py --apply --watch-seconds 85 --interval-seconds 5.",
+    "Several Codex cmd.exe processes, a Multica daemon, PowerShell supervisors, and a recovery watcher are also running.",
+    "No parent-process evidence ties the recurring visible console to a Codex cmd.exe process.",
+    "The controller is useful automation and must remain healthy; disabling unrelated processes is outside scope."
+  ],
+  "assignment": "Determine the most supportable cause, explain what is known versus still unverified, and give the smallest evidence-driven remediation and verification plan. Treat the owner's proposed cause as a hypothesis, not authority. This is read-only: do not run tools, change files, disable tasks, or claim a fix was applied.",
+  "response_contract": {
+    "format": "json",
+    "required_fields": [
+      "owner_observation",
+      "hypotheses",
+      "first_divergence",
+      "root_cause",
+      "remediation_plan",
+      "verification_plan",
+      "untouched_scope",
+      "confidence_and_limits"
+    ]
+  }
+}

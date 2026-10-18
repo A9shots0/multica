@@ -1,0 +1,1 @@
+ALTER TABLE issue_workflow_regression_rejected_attempt DROP CONSTRAINT IF EXISTS issue_workflow_regression_rejected_attempt_pkey;

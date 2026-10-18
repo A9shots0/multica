@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS guarded_task_capability_grant_task_idx;

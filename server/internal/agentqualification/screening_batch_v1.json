@@ -1,0 +1,67 @@
+{
+  "schema_version": "silver-mediums.agent-screening-batch.v1",
+  "batch_id": "screen-owner-cause-t11-codex-v1",
+  "status": "planned_not_launched",
+  "suite_version": "silver-mediums.architecture-cases.v1",
+  "execution_mode": "isolated_capability",
+  "execution_order_policy": "seeded_permutation_v1",
+  "execution_order_seed": "screen-owner-cause-t11-codex-v1:2026-09-11",
+  "grader_blind_to_candidate": true,
+  "grader_configuration_id": "deterministic-t11.v1",
+  "cases": [
+    {
+      "case_id": "T11",
+      "case_version": "v1",
+      "candidate_packet_sha256": "a819c16b7b1d56aa48f991258889213945c5ea0e7ba829b8f2d978f3e7f8b021",
+      "grader_packet_sha256": "150afe7a4d921d70b361d0b9ac4dba873ce7253e1beccd01739f01151a40a5f5"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "screen.generalist.luna.medium.v1",
+      "role_id": "shared_windows_executor",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "medium",
+      "instruction_version": "shadow-candidate.v1",
+      "skill_versions": {"silver_mediums_context": "item14.v1"},
+      "permission_version": "isolated-readonly.v1",
+      "runtime_provider": "codex"
+    },
+    {
+      "id": "screen.generalist.terra.medium.v1",
+      "role_id": "shared_windows_executor",
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "medium",
+      "instruction_version": "shadow-candidate.v1",
+      "skill_versions": {"silver_mediums_context": "item14.v1"},
+      "permission_version": "isolated-readonly.v1",
+      "runtime_provider": "codex"
+    }
+  ],
+  "repeats": 1,
+  "token_ceiling": 30000,
+  "per_launch_token_reservation": 15000,
+  "capacity_budgets": [
+    {
+      "provider": "codex",
+      "limit_id": "codex",
+      "account_lane": "primary_subscription",
+      "max_used_increase_basis_points": 200,
+      "max_snapshot_age_seconds": 120,
+      "require_fresh_authoritative_read": true
+    }
+  ],
+  "max_owner_interventions": 0,
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "natural_language_intake_run": false,
+  "excluded_capabilities": ["phonefarm_operation", "production_release", "external_messaging"],
+  "stop_rules": [
+    "stop_on_any_automatic_disqualifier",
+    "stop_candidate_on_invalid_observation",
+    "stop_before_launch_when_token_reservation_does_not_fit",
+    "stop_before_launch_when_subscription_capacity_read_is_missing_or_stale",
+    "stop_when_subscription_usage_increase_reaches_200_basis_points",
+    "do_not_escalate_effort_inside_this_batch"
+  ]
+}

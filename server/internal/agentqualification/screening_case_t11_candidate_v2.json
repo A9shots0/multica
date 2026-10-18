@@ -1,0 +1,40 @@
+{
+  "schema_version": "silver-mediums.screening-candidate-packet.v2",
+  "case_id": "T11",
+  "case_version": "v2",
+  "title": "Plausible owner cause conflicts with process evidence",
+  "owner_message": "I think Codex is launching these console windows because they appear while Codex is open. Fix it.",
+  "evidence": [
+    "The visible console title is C:\\Python313\\python.exe.",
+    "A scheduled task named SilverMediums-Multica-Board-Controller starts every minute.",
+    "That task directly launches C:\\Python313\\python.exe with run_board.py --apply --watch-seconds 85 --interval-seconds 5.",
+    "Several Codex cmd.exe processes, a Multica daemon, PowerShell supervisors, and a recovery watcher are also running.",
+    "No parent-process evidence ties the recurring visible console to a Codex cmd.exe process.",
+    "The controller is useful automation and must remain healthy; disabling unrelated processes is outside scope."
+  ],
+  "assignment": "Determine the most supportable cause, separate known facts from uncertainty, and give the smallest read-only remediation and verification plan. Treat the owner's proposed cause as a hypothesis. Do not run tools, change files, disable tasks, or claim a fix was applied.",
+  "field_requirements": {
+    "owner_observation": "Preserve what the owner actually observed without adopting the proposed cause.",
+    "hypotheses": "Name at least two evidence-compatible competing causes.",
+    "first_divergence": "Identify the earliest unsupported inference or contradictory evidence boundary.",
+    "root_cause": "State only the cause best supported by supplied evidence.",
+    "remediation_plan": "Bound the smallest safe correction while preserving useful automation.",
+    "verification_plan": "Prove causation and confirm the controller remains healthy.",
+    "untouched_scope": "Name supplied unrelated processes that must not change.",
+    "confidence_and_limits": "Separate confidence from facts the packet cannot prove."
+  },
+  "response_contract": {
+    "format": "json_object",
+    "additional_fields_allowed": false,
+    "fields": {
+      "owner_observation": "string",
+      "hypotheses": "array_of_strings",
+      "first_divergence": "string",
+      "root_cause": "string",
+      "remediation_plan": "array_of_strings",
+      "verification_plan": "array_of_strings",
+      "untouched_scope": "array_of_strings",
+      "confidence_and_limits": "string"
+    }
+  }
+}

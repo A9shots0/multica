@@ -1,0 +1,36 @@
+{
+  "$comment": "Source of truth for the text-preview allowlist. Edit this file only. The Go side embeds this JSON directly; the TS side (packages/views/editor/utils/preview-allowlist.ts) is regenerated from this file by `pnpm generate:preview-allowlist`. packages/views/editor/utils/preview-allowlist.test.ts compares the generated TS with this file and runs in CI, so a stale regeneration fails the build.",
+  "extensions": [
+    "md", "markdown",
+    "txt", "log",
+    "csv", "tsv",
+    "html", "htm",
+    "json", "xml",
+    "yml", "yaml", "toml", "ini", "conf",
+    "dockerfile", "makefile", "gitignore",
+    "sh", "bash", "zsh",
+    "py", "rb", "go", "rs",
+    "ts", "tsx", "js", "jsx", "mjs", "cjs",
+    "css", "scss", "sass", "less",
+    "sql",
+    "java", "kt", "swift",
+    "c", "cc", "cpp", "h", "hpp",
+    "cs", "php", "lua", "vim"
+  ],
+  "contentTypes": [
+    "application/json",
+    "application/javascript",
+    "application/xml",
+    "application/x-yaml",
+    "application/yaml",
+    "application/toml",
+    "application/x-sh",
+    "application/x-httpd-php"
+  ],
+  "basenames": [
+    "dockerfile",
+    "makefile",
+    ".env",
+    ".gitignore"
+  ]
+}

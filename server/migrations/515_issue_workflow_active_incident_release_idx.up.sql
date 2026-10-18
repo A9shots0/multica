@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_issue_workflow_active_incident_release ON issue_workflow_incident (workspace_id, target_key, target_generation, release_id) WHERE superseded_at IS NULL AND state NOT IN ('resolved', 'cancelled', 'superseded');

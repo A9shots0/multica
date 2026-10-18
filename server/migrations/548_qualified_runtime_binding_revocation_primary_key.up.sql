@@ -1,0 +1,1 @@
+ALTER TABLE qualified_runtime_binding_revocation ADD CONSTRAINT qualified_runtime_binding_revocation_pkey PRIMARY KEY USING INDEX qualified_runtime_binding_revocation_pkey_idx;

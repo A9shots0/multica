@@ -1,0 +1,15 @@
+{
+  "task_id": "trial2-issue-batch-schemas",
+  "title": "Validate issue batch and assignee-frequency responses with schemas",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Do not cast network JSON to T' and 'include a malformed-response test'. packages/core/api/client.ts batchUpdateIssues, batchDeleteIssues and getAssigneeFrequency return unvalidated this.fetch(...) results.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/issue-batch-schemas.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 50,
+  "trial_role": "Trial 2, task 2. Same rule as task 1 but with an array response (AssigneeFrequencyEntry[]), so the element shape and the fallback for a partially malformed list need a decision.",
+  "objective": "packages/core/api/client.ts has three issue methods that trust the server response without validation: batchUpdateIssues (typed { updated: number }), batchDeleteIssues (typed { deleted: number }) and getAssigneeFrequency (typed AssigneeFrequencyEntry[]). The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a zod schema via parseWithFallback, with a malformed-response test.\n\nStudy the existing parseWithFallback usages and packages/core/api/schemas.ts, and the AssigneeFrequencyEntry type, then bring these three methods under the same pattern. Keep schemas lenient in the way schema.ts describes. Do not change any other method.\n\nWrite tests at exactly packages/core/api/issue-batch-schemas.test.ts that show each method returns the parsed value for a well-formed response and does not pass a malformed response through to the caller."
+}

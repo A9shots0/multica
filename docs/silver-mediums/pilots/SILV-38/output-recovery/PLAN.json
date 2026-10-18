@@ -1,0 +1,10 @@
+{
+  "summary": "Operator plan for the controlled CRM handoff: preserve the four failed attempts, write the actual dated handoff, then obtain the distinct reviewer verdict.",
+  "plan": [
+    "State the captured local CRM branch main, exact HEAD ba1447ac85cbce4c1b04273c14f3d2c4a524582e, 6 tracked-change records and 110 individual untracked files, using the evidence timestamp and definitions.",
+    "Keep cached origin/main divergence (4 ahead, 666 behind) and cached SHA d94fccc1dc536abc4226663c9b7c9009dbe1e082 separate from fresh remote truth. No fetch occurred.",
+    "Summarize 285 registered worktrees, 285 completed path checks, 285 present and 0 absent. Link the full JSON. Path presence and unlocked metadata do not establish cleanliness, idleness or cleanup permission.",
+    "Give prioritized preservation and isolated-worktree next actions, cite CRM AGENTS and hub GOVERNANCE, treat the dated CRM context as historical, and list separate future remote-Git, paired SMCrm/SMCrm-Jobs deployment, health and authenticated business checks. No CRM application/database/source change or Phone Farm work.",
+    "Produce a useful concise Markdown document; the independent reviewer must verify important numeric claims, revision, snapshot boundaries and practical next actions against the same evidence."
+  ]
+}

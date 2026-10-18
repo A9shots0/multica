@@ -1,0 +1,26 @@
+{
+  "schema_version": "silver-mediums.agent-screening-batch.v1",
+  "batch_id": "screen-owner-anchoring-t11-minimax-recovery-openrouter-v12",
+  "status": "planned_not_launched",
+  "suite_version": "silver-mediums.minimum-screening-suite.v1",
+  "execution_mode": "isolated_capability",
+  "candidate_transport": "opencode_run_json_stdin_tool_free_routing_receipted_v6",
+  "execution_order_policy": "seeded_permutation_v1",
+  "execution_order_seed": "screen-owner-anchoring-t11-minimax-recovery-openrouter-v12:1",
+  "grader_blind_to_candidate": true,
+  "grader_configuration_id": "deterministic-t11.v4",
+  "cases": [{"case_id":"T11","case_version":"v4","candidate_packet_sha256":"65f4351c80c3c6d3a4a9462d5e910b5ff78f225959ea2e484e2c06aeeef8621c","grader_packet_sha256":"53c63e0c5154a3334dfac716841d2686df8e8e1c95cc667e4d1bcbfc0f30a1c4"}],
+  "candidates": [
+    {"id":"screen.generalist.minimaxm27.default.openrouter.v12","role_id":"screening_generalist","model":"openrouter/minimax/minimax-m2.7","reasoning_effort":"screening_default","instruction_version":"shadow-candidate.v5","instruction_sha256":"b77e91b1734a72c15080fe9a1092d89b79e040e318056db4d9719364a4709745","skill_versions":{"silver_mediums_context":"item14.v2-inline"},"skill_content_sha256":{"silver_mediums_context":"abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},"permission_version":"isolated-no-tools.v1","runtime_provider":"opencode_cli","serving_provider":"minimax","provider_fallbacks":false}
+  ],
+  "repeats": 1,
+  "token_ceiling": 10000,
+  "per_launch_token_reservation": 10000,
+  "api_budgets": [{"provider":"openrouter","project_lane":"opencode_local_openrouter","currency":"USD","window_id":"openrouter_account_lifetime","max_spend_micros":102110880,"per_request_reserve_micros":5000,"max_snapshot_age_seconds":30}],
+  "max_owner_interventions": 0,
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "natural_language_intake_run": false,
+  "excluded_capabilities": ["tools","multica_issue_transport","phonefarm_operation","production_release","external_messaging","repository_access"],
+  "stop_rules": ["invalidate_on_any_tool_event","disqualify_candidate_on_competence_failure_or_disqualifier","halt_batch_only_on_test_invalidity_evidence_integrity_unsafe_execution_transport_failure_or_budget_breach","stop_before_launch_when_token_reservation_does_not_fit","stop_before_launch_when_api_spend_snapshot_is_missing_or_stale","stop_when_absolute_openrouter_spend_reaches_102110880_micros","hard_cap_each_provider_response_at_8000_generated_tokens","one_observation_no_retries","do_not_escalate_effort_inside_this_batch","require_exact_prompt_hash_before_scoring","require_exact_serving_provider_and_no_fallbacks","post_halt_recovery_only_no_role_promotion"]
+}

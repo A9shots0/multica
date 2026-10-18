@@ -1,0 +1,548 @@
+[
+  {
+    "file": "crm-delivered-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "c200c6ee418471748d1ccd89c51f29d71a03f9192e5442f910a4500aa94750e8"
+  },
+  {
+    "file": "crm-v2-1024-minimum.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 900,
+    "sha256": "89a2a1e39430da4990b611ca3eb8384a70204353dca33645d6acf63895fa1197"
+  },
+  {
+    "file": "crm-v2-1440-dense.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "b4453bb4159fe22151c08f42fc36f5508c21956679fd007b6dadcacafba9e72d"
+  },
+  {
+    "file": "crm-v2-1440.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "810a2450e3b47ad12456bac4390a076a6c46aeca97eddcd8b075e6ff897c71fd"
+  },
+  {
+    "file": "crm-v2-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "a1528fb74c746169b3b7751348d488da8b62275be44f6d88f4f31dc1f994cd5a"
+  },
+  {
+    "file": "crm-v2-mobile.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "fed1c3fb43c11f3e2443cc98df049397660dbb9d423444c85318e0769433c735"
+  },
+  {
+    "file": "crm-v2-unavailable-drawer.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "845ba13e1ff68a6dcc8f41aeaa55d1f3a126dfde7c865bae5e905d594ce9130d"
+  },
+  {
+    "file": "crm-v2r2-1024-minimum.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 900,
+    "sha256": "e25f898b5fed67f0d434e560c22a9c5cf11d373e185d0481b7102491558d900f"
+  },
+  {
+    "file": "crm-v2r2-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "4fcb6b6d70a8c17ee9c008b1d068c0208f050f104e148f2643330bd674a14079"
+  },
+  {
+    "file": "crm-v2r2-drawer.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "4b33f1efedfdf1324f190e685896697528349ae589be080f3dc25b119cbfd278"
+  },
+  {
+    "file": "crm-v3-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "ed122e28c1448e7d709381d11e2a1c7e71baf36275347288ec00c5e5ae1b6708"
+  },
+  {
+    "file": "crm-v3-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "cea889deeead9191ac2df8be4d8f7a422aed117c83ff0e530cdee92c31401919"
+  },
+  {
+    "file": "crm-v3-independent-package-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "3221b41ba0172159202be9065fb5cabed1bc3c98bc2f72a6c801744be13d7cf1"
+  },
+  {
+    "file": "crm-v3-mobile.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "2deb114dc63fcea00233502873d81c8a49531208e158cbadbca6e26d6b51198f"
+  },
+  {
+    "file": "crm-v3-onboarding-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "2ae4c6915e02e8550c8772f717b4935921728897a7281d43c25b9cef95bae37d"
+  },
+  {
+    "file": "crm-v3.1-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "9e7ec43e95079470f8379ddb2de1a18add1d829f1095ca1e6a81982a7042e8b3"
+  },
+  {
+    "file": "crm-v3.1-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "eb057abb4629c62e8351e1cd6581f3466507c22ab1754336ee187c72d1b1e250"
+  },
+  {
+    "file": "crm-v3.1-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "a16b9c6a54b1678b5b4e8f8aaecf290c24b8eca6477945383f90ff577365fd3a"
+  },
+  {
+    "file": "crm-v3.1-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "a6e3af3399591956c60dd12f1fcd31fbf84d2f19a3748da2f2ac204fa1b839aa"
+  },
+  {
+    "file": "crm-v3.1-mobile.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "0d6965089a56a5ed6deba17731953421da9b1d734dc5b4880ce0f6db8106b8a4"
+  },
+  {
+    "file": "crm-v3.1-onboarding-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "faf12d012dcce262b0e172857631526f63930029cb52bb085ca68ae2f7545396"
+  },
+  {
+    "file": "current-chat-status-no-owner-dependency.png",
+    "format": "PNG",
+    "width": 1490,
+    "height": 1377,
+    "sha256": "41dd216a774d51e3aded8e8eb2a0cfd6c7a41131594263f1b7b0cd81a4b72358"
+  },
+  {
+    "file": "phone-delivered-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "ca8be06b8a355ac444ef8e48b139bd3161fb56e07f2368bbda7b1b3151290a19"
+  },
+  {
+    "file": "phone-pinned-baseline-unavailable-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "3bb3b8b64b8a03b86e6eb29c3722ed50b0787ae4f14e11fe865d1573facbf2a6"
+  },
+  {
+    "file": "phone-pinned-baseline-unavailable-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "14c0879c07168e6f89bc2472d19bd717fd8404f74512e64bca8d32b00eb439e4"
+  },
+  {
+    "file": "phone-pinned-baseline-unavailable-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "b059ff638741ae052a1aa5706b3426fb8b68d1f599feed6b5add08a0ca71df22"
+  },
+  {
+    "file": "phone-pinned-baseline-unavailable-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "d3ed94bc11c232ec6c9caa661a20e8b26be22f1c1b11bf743a376d93ab443f46"
+  },
+  {
+    "file": "phone-pinned-baseline-unavailable-390x844.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "434afeb924bddb65c1040f3e650c674b4143ccd5a4e9b244091156c28a077ee2"
+  },
+  {
+    "file": "phone-v1-verified-1440.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "58b0616562c4fd99f3ea24e1660fd44907e4c0a209f89b92d175b2d6e73572c3"
+  },
+  {
+    "file": "phone-v1-verified-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "8097542ff82fdc39bd3893713ff0dc1c504aaa1949f2e836bca63946c95733ea"
+  },
+  {
+    "file": "phone-v2-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "bace379d1795b3c941f7ca515f7dd1dbea1e424a00cc03cf29a87d4334ce9981"
+  },
+  {
+    "file": "phone-v2-weekly-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "e1f1e29fc33b3020b0bbbac14ef57f2cb41c995014c8c9b2b4c04435fc2f67bf"
+  },
+  {
+    "file": "phone-v2.1-1279.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "e779abffd44d089e9500998cdb82f6c664e774acd0a77a4323dad9c5cebdb79e"
+  },
+  {
+    "file": "phone-v2.1-1920.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "5e7c894a41739ef0e9ec252deb079c2b552099fddd3b58f447db8f2d8f5b39f4"
+  },
+  {
+    "file": "phone-v3-manager-dense-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "be8e614cdd874dd4aeb71e2a28ba21cd360b689f9fd3376f921b7b17f315385d"
+  },
+  {
+    "file": "phone-v3-va-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "d2a7e80d0a182314204d0983bd4098d3a0ed41d95bd337928bf8a003b4cd1732"
+  },
+  {
+    "file": "phone-v3-va-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "74ff7597c62fad5e1021fac2e9c1c8e2999c4293dcb10d24e192b0db5236dcde"
+  },
+  {
+    "file": "phone-v3-va-mobile.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "da1c52d24b20b40fe4c800904f33678ffc2b4785562584acb0d28ea3a8fa27b1"
+  },
+  {
+    "file": "phone-v3.1-delayed-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "7bd19a04f4c456c5259aa854b784ff19a280350044e1df5f8f2d10c3edacbad7"
+  },
+  {
+    "file": "phone-v3.1-delayed-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "96419277550e757ad99f14492fccb4d4165cfc602f190c402c07b4aac68fc848"
+  },
+  {
+    "file": "phone-v3.1-delayed-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "ad2103937c1058f33f8f5a1f4f40b77af641bd35a78fc65a602f6f5e7675e87a"
+  },
+  {
+    "file": "phone-v3.1-delayed-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "e70dc72eb7d8371dd8379586b4985e16db7e632e65a5add75a97a7474d5f685c"
+  },
+  {
+    "file": "phone-v3.1-delayed-390x844.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "d20f6490497afdd47336ddae17ce80f1f8b4107714998d0320712b708f809626"
+  },
+  {
+    "file": "phone-v3.1-dense-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "3c3d6183a6fde589cf599ae3dd2aaf320cfe8e44dbe1f5ef6e56114b8928f171"
+  },
+  {
+    "file": "phone-v3.1-dense-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "9ea3797f50b22e37617e2b60bbfd1d178e6096ec4292ef9b99034a90e0199eeb"
+  },
+  {
+    "file": "phone-v3.1-dense-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "faad40286b88410f6e61f51f240eaafcb54b370451195e700ae0b1dbad6e361f"
+  },
+  {
+    "file": "phone-v3.1-dense-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "9f6e3ed563c408d6d8bcfc764c22d1c5cfc009db095653d2d43d9f4696a39776"
+  },
+  {
+    "file": "phone-v3.1-dense-390x844.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "b2c4acf71a235cc092414ad043fd1e93c134b901c50c639ddd11d1edddffd97d"
+  },
+  {
+    "file": "phone-v3.1-empty-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "8b8e26b779dd456e472a2a87cc1411969a46acdb7f4456545f414235c5b07673"
+  },
+  {
+    "file": "phone-v3.1-empty-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "2d884f52f1185191310c4793b83b6871a744c8e5bdcd88165465f71d12b9294b"
+  },
+  {
+    "file": "phone-v3.1-empty-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "e412edff1b970dd6572af31e137e7782d849b358c59a15cb95b3c755cad777ee"
+  },
+  {
+    "file": "phone-v3.1-empty-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "0b13a29547301c33be257b4524553293bb4c19dcd1ded49011c804ef880f1210"
+  },
+  {
+    "file": "phone-v3.1-empty-390x844.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "d62bf5cc3ba2a071f6a49863a6546106e8efe095f169b36357c7c5c5f68d7073"
+  },
+  {
+    "file": "phone-v3.1-failure-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "be04fc874fa6adaae738531b09aac2395a1d1d3309a171ad59b1a1424aa7b05e"
+  },
+  {
+    "file": "phone-v3.1-failure-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "36bfc19e5f61f9961b9fc4ef66f604c5fd9a8443f426bc4b21d5ff4f867259b0"
+  },
+  {
+    "file": "phone-v3.1-failure-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "2c67e1fc1b7cce222d21e15ae6821722017443a1b33d8600460077201fadccbe"
+  },
+  {
+    "file": "phone-v3.1-failure-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "b759bec63839e4cc8a967779476ad655deff9205766b1676d5732839b514f301"
+  },
+  {
+    "file": "phone-v3.1-failure-390x844.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "49aaaad01db5fc1c3f6c80c231dd4ea09eebe1d6a4ba258495c1cabbb76160f4"
+  },
+  {
+    "file": "phone-v3.1-manager-dense-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "a7554b7f0a375caeea073aa5707be11f526fa74c0fdc104892c4b1d73e61e284"
+  },
+  {
+    "file": "phone-v3.1-minimum-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "9bf9e9fd6e67f64e15c944d428faa86a36167eefc8835c7269939ca1e6744023"
+  },
+  {
+    "file": "phone-v3.1-minimum-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "aff9937234a0eceb4629c40bbe7b45762358dd15749989c2e9ef7a51450194c7"
+  },
+  {
+    "file": "phone-v3.1-minimum-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "346b855e3a527baa9d75b15f8b5cd075e74b6d12f0df0d97e4f313eb476b48cf"
+  },
+  {
+    "file": "phone-v3.1-minimum-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "a0793df6e05925d9de71a5e8b919646317dcb1a3ef841e6c4a5bdb437ccc91c5"
+  },
+  {
+    "file": "phone-v3.1-minimum-390x844.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "68d92ea7ec818e1acdf9be46ba34bfc569cc228f3431b199b45bdd05c7211e61"
+  },
+  {
+    "file": "phone-v3.1-mobile-menu-missing-dashboard.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "87e8e5710a63b61f31ae7ae54054f92af454683ece8b41c4342f5b0d3a8fb178"
+  },
+  {
+    "file": "phone-v3.1-partial-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "31c48b31064791a4716044777a238ebd778665a5077e9a4a7690c942da04c311"
+  },
+  {
+    "file": "phone-v3.1-partial-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "f6cad4054bb4fbff036a8cb98ee4379ce2dc4ecf86d6378781d7f9d07cd1b10b"
+  },
+  {
+    "file": "phone-v3.1-partial-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "3200f4181da226f994b9ed135a36feec2214567d013cad867a5042ac913e2c09"
+  },
+  {
+    "file": "phone-v3.1-partial-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "51884fe1921058abc1ab7b955308f17efca12617ec38c92944ac8b559bfb22a2"
+  },
+  {
+    "file": "phone-v3.1-partial-390x844.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "25137a193704d8682bd5353b8bc1895ba03a0d41f43dbfe7bdc69353b8e7207f"
+  },
+  {
+    "file": "phone-v3.1-va-1024x768.png",
+    "format": "PNG",
+    "width": 1024,
+    "height": 768,
+    "sha256": "8e1e3a448312e223038e3c81028d8bc18d74ba8aff96ee74942e9d27866da51f"
+  },
+  {
+    "file": "phone-v3.1-va-1279x777.png",
+    "format": "PNG",
+    "width": 1279,
+    "height": 777,
+    "sha256": "ffcb92d8f33a2396bbeb2e82cb14c73939dd78a81c50196ad2a5db97aaf56cae"
+  },
+  {
+    "file": "phone-v3.1-va-1440x900.png",
+    "format": "PNG",
+    "width": 1440,
+    "height": 900,
+    "sha256": "3076b1ec4d8947f6d67627ee29fff6b8cbefe369f13af46735cae11f97dd142c"
+  },
+  {
+    "file": "phone-v3.1-va-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "c32d1021cd653ed5208d2f247ec9b6fa7b8f05d887aa5b127597538cafb9b97e"
+  },
+  {
+    "file": "phone-v3.1-va-mobile.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "e061e3b1cf7a4ffaedaf079ee28603e8fa11ff88263214a5de9f53039e8ed863"
+  },
+  {
+    "file": "phone-v3.2-independent-package-menu.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "1a805713b0ef84ed787de5b2a991c8464d1ac9fcc0cc83427e9ff65b90aad4aa"
+  },
+  {
+    "file": "phone-v3.2-mobile-menu-dashboard.png",
+    "format": "PNG",
+    "width": 390,
+    "height": 844,
+    "sha256": "57a9b80c2cab03b228ef1ca68b2e61fa4136e5518971944f242f1f049c04dee7"
+  },
+  {
+    "file": "phone-v3.2-va-1920x1080.png",
+    "format": "PNG",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "f05da56fd734e35527cff56750c7060b7ff91d8be542b2bc08ce5a094c128715"
+  }
+]

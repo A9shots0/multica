@@ -1,0 +1,31 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-t09-v2-affected-retest-openrouter-v24",
+  "status":"complete",
+  "test_validity":"valid",
+  "planned_observations":2,
+  "receipted_provider_calls":2,
+  "sealed_observations":2,
+  "policy_skipped_assignments":0,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "fresh_input_tokens":4450,
+  "cached_input_tokens":0,
+  "output_tokens":320,
+  "reasoning_tokens":2292,
+  "provider_export_total_tokens":7062,
+  "receipt_cost_usd":0.007282,
+  "provider_event_time_seconds":5.777,
+  "results":[
+    {"model":"openrouter/qwen/qwen3-coder-next","candidate_id":"screen.generalist.qwen3codernext.default.openrouter.v24","effort":"screening_default","serving_provider":"alibaba","case_id":"T09","case_version":"v2","result":"PASS","calls":1,"input_tokens":2112,"output_tokens":120,"reasoning_tokens":0,"total_tokens":2232,"cost_usd":0.000350,"time_seconds":0.469,"eligible_for_reliability_screen":true},
+    {"model":"openrouter/google/gemini-3.5-flash-lite","candidate_id":"screen.generalist.gemini35flashlite.default.openrouter.v24","effort":"screening_default","serving_provider":"google-ai-studio","case_id":"T09","case_version":"v2","result":"PASS","calls":1,"input_tokens":2338,"output_tokens":200,"reasoning_tokens":2292,"total_tokens":4830,"cost_usd":0.006932,"time_seconds":5.308,"eligible_for_reliability_screen":true}
+  ],
+  "advancement":"Qwen3 Coder Next and Gemini 3.5 Flash Lite now have valid 5-of-5 static breadth passes when their four valid v23 passes are combined with this corrected affected-case result. They advance only to a separately frozen reliability screen; no model, role, squad, topology, or production configuration is selected.",
+  "evidence_root":".qualification-evidence/openrouter-v24",
+  "notes":[
+    "T09 v1 and both raw v23 observations remain byte-preserved and unscored.",
+    "T09 v2 was frozen after one independent review and changes only the ambiguous canonical_total JSON type.",
+    "Both candidates were called exactly once with their exact provider route, no fallback, no retry, no tools, and no external side effects."
+  ]
+}

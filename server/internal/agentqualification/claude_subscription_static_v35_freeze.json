@@ -1,0 +1,62 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-static-freeze.v35",
+  "freeze_id": "claude-subscription-static-reliability-repeat-freeze-v35",
+  "status": "frozen_reviewed",
+  "review_outcome": "one_consolidated_correction_after_independent_hold_no_second_review",
+  "provider_calls_allowed": true,
+  "prepared_definition_sha256": "584a8f0848c40466db03457678a5fed09c063cced3ddd3ca98ddb27fc575c1d1",
+  "prepared_antecedent_sha256": "70d47c9287a0a01dab0966298d3563a4df28af531227389c632a50cbb5d030ee",
+  "prepared_review_binding_sha256": "b54a7dec0b2dc36a73d5c8d540616ee61c3b1703cbeb067d38d5df39e33026b2",
+  "execution_order": ["T12:v4", "T11:v4", "T08:v3", "T16:v3", "T04:v1", "T09:v2"],
+  "route": {
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "transport": "claude_code_print_restricted_tool_free_v2",
+    "runtime_provider": "claude_code_subscription",
+    "serving_provider": "anthropic",
+    "provider_fallbacks": false,
+    "runtime_version": "2.1.270 (Claude Code)",
+    "executable_sha256": "7999fba95dbffe167d9e0a043f29057979a0518ebe89b60c4fcfc6401ea8c424",
+    "billing_boundary": "anthropic_subscription"
+  },
+  "caps": {
+    "max_provider_invocations": 6,
+    "max_total_reported_tokens_per_cell": 15000,
+    "max_output_tokens_per_cell": 2000,
+    "max_campaign_reported_tokens": 90000,
+    "max_wall_seconds": 900,
+    "max_retries": 0
+  },
+  "local_components": {
+    "claude_subscription_static_v35.json": "584a8f0848c40466db03457678a5fed09c063cced3ddd3ca98ddb27fc575c1d1",
+    "claude_subscription_static_v35_antecedents.json": "70d47c9287a0a01dab0966298d3563a4df28af531227389c632a50cbb5d030ee",
+    "claude_subscription_static_v35.go": "081255bc511cf3c9d4ef6ddb49c85c53d23bdeb75b3b3688882319bf014a3088",
+    "claude_subscription_static_v35_test.go": "1097a584f7a9e287e8b82848c08a99e72393eeb50650376b2e5cfd78af84a7bf",
+    "claude_subscription_static_v35_freeze.go": "d686ccb47ccaf8a4575cf3bc091d580940fa86d18f6eaf7d06fffe06b55d1066",
+    "claude_subscription_static_v35_freeze_test.go": "3e9de0899182a3351ec5443d1281673bbc3fb18d6aea77fa7a6e51b7b7e06828",
+    "transport_catalog_v1.json": "d2c68953d96d6ac067976b1d028287addb9f878e057e03b9395fd0b3fe5638c5"
+  },
+  "shared_components": {
+    "claude_transport.go": "d3f84877dcc07262fce2e42efb1823619ea75c4df71b0436d826a10eaf06d06b",
+    "claude_receipt.go": "63ed9c1cf73762fe5c14d89f0cdece6fae2d8bea74fdc87138f7c034f4a78b70",
+    "execution_normalizer.go": "3c800042c0040b95fbe59e7bf33c35f13047ff4eff269c670eb5b6d1f8b80cfc",
+    "execution_receipt.go": "fbd4fbf6bc93dd04e7cef165ed61ab6d5f7e513613b0d226a5d0468a3f711dd7",
+    "batch.go": "7b3f9446568a007f3af65a3b41ce16cfb4e4d4b944c46fde1ec1fe87a66bbea2",
+    "grader.go": "f05409de3d62ca6b081d1c1e5772fe2c4ce002638db01c0a77af945da5db96e8",
+    "claude_transport_test.go": "f13478bff53c0ac64a2da5c5823bc616a14b3930e5341c3cd2e2b449c5f0d211",
+    "claude_receipt_test.go": "c3160a81d5268c590ed4bd0f1a8d6e6812ec9a959f5aaaa1031a2e7099ea50a5",
+    "execution_normalizer_test.go": "6ebfca0d7d9894b11972ffceedfe9afc57bd8f43f0d752454bdabeb5e63207a2",
+    "execution_receipt_test.go": "81eec6c4e2c4d1932585acc70051bde877de51fa6cb6ea158ed960a9c8244b12",
+    "grader_test.go": "c81194d3e44ee1cc3dd3393b2997c7c60cb1bbb7c39706bf6726a65448d10589",
+    "grader_capability_group_test.go": "079e7ab6cdbb3e0eeec69ada2e33b7807373e87de3ec1650ec99dc68ad74f0f8",
+    "grader_t09_v2_test.go": "690cd66df8f1e030542346e246f32b2887575d916e2d38207569b0e3af360f5d"
+  },
+  "command_sources": {
+    "claude-subscription-static-v35/main.go": "5432ffc98a0f7e73bc3c66842061690435210b504efd822bdff6d4f57bcf4233",
+    "claude-subscription-static-v35/lifecycle.go": "dd1daa17afff11347457121204b82719b30500a6460d7e0d817fefd28271b2fe",
+    "claude-subscription-static-v35/lifecycle_test.go": "dd4882acac2736be6e10f54f657b5b0286f3dd3e3b3aef7f664bacd658caef86"
+  },
+  "documents": {
+    "docs/silver-mediums/ITEM-14-CLAUDE-SUBSCRIPTION-STATIC-V35-PREVALIDATION.md": "df2a01595365e59a3d4a3e0fb968f8c51f3bf222c5af6aaa53438cbf5ba6871f"
+  }
+}

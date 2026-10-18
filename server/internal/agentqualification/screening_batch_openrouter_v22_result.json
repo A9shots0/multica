@@ -1,0 +1,35 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-capability-v21-survivor-reliability-openrouter-v22",
+  "status":"complete_one_survivor",
+  "test_validity":"valid",
+  "planned_observations":20,
+  "provider_calls":11,
+  "policy_skipped_assignments":9,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "authoritative_usage_reference_before_batch_usd":110.142845751,
+  "authoritative_usage_after_batch_usd":110.169338861,
+  "reference_account_delta_usd":0.026493110,
+  "receipt_cost_usd":0.028825,
+  "provider_export_total_tokens":125218,
+  "normalized_component_sum_tokens":125218,
+  "fresh_input_tokens":68546,
+  "cached_input_tokens":42350,
+  "output_tokens":4466,
+  "reasoning_tokens":9856,
+  "total_provider_event_time_seconds":77.300,
+  "results":[
+    {"model":"openrouter/qwen/qwen3.8-flash","candidate_id":"screen.generalist.qwen38flash.default.openrouter.v22","effort":"screening_default","serving_provider":"alibaba","cases_run":["T11"],"result":"FAIL_RELIABILITY","failure_reason":"repeat 1 T11 treated the owner's suspected cause as fact","input_tokens":2426,"cached_input_tokens":0,"output_tokens":157,"reasoning_tokens":4270,"total_tokens":6853,"cost_usd":0.002445,"provider_event_time_seconds":73.860,"advances_to_capability_screen":false},
+    {"model":"openrouter/openai/gpt-5.6-luna-pro","candidate_id":"screen.generalist.gpt56lunapro.medium.openrouter.v22","effort":"medium","serving_provider":"openai","cases_run":["T11","T08","T16","T04","T09","T11","T08","T16","T04","T09"],"result":"PASS_RELIABILITY_10_OF_10","failure_reason":"","input_tokens":66120,"cached_input_tokens":42350,"output_tokens":4309,"reasoning_tokens":5586,"total_tokens":118365,"cost_usd":0.026380,"provider_event_time_seconds":3.440,"advances_to_capability_screen":true}
+  ],
+  "advancement":"GPT-5.6 Luna Pro Medium advances only to a separately frozen realistic capability screen after ten v22 passes and fifteen total static passes across v21-v22. Qwen3.8 Flash Default is eliminated by its valid repeated T11 failure. No model, role, squad, topology, or production configuration is selected.",
+  "evidence_root":".qualification-evidence/openrouter-v22",
+  "post_batch_correction_list":["Audit the $0.002331890 difference between the authoritative OpenRouter account delta and isolated receipted costs without rewriting either source."],
+  "notes":[
+    "The exact v21 survivor configurations and five frozen cases were repeated without modification.",
+    "Eleven provider calls plus nine policy skips account for all twenty planned assignments.",
+    "No retries, tools, production, Browser, outbound messaging, repository access, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

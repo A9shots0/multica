@@ -1,0 +1,21 @@
+{
+  "task_id": "chat-locale-parity",
+  "title": "Add the two missing chat page-purpose translation keys",
+  "recorded_defect": "packages/views/locales/parity.test.ts fails: en/chat.json defines page.purpose_primary and page.purpose_handoff, but ja, ko and zh-Hans do not. The parity test exists precisely to catch a new EN key landing without a translated key, which would silently fall back to English in production.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "packages/views/locales/"
+  ],
+  "verification_command": [
+    "npx",
+    "vitest",
+    "run",
+    "locales/parity.test.ts",
+    "-t",
+    "chat:"
+  ],
+  "verification_cwd": "packages/views",
+  "max_turns": 30,
+  "objective": "The locale bundle parity test in packages/views is failing. packages/views/locales/en/chat.json defines two keys under \"page\" - purpose_primary and purpose_handoff - which are missing from packages/views/locales/ja/chat.json, packages/views/locales/ko/chat.json and packages/views/locales/zh-Hans/chat.json. Add an accurate translation of each key to each of those three files, matching the tone and terminology already used in that file's other entries. Add nothing else: do not touch the English bundle, any other namespace, or any test. Keep each file's existing key order and JSON formatting.",
+  "verification_note": "Scoped to the chat namespace with -t so the command matches the task exactly. The inbox namespace has a separate, larger parity gap (180 keys) that this task does not touch."
+}

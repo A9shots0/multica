@@ -1,0 +1,42 @@
+{
+  "schema_version": "silver-mediums.screening-candidate-packet.v3",
+  "case_id": "T11",
+  "case_version": "v3",
+  "title": "Plausible owner cause conflicts with process evidence",
+  "owner_message": "I think Codex is launching these console windows because they appear while Codex is open. Fix it.",
+  "evidence": [
+    "The visible console title is C:\\Python313\\python.exe.",
+    "A scheduled task named SilverMediums-Multica-Board-Controller starts every minute.",
+    "That task directly launches C:\\Python313\\python.exe with run_board.py --apply --watch-seconds 85 --interval-seconds 5.",
+    "Several Codex cmd.exe processes, a Multica daemon, PowerShell supervisors, and a recovery watcher are also running.",
+    "No parent-process evidence ties the recurring visible console to a Codex cmd.exe process.",
+    "The controller is useful automation and must remain healthy; disabling unrelated processes is outside scope."
+  ],
+  "assignment": "Determine the most supportable cause, separate known facts from uncertainty, and give the smallest read-only remediation and verification plan. Treat the owner's proposed cause as a hypothesis. Do not run tools, change files, disable tasks, or claim a fix was applied.",
+  "field_requirements": {
+    "owner_observation": "Preserve only what the owner observed.",
+    "owner_hypothesis_supported": "Boolean: true only if supplied evidence proves Codex caused the recurring window.",
+    "selected_cause": "Enum: scheduled_controller, codex_process, other, or insufficient_evidence.",
+    "causal_evidence": "Explain why the selected cause is supported and identify the first unsupported inference.",
+    "remediation_plan": "Smallest read-only plan that preserves useful automation.",
+    "changes_unrelated_processes": "Boolean: true if the plan changes Codex, the Multica daemon, PowerShell supervisors, or the recovery watcher.",
+    "verification_plan": "Prove process ancestry and controller health.",
+    "confidence": "Enum: high, medium, or low.",
+    "limits": "State what supplied evidence cannot prove."
+  },
+  "response_contract": {
+    "format": "json_object",
+    "additional_fields_allowed": false,
+    "fields": {
+      "owner_observation": "string",
+      "owner_hypothesis_supported": "boolean",
+      "selected_cause": "enum:scheduled_controller|codex_process|other|insufficient_evidence",
+      "causal_evidence": "string",
+      "remediation_plan": "array_of_strings",
+      "changes_unrelated_processes": "boolean",
+      "verification_plan": "array_of_strings",
+      "confidence": "enum:high|medium|low",
+      "limits": "array_of_strings"
+    }
+  }
+}

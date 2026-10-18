@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "inbox": "인박스",
+    "chat": "채팅",
+    "my_issues": "내 태스크",
+    "issues": "HQ",
+    "projects": "프로젝트",
+    "autopilots": "오토파일럿",
+    "agents": "에이전트",
+    "squads": "스쿼드",
+    "usage": "분석",
+    "runtimes": "런타임",
+    "skills": "스킬",
+    "deployments": "배포",
+    "knowledge": "지식",
+    "settings": "설정"
+  },
+  "tab": {
+    "issue": "태스크",
+    "project": "프로젝트",
+    "autopilot": "오토파일럿",
+    "agent": "에이전트",
+    "member": "멤버",
+    "squad": "스쿼드",
+    "skill": "스킬",
+    "machine": "머신",
+    "runtime": "런타임",
+    "attachment": "첨부파일",
+    "create_agent": "에이전트 만들기",
+    "unknown": "알 수 없는 페이지"
+  },
+  "help": {
+    "trigger": "도움말",
+    "download_desktop": "데스크톱 앱",
+    "docs": "문서",
+    "changelog": "변경 로그",
+    "discord": "Discord",
+    "feedback": "피드백",
+    "server_version": "서버 버전 {{version}}"
+  },
+  "workspace_loader": {
+    "loading_workspace": "워크스페이스 로딩 중...",
+    "loading_named_prefix": "로딩 중"
+  },
+  "sidebar": {
+    "unpin_tooltip": "고정 해제",
+    "workspaces_label": "워크스페이스",
+    "create_workspace": "워크스페이스 만들기",
+    "pending_invitations_label": "대기 중인 초대",
+    "invitation_workspace_fallback": "워크스페이스",
+    "invitation_join": "참가",
+    "invitation_decline": "거절",
+    "log_out": "로그아웃",
+    "new_issue": "새 태스크",
+    "new_issue_shortcut": "C",
+    "pinned_label": "고정됨",
+    "work_group": "업무",
+    "ai_team_group": "AI 팀",
+    "show_more_pins": "{{count}}개 더 보기…",
+    "show_fewer_pins": "접기",
+    "unread_overflow": "99+",
+    "discord_card": {
+      "title": "Discord 참여하기",
+      "dismiss": "닫기"
+    }
+  },
+  "control_plane": {
+    "name": "Silver Mediums Agent Control Plane",
+    "built_on": "Multica 기반",
+    "about_trigger": "이 컨트롤 플레인 정보",
+    "about_intro": "기본 제품은 Multica입니다. 컨트롤 플레인은 그 위에서 에이전트의 작업 방식을 정하는 Silver Mediums 계층입니다.",
+    "points": {
+      "truthful_states": {
+        "title": "사실 그대로의 상태",
+        "body": "상태는 실제로 일어난 일만 나타냅니다. 기대만으로 완료로 표시하지 않습니다."
+      },
+      "routing": {
+        "title": "통제된 라우팅",
+        "body": "작업은 정해진 경로로 에이전트 사이를 이동하며 모든 인계가 기록됩니다."
+      },
+      "shared_knowledge": {
+        "title": "공유된 지침",
+        "body": "에이전트는 같은 작업에 같은 스킬과 지침을 불러오므로 매번 같은 방식으로 처리됩니다."
+      },
+      "bounded_permissions": {
+        "title": "제한된 권한",
+        "body": "에이전트는 해당 작업에 필요한 권한만, 작업이 진행되는 동안만 받습니다."
+      },
+      "independent_review": {
+        "title": "독립 검토",
+        "body": "완료로 인정하기 전에 별도의 검토자가 결과물을 확인합니다."
+      },
+      "release_verification": {
+        "title": "릴리즈 및 실행 확인",
+        "body": "릴리즈는 검토된 빌드와 대조되고, 시작 후 정상 상태가 확인됩니다."
+      },
+      "recovery": {
+        "title": "복구와 롤백",
+        "body": "백업을 미리 복원하고 연습해 두기 때문에 잘못된 변경을 되돌릴 수 있습니다."
+      },
+      "owner_inbox": {
+        "title": "내 수신함",
+        "body": "직접 결정해야 할 사항은 선택지와 그 결과가 명시된 채로 전달됩니다."
+      },
+      "usage": {
+        "title": "사용량 파악",
+        "body": "실행 횟수, 토큰, 시간, 비용을 기록해 무엇에 쓰였는지 확인할 수 있습니다."
+      }
+    },
+    "attribution": "Multica 기반으로 만들어졌습니다. Multica 이름, 로고, 고지 문구는 변경 없이 표시됩니다.",
+    "copyright": "Multica © 2025-2026 Multica, Inc. Multica License에 따라 제공됩니다."
+  }
+}

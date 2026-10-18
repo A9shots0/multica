@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY external_incident_source_binding_key ON external_incident_source_binding (workspace_id, source_key);

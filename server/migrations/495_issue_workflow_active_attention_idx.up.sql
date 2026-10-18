@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_issue_workflow_active_attention ON issue_workflow_attention (workspace_id, issue_id, created_at) WHERE resolution_state IN ('open', 'resuming', 'snoozed') AND superseded_at IS NULL;

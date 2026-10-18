@@ -1,0 +1,50 @@
+{
+  "task_id": "trial4-agent-lifecycle-responses",
+  "title": "Validate agent get, archive and restore responses",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Endpoint responses consumed by UI logic must pass through a schema before returning.' packages/core/api/client.ts getAgent, archiveAgent and restoreAgent return this.fetch(...) cast to Agent with no validation.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "packages/core/api/"
+  ],
+  "verification_command": [
+    "npx",
+    "vitest",
+    "run",
+    "api/agent-lifecycle-responses.test.ts",
+    "--passWithNoTests=false",
+    "--maxWorkers=1",
+    "--no-file-parallelism"
+  ],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": [
+    "node"
+  ],
+  "max_turns": 60,
+  "regression_commands": [
+    {
+      "command": [
+        "npx",
+        "vitest",
+        "run",
+        "api/",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "packages/core"
+    },
+    {
+      "command": [
+        "npx",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "."
+      ],
+      "cwd": "packages/core"
+    }
+  ],
+  "trial_role": "Trial 4 (lane v7). A large entity type: the executor must find whether an agent schema already exists and match the Go agent response, including omitempty fields.",
+  "objective": "packages/core/api/client.ts has three agent methods that trust the server response without validation: getAgent (GET /api/agents/{id}), archiveAgent (POST /api/agents/{id}/archive) and restoreAgent (POST /api/agents/{id}/restore), each typed as returning Agent. The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a zod schema, with a malformed-response test.\n\nFind out whether packages/core/api/schemas.ts already validates agents elsewhere and reuse it if it fits. Read the Go handlers and the exact response struct they write, including json tags, and make the schema accept everything the server can legitimately send. Read how callers use each return value before deciding what a malformed response must do. Do not change any other method.\n\nWrite tests at exactly packages/core/api/agent-lifecycle-responses.test.ts covering a well-formed response and a malformed response for each method."
+}

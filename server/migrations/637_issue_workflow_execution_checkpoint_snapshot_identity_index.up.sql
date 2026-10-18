@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY issue_workflow_execution_checkpoint_snapshot_identity_key ON issue_workflow_execution_checkpoint_snapshot (workspace_id, issue_id, execution_id, execution_revision);

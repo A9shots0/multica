@@ -1,0 +1,1 @@
+ALTER TABLE owner_notification_binding DROP CONSTRAINT IF EXISTS owner_notification_binding_pkey;

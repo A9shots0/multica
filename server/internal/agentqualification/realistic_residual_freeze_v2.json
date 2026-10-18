@@ -1,0 +1,25 @@
+{
+  "schema_version": "silver-mediums.realistic-residual-freeze.v2",
+  "freeze_id": "realistic-continuity-and-rollout-residual-freeze-v31",
+  "status": "frozen_reviewed",
+  "review_outcome": "go",
+  "provider_calls_allowed": true,
+  "upstream_fixture_freeze_sha256": "cca629d86d79666cc29dae7815e5226430f821adc0a9c5098c974c44598f0f77",
+  "local_components": {
+    "realistic_residual_matrix_v2.json": "daa8713886599f348dbce99331632ae52b9725dc8a7208a566934cb358754d39",
+    "realistic_residual_matrix_v2.go": "f2c3ed34bb9f977b1c9165fd6fab2f87b1b919be8d824cd3170bac15fd4471c7",
+    "realistic_residual_matrix_v2_test.go": "62deb95b76b40bd2a5cc65d39224e3b54b2733ff4d2bbfef7dc9ef5a8241dc78",
+    "realistic_residual_freeze_v2.go": "be7a8e2ae77aec35a6c28d9924189cb997d95d61b0d3a6850d5135d036e93cfa",
+    "realistic_residual_freeze_v2_test.go": "cba03e8b2778b6d8cb18e90a0c1c6e8af8a043b7e191f62f44e49d6c1f7a098f"
+  },
+  "command_sources": {
+    "realistic_residual_execute_v2.go": "2e3454e622ba10e3ccbfdc97436072547352f7791713672c0972c2634fdc1e38",
+    "realistic_residual_execute_v2_test.go": "7c713db08a189186fedb8181c4f85653bdaab853cca2b89bb409b120a3bd1170",
+    "realistic_residual_entry_v2.go": "cbdc5c06e361933217a4b2c9221f22c73a23bc0d0ddafcae57cd87b335285c71",
+    "realistic_next_execute_v1.go": "ad1e5ddbb36bc0617db1e503148c9ecf19a9795dc6a56ffa2dd53d506f92255d",
+    "realistic_execute.go": "090434a7a7e2fdc9e114600000e9ab66317fa611b0b04f438dd0bf5cfcd7957f",
+    "openrouter_execute.go": "ecf598caf7c80419e4c7d0b1be3ca561d4da6549954cdbf6ed13a48f71664508",
+    "realistic-residual-run-v2/main.go": "0f1e3bf7b53b3747128dd5b67ce89d6cdb4f485f8194aeb05af678079a498131",
+    "realistic-residual-run-v2/main_test.go": "fb764144236cebef45783024e7a35e78a1fbfaf7cb20bbe30340c6014610d8a3"
+  }
+}

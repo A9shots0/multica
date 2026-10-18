@@ -1,0 +1,50 @@
+{
+  "task_id": "trial4-reaction-responses",
+  "title": "Validate comment and issue reaction responses with schemas",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Do not cast network JSON to T' and 'include a malformed-response test'. packages/core/api/client.ts addReaction and addIssueReaction return this.fetch(...) cast to Reaction and IssueReaction with no validation.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "packages/core/api/"
+  ],
+  "verification_command": [
+    "npx",
+    "vitest",
+    "run",
+    "api/reaction-responses.test.ts",
+    "--passWithNoTests=false",
+    "--maxWorkers=1",
+    "--no-file-parallelism"
+  ],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": [
+    "node"
+  ],
+  "max_turns": 50,
+  "trial_role": "Trial 4 (lane v7). Carried over from trial 3, where it never completed: New schemas for response types whose Go structs have to be read field by field, which is where the server-contract check applies.",
+  "objective": "packages/core/api/client.ts has two methods that trust the server response without validation: addReaction (typed Reaction) and addIssueReaction (typed IssueReaction). The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a zod schema, with a malformed-response test.\n\nRead the Go handlers for POST /api/comments/{id}/reactions and POST /api/issues/{id}/reactions and the exact structs they serialise, including every json tag. Write schemas in packages/core/api/schemas.ts that accept everything the server can legitimately send and reject what it cannot. Read how callers use the returned reaction and decide what a malformed response must do. Do not change any other method.\n\nWrite tests at exactly packages/core/api/reaction-responses.test.ts covering a well-formed response and a malformed response for each method.",
+  "regression_commands": [
+    {
+      "command": [
+        "npx",
+        "vitest",
+        "run",
+        "api/",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "packages/core"
+    },
+    {
+      "command": [
+        "npx",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "."
+      ],
+      "cwd": "packages/core"
+    }
+  ]
+}

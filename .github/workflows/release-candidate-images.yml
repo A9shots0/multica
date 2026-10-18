@@ -1,0 +1,119 @@
+# Builds the private self-host release candidate images off the operator host,
+# whose memory cannot hold the web build. Triggered only by a change to the
+# request file, which pins the exact release commit and its reviewed source
+# fingerprint. No secrets: the build needs none, and the images leave only as a
+# short-lived private workflow artifact.
+name: Release candidate images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/release-build/request.json"
+  # The push trigger did not start a run when the workflow arrived in the same
+  # push, so a manual run of the committed request is also allowed.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-images
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: alienware-ci
+    timeout-minutes: 180
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read the build request
+        id: request
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re
+          request = json.load(open('.github/release-build/request.json', encoding='utf-8'))
+          assert re.fullmatch(r'release-\d{8}(-\d+)?', request['release'])
+          assert re.fullmatch(r'[0-9a-f]{40}', request['commit'])
+          assert re.fullmatch(r'[0-9a-f]{64}', request['source_sha256'])
+          for key in ('release', 'commit', 'source_sha256', 'source_id'):
+              print(f'{key}={request[key]}')
+          PY
+
+      - name: Check out the pinned release commit
+        run: git checkout --quiet --detach "${{ steps.request.outputs.commit }}"
+
+      - name: Verify the build inputs match the reviewed manifest
+        run: |
+          python3 scripts/local-candidate-source.py --root . --manifest "$RUNNER_TEMP/manifest.json" --normalize-eol > "$RUNNER_TEMP/source.json"
+          python3 - <<'PY'
+          import json, os
+          source = json.load(open(os.environ['RUNNER_TEMP'] + '/source.json'))
+          assert source['source_sha256'] == '${{ steps.request.outputs.source_sha256 }}', source['source_sha256']
+          assert source['source_id'] == '${{ steps.request.outputs.source_id }}', source['source_id']
+          print('build inputs verified', source['source_id'], source['build_input_count'])
+          PY
+
+      - name: Build the backend image
+        run: |
+          docker build --pull -f Dockerfile \
+            --build-arg VERSION=${{ steps.request.outputs.release }} \
+            --build-arg COMMIT=${{ steps.request.outputs.source_id }} \
+            -t smk-${{ steps.request.outputs.release }}-backend:candidate .
+
+      - name: Build the web image
+        run: |
+          docker build --pull -f Dockerfile.web \
+            --build-arg NEXT_PUBLIC_APP_VERSION=${{ steps.request.outputs.release }} \
+            --build-arg NEXT_BUILD_LOW_MEMORY=1 \
+            --build-arg BUILD_NODE_OPTIONS=--max-old-space-size=3072 \
+            -t smk-${{ steps.request.outputs.release }}-web:candidate .
+
+      - name: Re-verify the build inputs after the build
+        run: |
+          python3 scripts/local-candidate-source.py --root . --manifest "$RUNNER_TEMP/manifest.json" --normalize-eol --check --content-only
+
+      - name: Export the images with a receipt
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          release=${{ steps.request.outputs.release }}
+          docker save -o "$RUNNER_TEMP/out/backend.tar" "smk-$release-backend:candidate"
+          docker save -o "$RUNNER_TEMP/out/frontend.tar" "smk-$release-web:candidate"
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          out = os.environ['RUNNER_TEMP'] + '/out'
+          release = '${{ steps.request.outputs.release }}'
+          def digest(path):
+              with open(path, 'rb') as stream:
+                  return hashlib.file_digest(stream, 'sha256').hexdigest()
+          tags = {'backend': f'smk-{release}-backend:candidate', 'frontend': f'smk-{release}-web:candidate'}
+          receipt = {
+              'release': release,
+              'commit': '${{ steps.request.outputs.commit }}',
+              'source_id': '${{ steps.request.outputs.source_id }}',
+              'source_sha256': '${{ steps.request.outputs.source_sha256 }}',
+              'run_id': os.environ['GITHUB_RUN_ID'], 'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'runner': os.environ.get('RUNNER_NAME'), 'workflow_sha': os.environ['GITHUB_SHA'],
+              'tags': tags,
+              'runner_image_ids': {s: subprocess.check_output(['docker', 'image', 'inspect', '--format', '{{.Id}}', t], text=True).strip()
+                                   for s, t in tags.items()},
+              'archives': {s: {'file': f'{s}.tar', 'sha256': digest(f'{out}/{s}.tar'), 'bytes': os.path.getsize(f'{out}/{s}.tar')}
+                           for s in tags},
+          }
+          json.dump(receipt, open(f'{out}/build-receipt.json', 'w'), indent=2)
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Upload the images as a private artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.request.outputs.release }}-images
+          path: ${{ runner.temp }}/out
+          retention-days: 3
+          compression-level: 6
+          if-no-files-found: error

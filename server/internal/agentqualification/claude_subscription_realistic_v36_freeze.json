@@ -1,0 +1,58 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-realistic-freeze.v36",
+  "freeze_id": "claude-subscription-realistic-r03-r04-freeze-v36",
+  "status": "frozen_reviewed",
+  "review_outcome": "one_consolidated_correction_after_independent_hold_no_second_review",
+  "provider_calls_allowed": true,
+  "prepared_definition_sha256": "572a649ad9e65d9ab3106aeeaf941d8e373322aba7befed686b6861ebf66eb44",
+  "review_binding_sha256": "0a3b6ac8c7e98eeeade2bd42778578a89bfb61d8bc6ddb94ae2a5ad1d3331eb6",
+  "execution_order": ["R03:v2", "R04:v1"],
+  "route": {
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "transport": "claude_code_print_restricted_tool_free_v2",
+    "runtime_provider": "claude_code_subscription",
+    "serving_provider": "anthropic",
+    "provider_fallbacks": false,
+    "runtime_version": "2.1.270 (Claude Code)",
+    "executable_sha256": "7999fba95dbffe167d9e0a043f29057979a0518ebe89b60c4fcfc6401ea8c424"
+  },
+  "case_caps": {
+    "R03:v2": {"max_provider_turns": 15, "max_total_reported_tokens": 75000, "max_generated_tokens": 20000, "max_cost_equivalent_micros": 200000},
+    "R04:v1": {"max_provider_turns": 15, "max_total_reported_tokens": 60000, "max_generated_tokens": 12000, "max_cost_equivalent_micros": 250000}
+  },
+  "campaign_caps": {"max_provider_turns": 30, "max_total_reported_tokens": 135000, "max_generated_tokens": 32000, "max_cost_equivalent_micros": 450000},
+  "frozen_antecedents": {
+    "realistic_workflow_group_v1.json": "3b7a9d315ef3abd9aac7dca8d879719f5402db538f6e401c59194c09f9594bcf",
+    "realistic_fixture_manifest_v1.json": "e182e08f9946384cbbb8b43316c52932af5c71b19c22ec9df372120f9b474c9d",
+    "realistic_freeze_v1.json": "fd2e81e609ae0521125bc742aa850e70c0412fb6b5c94847803ab99dc8a1933c",
+    "realistic_controller.go": "9f05555585f6778b7be028a09224205da746d005df32c0b44e55283543a1f27d",
+    "realistic_runner.go": "ce28bb3544c59185fc17132dca1e6d2933347b9e838570b8b0d6d9ac05e8746d",
+    "realistic_verifier.go": "a5a36815b134ccf799c85c488c97fef17d7ab2952f4354efdf775e6129ef7a14",
+    "realistic_execution.go": "4d11f2cb3f06abffb41c62b0f1f508391d71f206647ad09bb934aceb6ba99a31",
+    "realistic_seal.go": "3b78e2f2e490d18412811e38ae669f10c3f1c2ccd46f2347a1a1af5b005fa4f6",
+    "realistic_declarations.go": "ab8d084edbba4a220ff96b77654b08b50050b017d054f9f65fde5ea7e94d9100",
+    "realistic_end_to_end_adversarial_test.go": "38f5d8346e1c353ece9c1770f6e8aa13eec6cb0371e6a0abb72c69245db44122",
+    "realistic_validation_matrix_test.go": "2635d678fea855c3ebd2a39b99c930b33253ecb878f3366f0f820e3452dacb7b",
+    "claude_transport.go": "d3f84877dcc07262fce2e42efb1823619ea75c4df71b0436d826a10eaf06d06b",
+    "claude_receipt.go": "63ed9c1cf73762fe5c14d89f0cdece6fae2d8bea74fdc87138f7c034f4a78b70",
+    "claude_subscription_static_v35_freeze.json": "b37d6246a1a3f998e5373f7baadaace2fcc8408a8b040a40074b8481a118b4ee"
+  },
+  "local_components": {
+    "claude_subscription_realistic_v36.json": "572a649ad9e65d9ab3106aeeaf941d8e373322aba7befed686b6861ebf66eb44",
+    "claude_subscription_realistic_v36.go": "504f7b792a35d9c783384a84eebf2f1cb6e6e6160548add25ed377f224741205",
+    "claude_subscription_realistic_v36_seal.go": "a37654d6c369feeb5f038799d2827e614316c6712deec8b3cf4e3644689913ef",
+    "claude_subscription_realistic_v36_test.go": "77d39ca2730b64a3fd8b96a8e13e73d90c156f416e18cc1260ae33f224b92ea1",
+    "claude_subscription_realistic_v36_freeze.go": "0c50eee517662728434b1c803948af64a9817fa57c910d303329fb9b499c1622",
+    "claude_subscription_realistic_v36_freeze_test.go": "8d2d6fa79443bb786280956119e5340dceb34af8d07ea610328e274fed4d1c8c"
+  },
+  "command_sources": {
+    "claude-subscription-realistic-v36/main.go": "4103694b42179513e784f07532d03b0f52de3ce2ba9d92de91ad3b5ef20a7fd9",
+    "claude-subscription-realistic-v36/lifecycle.go": "75484db5aba92abbe3f582562262c886aa33a9bfb770dd39f16885b30cf08585",
+    "claude-subscription-realistic-v36/provider.go": "eda988327b2130369e815731a6a0b2b02ebaebb5b5f88046685ca5d7ef224325",
+    "claude-subscription-realistic-v36/lifecycle_test.go": "4b1c0b8371d74af94e8e1a6982a4ca81ce8717db5292f1f069ddb41039121fd0"
+  },
+  "documents": {
+    "docs/silver-mediums/ITEM-14-CLAUDE-SUBSCRIPTION-REALISTIC-V36-PREVALIDATION.md": "1282cf3e891ad11217cf4d939ac9858ed2b90135eddbd7fbe2c64b863cb2272e"
+  }
+}

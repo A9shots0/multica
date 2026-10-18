@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "inbox": "インボックス",
+    "chat": "チャット",
+    "my_issues": "マイタスク",
+    "issues": "HQ",
+    "projects": "プロジェクト",
+    "autopilots": "オートパイロット",
+    "agents": "エージェント",
+    "squads": "スクワッド",
+    "usage": "分析",
+    "runtimes": "ランタイム",
+    "skills": "スキル",
+    "deployments": "デプロイ",
+    "knowledge": "ナレッジ",
+    "settings": "設定"
+  },
+  "tab": {
+    "issue": "タスク",
+    "project": "プロジェクト",
+    "autopilot": "オートパイロット",
+    "agent": "エージェント",
+    "member": "メンバー",
+    "squad": "スクワッド",
+    "skill": "スキル",
+    "machine": "マシン",
+    "runtime": "ランタイム",
+    "attachment": "添付ファイル",
+    "create_agent": "エージェントを作成",
+    "unknown": "不明なページ"
+  },
+  "help": {
+    "trigger": "ヘルプ",
+    "download_desktop": "デスクトップ版",
+    "docs": "ドキュメント",
+    "changelog": "変更ログ",
+    "discord": "Discord",
+    "feedback": "フィードバック",
+    "server_version": "サーバーバージョン {{version}}"
+  },
+  "workspace_loader": {
+    "loading_workspace": "ワークスペースを読み込み中…",
+    "loading_named_prefix": "読み込み中"
+  },
+  "sidebar": {
+    "unpin_tooltip": "ピン留めを解除",
+    "workspaces_label": "ワークスペース",
+    "create_workspace": "ワークスペースを作成",
+    "pending_invitations_label": "保留中の招待",
+    "invitation_workspace_fallback": "ワークスペース",
+    "invitation_join": "参加",
+    "invitation_decline": "辞退",
+    "log_out": "ログアウト",
+    "new_issue": "新規タスク",
+    "new_issue_shortcut": "C",
+    "pinned_label": "ピン留め済み",
+    "work_group": "仕事",
+    "ai_team_group": "AI チーム",
+    "show_more_pins": "さらに {{count}} 件を表示…",
+    "show_fewer_pins": "表示を減らす",
+    "unread_overflow": "99+",
+    "discord_card": {
+      "title": "Discord に参加",
+      "dismiss": "閉じる"
+    }
+  },
+  "control_plane": {
+    "name": "Silver Mediums Agent Control Plane",
+    "built_on": "Multica 上に構築",
+    "about_trigger": "このコントロールプレーンについて",
+    "about_intro": "土台となる製品は Multica です。コントロールプレーンは、その上でエージェントの動き方を決める Silver Mediums の層です。",
+    "points": {
+      "truthful_states": {
+        "title": "実態どおりのステータス",
+        "body": "ステータスは実際に起きたことだけを示します。見込みで完了にすることはありません。"
+      },
+      "routing": {
+        "title": "管理されたルーティング",
+        "body": "作業は決められた経路でエージェント間を移り、引き継ぎはすべて記録されます。"
+      },
+      "shared_knowledge": {
+        "title": "共有された手順",
+        "body": "エージェントは同じ保存済みのスキルと指示を読み込むため、同じ仕事は毎回同じ手順で行われます。"
+      },
+      "bounded_permissions": {
+        "title": "限定された権限",
+        "body": "エージェントにはそのタスクに必要な権限だけが、実行中に限って与えられます。"
+      },
+      "independent_review": {
+        "title": "独立したレビュー",
+        "body": "完了とする前に、別のレビュアーが成果物を確認します。"
+      },
+      "release_verification": {
+        "title": "リリースと稼働確認",
+        "body": "リリースはレビュー済みビルドと照合され、起動後に正常性を確認します。"
+      },
+      "recovery": {
+        "title": "復旧とロールバック",
+        "body": "バックアップは事前に復元して演習されるため、問題のある変更を戻せます。"
+      },
+      "owner_inbox": {
+        "title": "あなたの受信箱",
+        "body": "あなたが決めるべき事項は、選択肢とその影響とともに届きます。"
+      },
+      "usage": {
+        "title": "使用量の把握",
+        "body": "実行回数、トークン、時間、コストを記録し、何に使われたかを確認できます。"
+      }
+    },
+    "attribution": "Multica 上に構築されています。Multica の名称、ロゴ、表記は変更せずに表示しています。",
+    "copyright": "Multica © 2025-2026 Multica, Inc. Multica License に基づき提供。"
+  }
+}

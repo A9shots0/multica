@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_issue_workflow_action_due ON issue_workflow_action_receipt (not_before, lease_expires_at, workspace_id) WHERE state IN ('admitted', 'retry_wait', 'leased');

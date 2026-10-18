@@ -1,0 +1,15 @@
+{
+  "task_id": "trial3-comment-mutations",
+  "title": "Validate comment edit and resolve responses with the comment schema",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Endpoint responses consumed by UI logic must pass through a schema before returning.' packages/core/api/client.ts updateComment, resolveComment and unresolveComment return unvalidated this.fetch(...) results although CommentSchema already exists in packages/core/api/schemas.ts.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/comment-mutations.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 50,
+  "trial_role": "Trial 3, task 2. Reuse of an existing entity schema on mutation responses; the comment edit flow carries revision handling, so the executor must check how callers use the returned comment before choosing a malformed-response behaviour.",
+  "objective": "packages/core/api/client.ts has three comment mutation methods that trust the server response without validation: updateComment, resolveComment and unresolveComment, each typed as returning Comment. packages/core/api/schemas.ts already defines CommentSchema. The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a schema, with a malformed-response test.\n\nRead the Go handlers that serve these endpoints and the response struct they write, and read how packages/core and packages/views use each method's return value (including any revision or optimistic-update handling). Reuse CommentSchema. Decide what each method must do when the response is malformed so that no caller writes a fabricated comment into a cache. Do not change any other method.\n\nWrite tests at exactly packages/core/api/comment-mutations.test.ts covering a well-formed response and a malformed response for each method."
+}

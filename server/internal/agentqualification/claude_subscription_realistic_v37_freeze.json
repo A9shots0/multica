@@ -1,0 +1,52 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-realistic-freeze.v37",
+  "freeze_id": "claude-subscription-realistic-r03-phased-freeze-v37",
+  "status": "frozen_reviewed",
+  "review_outcome": "accepted_after_one_consolidated_correction_no_second_review",
+  "provider_calls_allowed": true,
+  "prepared_definition_sha256": "dc86053057f4a57c17e9acac67561a5c4d62f60573744f966a9498dabece0677",
+  "execution_order": ["R03:v2"],
+  "topology": "bounded_phased_candidate_plans_to_deterministic_controller_no_reviewer_no_correction",
+  "route": {
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "transport": "claude_code_print_restricted_tool_free_v2",
+    "runtime_provider": "claude_code_subscription",
+    "serving_provider": "anthropic",
+    "provider_fallbacks": false,
+    "runtime_version": "2.1.270 (Claude Code)",
+    "executable_sha256": "7999fba95dbffe167d9e0a043f29057979a0518ebe89b60c4fcfc6401ea8c424"
+  },
+  "caps": {
+    "max_provider_invocations": 5,
+    "max_actions_per_phase": 4,
+    "max_total_actions": 20,
+    "max_total_reported_tokens": 75000,
+    "max_generated_tokens": 20000,
+    "max_cost_equivalent_micros": 200000,
+    "max_retries": 0
+  },
+  "frozen_antecedents": {
+    "claude_subscription_realistic_v36_freeze.json": "86ef9a33a047ede5f004ef73f35d76c6d8ef3400f32b8a89a4a2f025867afe6b",
+    "realistic_workflow_group_v1.json": "3b7a9d315ef3abd9aac7dca8d879719f5402db538f6e401c59194c09f9594bcf",
+    "realistic_fixture_manifest_v1.json": "e182e08f9946384cbbb8b43316c52932af5c71b19c22ec9df372120f9b474c9d",
+    "realistic_freeze_v1.json": "fd2e81e609ae0521125bc742aa850e70c0412fb6b5c94847803ab99dc8a1933c"
+  },
+  "local_components": {
+    "claude_subscription_realistic_v37.go": "d231069d959e2caca1189d52ed9d8ef5656c1bf83ecbf3437f03e39f8484f5e6",
+    "claude_subscription_realistic_v37_seal.go": "73fb2db4c0c69d3e9e1f5865601a8acf4cd27adbcb8a78761af534c69ef36247",
+    "claude_subscription_realistic_v37_test.go": "70a7b26c3ad40ff859f526a59dce42e71b9074e3324981aee53c1d37726236b3",
+    "claude_subscription_realistic_v37_freeze.go": "4c81d7540c572db9532877a16350261305991137fa0f6829711c5313db8f0e93",
+    "claude_subscription_realistic_v37_freeze_test.go": "9abad2c20964ddaac6e5d9c0722509effb154cf384a8f781615d9d0000d92600"
+  },
+  "command_sources": {
+    "claude-subscription-realistic-v37/main.go": "af9685c34424867c47f14e35dd9ab6ddcecd6d061daa3003488417b9f49fc59e",
+    "claude-subscription-realistic-v37/main_test.go": "3063b0bcd33f7827d0b8f31031577d87210cc23207ad356060610899dced8dd9",
+    "claude-subscription-realistic-v37/lifecycle.go": "af4c172bedbfb8649749b29362ca0ef49da5bd185ab99155b6f6257e5aa53bc4",
+    "claude-subscription-realistic-v37/lifecycle_test.go": "6a5790e653c047244b63502414025de9e335d7e81d07eb86caaeca42a979842d",
+    "claude-subscription-realistic-v37/provider.go": "dba941f2aa33f4a5b841a17442ce6f3e5c1ebd2e47df7d3f6e12113641c057a5"
+  },
+  "documents": {
+    "docs/silver-mediums/ITEM-14-CLAUDE-SUBSCRIPTION-REALISTIC-V37-PREVALIDATION.md": "d351afc5b0a6ec83ab4f936824573388c9c15574ed9e3e9bb45c8f70edc6fc75"
+  }
+}

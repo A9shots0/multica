@@ -1,0 +1,16 @@
+{
+  "schema_version": "silver-mediums.topology-freeze.v4",
+  "bundle_id": "realistic-topology-r03-gpt54-repeat-v4",
+  "status": "frozen_reviewed",
+  "experiment_sha256": "477e6fa94412f591b45cb7c0efe92102246dc965f6b6b2b43166a4a743f20b39",
+  "runner_sha256": "836109c372ad17fa82c4f8d3545d224696f871814c60ffa7d2187e02c6b5ab88",
+  "review_sha256": "0062bdce0f678ecbd271ad79793ef482d50c1412e54ccbb81c7368ec212e8885",
+  "campaign_sha256": "a767eeffffb80d0dd8b44f2ae8df0c3721fce5898ccc56686a1c0ba000de440b",
+  "campaign_executor_sha256": "545aa2b3d620420c8e34848dc0ed4f58993265eb24153403833ead4680868041",
+  "main_sha256": "d6d3ae342d0dbdee0e89def01a6d9d69e5a38f8efa4d765e905c7b009e6c75ee",
+  "opencode_provider_sha256": "2e5031bca08d1664076c746b182a7975718754b38685dd70bcd4e95ba5f7bdab",
+  "opencode_runtime_sha256": "f0c2c93dda650147eed84d4c334bb5df8ee7e057be3ab32224dddcf857617165",
+  "topology_v3_freeze_sha256": "89b5341f62ff15d1e67d0bf1c43124221b54d78f2b72684ae9027a1276ee9b69",
+  "validation_matrix": ["exact_gpt54_openai_medium","fresh_same_model_reviewer","same_tool_free_review_contract","unchanged_r03_v2_fixture_and_grader","no_fallbacks","no_transport_retries","local_only_no_external_side_effects","four_fresh_counterbalanced_observations","reviewer_16000_total_cap","reviewed_arm_covers_all_substages","campaign_410000_total_cap","incremental_spend_below_2_usd","paid_response_sealed_before_stop","exact_receipt_accounting","exclusive_claim","crash_no_retry","one_correction_ceiling","v3_byte_preservation","recursive_v3_v2_v1_command_source_admission"],
+  "provider_calls_allowed": true
+}

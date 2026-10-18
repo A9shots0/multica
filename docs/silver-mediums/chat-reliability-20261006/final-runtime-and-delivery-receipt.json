@@ -1,0 +1,215 @@
+{
+  "stage": "v41 runtime verified; both wireframe handoffs complete and shown, compositions unselected; whole operational trial incomplete",
+  "candidateCommit": "07ebf09bf595bb74a95be55ea997d308f357fb4f",
+  "baseCommit": "d97b28019c60c3521936b3d0649ed24af132b1db",
+  "observedAt": "2026-10-07T07:58:05.160086+00:00",
+  "checks": [
+    "v37 focused ordinary correction and follow-up database suite passed in 48.865 seconds; go vet handler/service passed",
+    "Active v37 ordinary Chat correction preserved 4852-byte Phone and 4518-byte CRM feedback and all six current images each in canonical issue comments",
+    "CRM final ZIP downloaded through Chat, SHA verified, freshly extracted, relative launcher reopened at port 3144; list/state/role verifier passed; filter returned two Onboarding clients with no duplicate scope banner; missing quick-view values remain Unavailable",
+    "Phone v3.1 ZIP downloaded through Chat, SHA verified, freshly extracted, relative Node server reopened at port 3143",
+    "Phone Browser supplement captured minimum/dense/empty/delayed/partial/failure across five sizes and actual interactions; found missing Dashboard mobile-return link; correction active",
+    "v38 focused admission and dispatch recovery regressions passed (35.826s); go vet handler/service and Linux build passed",
+    "Broader unbounded run interrupted without verdict; bounded combined run reached 180s after passing owner-route stage/authority checks and earlier workflow cases; remaining five recovery cases passed separately (25.340s). No claim of one all-green combined run.",
+    "All 24 workflow-control top-level cases observed PASS across these logs; combined-run timeout preserved as a limitation",
+    "Fresh backup local/offbox/private R2 passed after first attempt refused a changing uploads/workspace archive; v38 normal preflight/live application verification passed; health commit matches pushed source",
+    "27/27 workflow-control top-level cases observed PASS across recorded runs; final three test-evidence cases passed separately (26.958s). Combined-run timeout still not represented as green.",
+    "Live normal-Chat negative probe stopped at CLI validation: prior inventory file unavailable. No HTTP 409 observed. Read-only before/after confirms three existing workflow events and unchanged technical_review revision 4. This is a runtime-test limitation, not a claimed guard pass.",
+    "v39 local contract/prompt/vet and isolated handler tests passed; fresh backup and normal live checks passed; exact health reports7512b6b18. Ordinary Chat loaded multica-design and routed research/page proposal; no quality or all-agent compliance claim.",
+    "v40 policy/builtin template/YAML/payload/summary tests PASS0.620s, Linux build and preflight/live host checks PASS, health992e2eb27/start07:37:14Z. Both original Mika Chats resumed wireframe tasks; CRM actual PNG attachments completed, root opened both in built-in Browser; Phone generated PNGs copied/hash-checked/opened, final attachment handoff pending at this receipt.",
+    "v41 service summary testsPASS0.430s; vetPASS; nine isolated PostgreSQL delivery/history/catch-up casesPASS after earlier skipped TCP attempts. Build/preflight/live host healthPASS; IAB actual historical CRM raw JSON removed, image cards retained; DB evidence hashes unchanged."
+  ],
+  "windowsBinarySha256": "06c476769f44347c78571494da96def9687b472324afbf517468b37f0a404ccce",
+  "linuxBackendSha256": "8dc390579fd374dbf416e0fb5e088c3d44ea2bbdde91f7dc69c901d540d724fc",
+  "currentDaemonSha256": "06c476769f44347c78571494da96def9687b472324afbf517468b37f0a404ccce",
+  "currentBackendImage": "sha256:cca77bb0019bed85b0752683c529a59cf3f60925a1a16ad28a55ed989a6ee482",
+  "schemaChanges": true,
+  "fixtureContainer": "Both task-only containers stopped; test database volume preserved",
+  "fixtureTunnel": "stopped",
+  "ownerDesignsDelivered": 2,
+  "requestedDesigns": 2,
+  "nextAction": "Show actual wireframe pictures and a brief rationale; obtain meaningful composition feedback before styling. Keep independent authorized Multica engineering moving without treating questions as new work orders.",
+  "daemonCommit": "f0a24c97e4663ad2ed1c313c6ddef16f80e4ce5e",
+  "latestBackup": "20261007T075101Z-a1c2263a",
+  "builderRuntime": "existing Codex (a9drew), gpt-5.6-sol explicitly selected via UI",
+  "activeCorrectionProof": "Phone Chat correction cancelled task 01a11333-dc99-74e2-9981-397a20bf4552 at 21:54:37Z; exactly one replacement 01a11336-24ed-79f4-aeac-e03c305ae07f started 21:54:38Z on same SILV-94",
+  "macStudioDaemonCommit": "f0a24c97e4663ad2ed1c313c6ddef16f80e4ce5e",
+  "previewEvidenceLimitation": "Prior phone-v1-1920/1440 filenames did not establish those viewport dimensions. New verified captures use DOM dimension readback and full-width in-app CDP capture.",
+  "sourceCommit": "07ebf09bf595bb74a95be55ea997d308f357fb4f",
+  "ownerAcceptedDesigns": 0,
+  "multicaRuntimeChanges": true,
+  "crmPhoneLiveChanges": false,
+  "currentFrontendImage": "sha256:1e97c49960878dbdaf7aaab53dc909b2490162d17baef7d66a01311c8bef577f",
+  "frontendOverlay": "Exact prior compiled image, only embedded proxyClientMaxBodySize changed from 10 MiB to 100 MiB",
+  "deliveries": [
+    {
+      "project": "CRM",
+      "issue": "SILV-93",
+      "chat": "01a11310-1bb7-7eeb-ab4f-de979a5941bf",
+      "attachment": "01a11387-5186-708a-abd1-64c0f0511e2f",
+      "sha256": "a48550f322b1264c29248c74389fa830efccd5bdfe1281ad9832bc271c66264f",
+      "bytes": 3797747,
+      "preview": "http://a9drew.tailda9924.ts.net:3137/clients-v3-preview?role=admin&density=typical",
+      "independentPreview": "http://127.0.0.1:3144/clients-v3-preview?role=admin&density=typical",
+      "browserReopened": true,
+      "review": "Ordinary reviewer task 01a1138f-66ac-7951-949d-074c31779915 genuinely started, then cancelled by later owner rejection. No final verdict. Worker subsequently reported broken full-client links/clipped gain text; those observations require independent confirmation. Candidate rejected."
+    },
+    {
+      "project": "Phone Farm",
+      "issue": "SILV-94",
+      "chat": "01a11310-9d4a-7e0e-8529-3c995986d87e",
+      "attachment": "01a1138f-d643-73f9-b959-6c312bdcdf9c",
+      "sha256": "b37ab5da0ac26fda7f8180aeb65ea1dc532e1919f5fd5072e1f22f556ece7434",
+      "preview": "http://100.83.76.21:3099/dashboard?role=va",
+      "independentPreview": "http://127.0.0.1:3145/dashboard",
+      "browserReopened": true,
+      "review": "v3.2 separate reviewer inspected 36 supplied captures and source; bounded Partial without personal IAB interaction. Supervisor independently downloaded/reopened final ZIP and verified corrected mobile round-trip. Owner rejected product design nonetheless.",
+      "bytes": 42688389
+    }
+  ],
+  "ownerDesignDecision": {
+    "observedAt": "2026-10-06T23:43:27Z",
+    "accepted": 0,
+    "rejectedConcepts": 2,
+    "state": "Current revisions also rejected; no owner-ready design; existing requirements remain sufficient for system investigation",
+    "evidence": "Original owner rejection plus later direct feedback in this Codex chat, copied through both original Mika Chats"
+  },
+  "historicalDeliveryCheckpoint": {
+    "stage": "Owner rejected both delivered concepts; technical delivery verified, product outcome incomplete",
+    "candidateCommit": "f0a24c97e4663ad2ed1c313c6ddef16f80e4ce5e",
+    "observedAt": "2026-10-06T22:24:51.0281072Z",
+    "currentBackendImage": "sha256:e0b6cf899002b7535f56137b8589898adef75c4dd5dae1ab7faac26e17807bc9",
+    "linuxBackendSha256": "7e9f9bfe3b62fdc921032c7b0ba6ddc80482ce66e94b453a57a936093f1460eb",
+    "latestBackup": "20261006T221659Z-2bd79403",
+    "deliveries": [
+      {
+        "chat": "01a11310-1bb7-7eeb-ab4f-de979a5941bf",
+        "browserReopened": true,
+        "issue": "SILV-93",
+        "attachment": "01a1134e-2905-7612-b079-5b9d13ba1d17",
+        "independentPreview": "http://127.0.0.1:3141/clients-preview?role=admin&density=typical",
+        "sha256": "3c96a60ca2e09950b5475403ef697cdb280c3964f3107cfd60408079efd4c494",
+        "project": "CRM"
+      },
+      {
+        "sha256": "12f8620505fb52ba4c7103955162d2aa8f9f210e48a8d976dd2ef672c6666348",
+        "issue": "SILV-94",
+        "independentPreview": "http://100.83.76.21:3097/dashboard",
+        "bytes": 39110508,
+        "chat": "01a11310-9d4a-7e0e-8529-3c995986d87e",
+        "project": "Phone Farm",
+        "browserReopened": true,
+        "attachment": "01a1134c-f8fc-7dcc-bd4b-43c756f963c8"
+      }
+    ],
+    "checks": [
+      "focused frozen ordinary-correction database regressions passed",
+      "broader selected suite exposed two invalid existing fixtures; repaired test cases passed on rerun; whole log not claimed green",
+      "browser configuration and prompt checks passed",
+      "go vet handler service daemon passed",
+      "Linux backend Windows CLI Darwin arm64 CLI builds passed",
+      "git diff check passed",
+      "active Phone Chat correction stopped one worker and started one replacement on same issue",
+      "Installed Next 16.3.4 normal and low-memory config schema checks passed",
+      "Actual 39 MB Multica attachment upload and Browser download passed",
+      "Both final Chat ZIP bytes independently hash-checked, safely extracted and reopened in-app",
+      "Phone 14 portable checks and all 65 asset hashes passed independently after Browser download",
+      "CRM extracted minimum typical dense state assertions passed"
+    ]
+  },
+  "schemaChangesDetail": "v36 migration 621 expands ordinary owner feedback to 64 KiB; v37 has no additional schema change",
+  "remainingReliabilityGaps": [
+    "New ordinary-source/legacy mismatch prevention is deployed and DB-tested. Live normal-Chat negative probe did not reach server because its existing evidence file was missing; deployed guard request-path proof remains incomplete. Historical failed event preserved.",
+    "Product usefulness and visual quality remain unmet despite runtime/transport/technical delivery proof. Current rejection controls; no new brief required from owner.",
+    "Mika automatic follow-up invented an owner dependency despite no required new decision. Corrected via Chat; no new generic summary-authority safeguard claimed.",
+    "No universal reliability claim; reboot recovery and populated Phone original Overview baseline remain unproved."
+  ],
+  "priorBackendV38": {
+    "observedAt": "2026-10-06T23:43:27Z",
+    "candidateCommit": "5351e442d5ee14d67e45f01475b2603fafc37965",
+    "sourceCommit": "5351e442d5ee14d67e45f01475b2603fafc37965",
+    "currentBackendImage": "sha256:8e891f95b2b2c66d5dfc227e64b058721e363a611d29592bfd334963adfd4ded",
+    "linuxBackendSha256": "d46f3d68b76e5cad2b6febdf93bc96f4c01a35811fafec3c311a1cbf6f1c9d88",
+    "latestBackup": "20261006T233800Z-8ac0c41b"
+  },
+  "sharedDesignPractice": {
+    "ordinaryClaimInstruction": true,
+    "universalEmbeddedSkill": "multica-design",
+    "sealedRoleArtifactsUnchanged": true,
+    "intermediateReceiptValidation": true,
+    "hardPhaseApprovalStateMachine": false,
+    "finalReviewGateRetained": true,
+    "employeeUsabilityTesting": false,
+    "v39SchemaChange": false,
+    "chat": "01a11310-9d4a-7e0e-8529-3c995986d87e",
+    "mikaTask": "01a11422-409e-7064-9192-9504a2c43c74",
+    "specialistTask": "01a11422-de40-7a23-94ec-b566278abef3",
+    "observedStage": "Both final wireframe handoffs complete and images shown inline; owner composition selection and design acceptance remain absent.",
+    "evidence": "design-visible-delivery-v40.md",
+    "v40SchemaChange": false,
+    "explicitContinuationRecognized": true,
+    "visualArtifactsRequired": true,
+    "v41SchemaChange": false
+  },
+  "priorBackendV39": {
+    "sourceCommit": "7512b6b18bf109c892fca616afb07cda2739ce58",
+    "candidateCommit": "7512b6b18bf109c892fca616afb07cda2739ce58",
+    "linuxBackendSha256": "9050e25a1ca71bc85fb6f219f748447d18e8c00edca30e90be68d22043404619",
+    "currentBackendImage": "sha256:209cc7c673ba98387bdec248af727e1829da1ee64514a4838e96056f3d0fcf1f",
+    "latestBackup": "20261007T020937Z-537fb463",
+    "sharedDesignPractice": {
+      "ordinaryClaimInstruction": true,
+      "universalEmbeddedSkill": "multica-design",
+      "sealedRoleArtifactsUnchanged": true,
+      "intermediateReceiptValidation": true,
+      "hardPhaseApprovalStateMachine": false,
+      "finalReviewGateRetained": true,
+      "employeeUsabilityTesting": false,
+      "v39SchemaChange": false,
+      "chat": "01a11310-9d4a-7e0e-8529-3c995986d87e",
+      "mikaTask": "01a11422-409e-7064-9192-9504a2c43c74",
+      "specialistTask": "01a11422-de40-7a23-94ec-b566278abef3",
+      "observedStage": "Both wireframe tasks started; CRM actual images delivered and root shown inline; Phone generated images independently opened; no client design acceptance.",
+      "evidence": "design-visible-delivery-v40.md",
+      "v40SchemaChange": false,
+      "explicitContinuationRecognized": true,
+      "visualArtifactsRequired": true
+    }
+  },
+  "wireframeReview": {
+    "crmTask": "01a11544-c3bd-73f8-88bb-5742520e4a30",
+    "phoneTask": "01a11545-3c80-7cc8-8e28-e937b377e32f",
+    "crmAttachments": [
+      "01a11549-cda2-780c-a20b-b0d3da076979",
+      "01a11549-cdb6-792c-a327-92c7076c8678"
+    ],
+    "rootBrowserSurface": "built-in IAB; static PNG inspection only",
+    "ownerSelectedComposition": null,
+    "ownerAcceptedDesigns": 0,
+    "phoneCompletedAt": "2026-10-07T07:42:40.781759Z",
+    "phoneAttachments": [
+      "01a11550-04ec-75b0-a7f0-f1619a930ad3",
+      "01a11550-0550-7aa6-93fa-50bfb4825c3c",
+      "01a11550-05d0-7b3f-b648-dfa8a06bf915",
+      "01a11550-061d-7979-ae82-0740e7f3d971",
+      "01a11550-0a92-756f-b01f-bf8cd0590ee3"
+    ],
+    "phoneFinalADownloadSha256": "08fb553c6f2de08c0b962cdfbdf57786ef01bc0aab4c97645d32b071c177fe4f",
+    "phoneFinalBDownloadSha256": "804974405dfad3d85fbf95fdb56e004f779965f7bfa901187d891aa6f6c76e3e",
+    "phoneFinalBChange": "Adds Last check12:05 label; same composition; root independently inspected final attachment via IAB"
+  },
+  "priorBackendV40": {
+    "sourceCommit": "992e2eb279a4d619a4205571de254f953157682b",
+    "candidateCommit": "992e2eb279a4d619a4205571de254f953157682b",
+    "currentBackendImage": "sha256:e419728adaa3569c574beaad7da6404809eb7f483748d2fa1df8b3d8588de115",
+    "linuxBackendSha256": "5ad150d9631e6c61b556d8feeedba4f2e8088f05b30190b7781429e0bbdf36a2",
+    "latestBackup": "20261007T073304Z-60dc71c8",
+    "observedAt": "2026-10-07T07:40:25.288429+00:00"
+  },
+  "checkpointPresentationV41": {
+    "evidencePreserved": true,
+    "newAndHistoricalMessagesFiltered": true,
+    "runtimeBrowserVerified": true,
+    "evidence": "checkpoint-presentation-v41.md"
+  }
+}

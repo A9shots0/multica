@@ -1,0 +1,51 @@
+{
+  "task_id": "issue-proof-list-agents",
+  "title": "Validate the agent list response with the agent schema",
+  "repository": "C:/Dev/multica",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Endpoint responses consumed by UI logic must pass through a schema before returning.' packages/core/api/client.ts listAgents returns this.fetch(...) cast to Agent[] with no validation, while getAgent, archiveAgent and restoreAgent already validate through AgentSchema.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "packages/core/api/"
+  ],
+  "verification_command": [
+    "npx",
+    "vitest",
+    "run",
+    "api/list-agents-response.test.ts",
+    "--passWithNoTests=false",
+    "--maxWorkers=1",
+    "--no-file-parallelism"
+  ],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": [
+    "node"
+  ],
+  "max_turns": 60,
+  "regression_commands": [
+    {
+      "command": [
+        "npx",
+        "vitest",
+        "run",
+        "api/",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "packages/core"
+    },
+    {
+      "command": [
+        "npx",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "."
+      ],
+      "cwd": "packages/core"
+    }
+  ],
+  "trial_role": "The real task for the first issue-started lane proof on the local instance.",
+  "objective": "packages/core/api/client.ts listAgents returns the server response cast to Agent[] without validation, while getAgent, archiveAgent and restoreAgent already validate through AgentSchema in packages/core/api/schemas.ts. The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a schema, with a malformed-response test.\n\nRead the Go handler for GET /api/agents and the response it writes, and read how packages/core and packages/views use listAgents. Validate the list with AgentSchema (or a list schema built from it). Decide what a malformed list must return: a list that fails validation as a whole should not crash the agents pages, and one malformed agent should not silently hide every valid one if that can be avoided without inventing data. Do not change any other method.\n\nWrite tests at exactly packages/core/api/list-agents-response.test.ts covering a well-formed list, an empty list and malformed responses. The tests must exercise the client boundary: call ApiClient.listAgents with a mocked fetch response, as the existing packages/core/api/*.test.ts files do, rather than only parsing with the schema directly, so they would fail if listAgents returned the unchecked response again. The file needs no DOM, so it must start with the line // @vitest-environment node (CLAUDE.md, Testing). Test only the behaviour this task asks for. Two further rules the review enforces: agent responses can carry owner-visible secrets such as mcp_config, so pass redactReceived: true in the parseWithFallback options (as the agent env methods in client.ts do) so a malformed payload is never logged; and packages/core typechecks tests strictly (npx tsc --noEmit -p . from packages/core, which you cannot run yourself), so narrow indexed results before reading properties, for example with a length assertion followed by a non-null check, never by accessing result[0].id directly."
+}

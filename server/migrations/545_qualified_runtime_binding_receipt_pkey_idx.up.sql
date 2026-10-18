@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY qualified_runtime_binding_receipt_pkey_idx ON qualified_runtime_binding_receipt (id);

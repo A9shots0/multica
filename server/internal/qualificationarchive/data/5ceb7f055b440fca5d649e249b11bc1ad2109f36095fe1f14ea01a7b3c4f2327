@@ -1,0 +1,10 @@
+{
+  "schema_version": "silver-mediums.screening-reservation.v1",
+  "batch_id": "claude-subscription-transport-v29",
+  "evaluation_binding": "f0bcf5256786d96aa08c676b98ea86c61b593fc623feb02d8494e1716b1bfa1a",
+  "candidate_id": "screen.generalist.claude46.medium.subscription.calibration.v29",
+  "case_id": "T11",
+  "admission_input_sha256": "b9c299879022a62fcca627464c628e45709ae88b4b6f07249e8560cc5d2c5976",
+  "reserved_at": "2026-09-13T12:05:57.5700573Z",
+  "state": "reserved"
+}

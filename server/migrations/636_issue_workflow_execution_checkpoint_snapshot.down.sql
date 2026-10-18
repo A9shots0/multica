@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS issue_workflow_execution_checkpoint_snapshot;

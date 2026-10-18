@@ -1,0 +1,87 @@
+package agentqualification
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"github.com/multica-ai/multica/server/internal/qualificationarchive"
+	"testing"
+)
+
+func TestClaudeSubscriptionStaticV34AtomicFreezeIsLocked(t *testing.T) {
+	f, err := historicalContracts(t).CurrentClaudeSubscriptionStaticV34Freeze()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Status != "frozen_reviewed" || f.ReviewOutcome != "passed_after_consolidated_correction" || !f.ProviderCallsAllowed || len(f.ExecutionOrder) != 6 || len(ClaudeSubscriptionStaticV34FreezeSHA256()) != 64 {
+		t.Fatalf("unexpected v34 freeze: %+v", f)
+	}
+	doc, err := qualificationarchive.Read("claude-v34", "docs/silver-mediums/ITEM-14-CLAUDE-SUBSCRIPTION-STATIC-V34-PREVALIDATION.md", f.Documents["docs/silver-mediums/ITEM-14-CLAUDE-SUBSCRIPTION-STATIC-V34-PREVALIDATION.md"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := sha256.Sum256(doc)
+	if f.Documents["docs/silver-mediums/ITEM-14-CLAUDE-SUBSCRIPTION-STATIC-V34-PREVALIDATION.md"] != hex.EncodeToString(h[:]) {
+		t.Fatal("Claude subscription static v34 prevalidation doc drift")
+	}
+	commands := map[string]string{
+		"claude-subscription-static-v34/main.go":           "../../cmd/claude-subscription-static-v34/main.go",
+		"claude-subscription-static-v34/lifecycle.go":      "../../cmd/claude-subscription-static-v34/lifecycle.go",
+		"claude-subscription-static-v34/lifecycle_test.go": "../../cmd/claude-subscription-static-v34/lifecycle_test.go",
+	}
+	for name := range commands {
+		raw, err := qualificationarchive.Read("claude-v34", "server/cmd/"+name, f.CommandSources[name])
+		if err != nil {
+			t.Fatal(err)
+		}
+		h := sha256.Sum256(raw)
+		if f.CommandSources[name] != hex.EncodeToString(h[:]) {
+			t.Fatalf("Claude subscription static v34 command drift: %s", name)
+		}
+	}
+}
+
+func TestClaudeSubscriptionStaticV34AntecedentEvidenceIsBytePreserved(t *testing.T) {
+	var manifest map[string]json.RawMessage
+	if err := json.Unmarshal(claudeSubscriptionStaticV34Antecedents, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	for _, sectionName := range []string{"original_invalid_v29", "corrected_stdin_pass_v29"} {
+		var section map[string]string
+		if err := json.Unmarshal(manifest[sectionName], &section); err != nil {
+			t.Fatal(err)
+		}
+		root := section["root"]
+		delete(section, "root")
+		if root == "" || len(section) == 0 {
+			t.Fatalf("antecedent section %s is incomplete", sectionName)
+		}
+		for name, expected := range section {
+			raw, err := qualificationarchive.Read("claude-v29", root+"/"+name, expected)
+			if err != nil {
+				t.Fatalf("read %s/%s: %v", sectionName, name, err)
+			}
+			h := sha256.Sum256(raw)
+			if hex.EncodeToString(h[:]) != expected {
+				t.Fatalf("antecedent evidence drift: %s/%s", sectionName, name)
+			}
+		}
+	}
+}
+
+func TestClaudeSubscriptionStaticV34RejectsPrematureUnlockAndHashDrift(t *testing.T) {
+	f, err := historicalContracts(t).CurrentClaudeSubscriptionStaticV34Freeze()
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.ProviderCallsAllowed = false
+	if historicalContracts(t).ValidateClaudeSubscriptionStaticV34Freeze(f) == nil {
+		t.Fatal("reviewed v34 freeze accepted provider relock drift")
+	}
+	f, _ = historicalContracts(t).CurrentClaudeSubscriptionStaticV34Freeze()
+	f.LocalComponents = cloneStringMap(f.LocalComponents)
+	f.LocalComponents["claude_subscription_static_v34.go"] = "drift"
+	if historicalContracts(t).ValidateClaudeSubscriptionStaticV34Freeze(f) == nil {
+		t.Fatal("v34 source drift accepted")
+	}
+}

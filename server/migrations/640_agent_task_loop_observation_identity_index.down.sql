@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS agent_task_loop_observation_identity_key;

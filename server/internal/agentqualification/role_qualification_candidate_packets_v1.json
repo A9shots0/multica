@@ -1,0 +1,21 @@
+{
+  "schema_version": "silver-mediums.role-qualification-candidate-packets.v1",
+  "status": "draft_prevalidation_visible",
+  "case_source": "role_qualification_case_group_v1.json",
+  "packets": [
+    {"case_id":"RQ-MIKA-01","candidate_class":"mika_owner_interface","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["answer","truth","action","owner_decision_needed"]},
+    {"case_id":"RQ-MIKA-02","candidate_class":"mika_owner_interface","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["answer","truth","action","owner_decision_needed"]},
+    {"case_id":"RQ-MIKA-03","candidate_class":"mika_owner_interface","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["answer","truth","action","owner_decision_needed"]},
+    {"case_id":"RQ-QC-01","candidate_class":"quality_checker","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["verdict","failed_criteria","evidence","required_correction","completion_boundary","independence_check"]},
+    {"case_id":"RQ-QC-02","candidate_class":"quality_checker","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["verdict","failed_criteria","evidence","required_correction","completion_boundary","independence_check"]},
+    {"case_id":"RQ-QC-03","candidate_class":"quality_checker","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["verdict","failed_criteria","evidence","required_correction","completion_boundary","independence_check"]},
+    {"case_id":"RQ-PUI-01","candidate_class":"product_ui","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["user_problem","information_priority","minimum_state","typical_state","maximum_state","narrow_view","medium_view","wide_view","interaction_and_accessibility","functional_acceptance","taste_decision_needed"]},
+    {"case_id":"RQ-PUI-02","candidate_class":"product_ui","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["user_problem","information_priority","minimum_state","typical_state","maximum_state","narrow_view","medium_view","wide_view","interaction_and_accessibility","functional_acceptance","taste_decision_needed"]},
+    {"case_id":"RQ-PUI-03","candidate_class":"product_ui","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["user_problem","information_priority","minimum_state","typical_state","maximum_state","narrow_view","medium_view","wide_view","interaction_and_accessibility","functional_acceptance","taste_decision_needed"]},
+    {"case_id":"RQ-WIN-01","candidate_class":"shared_windows_executor","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["first_failing_boundary","accountable_actor","implementation_plan","blast_radius","authority_and_host_limits","focused_checks","regression_checks","completion_proof","prohibited_shortcuts","owner_decision_needed"]},
+    {"case_id":"RQ-WIN-02","candidate_class":"shared_windows_executor","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["first_failing_boundary","accountable_actor","implementation_plan","blast_radius","authority_and_host_limits","focused_checks","regression_checks","completion_proof","prohibited_shortcuts","owner_decision_needed"]},
+    {"case_id":"RQ-WIN-03","candidate_class":"shared_windows_executor","visible_fields":["case_id","title","purpose","scenario","required_artifact_ids","response_schema"],"response_schema":["first_failing_boundary","accountable_actor","implementation_plan","blast_radius","authority_and_host_limits","focused_checks","regression_checks","completion_proof","prohibited_shortcuts","owner_decision_needed"]}
+  ],
+  "hidden_fields_forbidden": ["pass_requirements","subtle_failures","adversarial_failures","coverage_tags","required_concepts","forbidden_concepts","expected_pass","calibration_variant"]
+}
+

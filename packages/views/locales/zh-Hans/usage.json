@@ -1,0 +1,128 @@
+{
+  "title": "统计",
+  "tab_usage": "用量",
+  "tab_subscriptions": "订阅与故障转移",
+  "subscriptions": {
+    "title": "已连接订阅与故障转移",
+    "subtitle": "实时监控各模型服务配额、响应健康度与自动容灾状态",
+    "active_provider": "当前主用",
+    "standby_provider": "容灾备用",
+    "status_healthy": "运行正常",
+    "status_standby": "备用就绪",
+    "status_rate_limited": "受限/触发限流",
+    "quota_used": "已消耗配额",
+    "quota_limit": "月度配额",
+    "monthly_spend": "本期费用",
+    "failover_notice": "当主用服务遭遇速率限制或异常时，Agent 工作流将在 200ms 内无感切换至备用服务。",
+    "models_heading": "已接入提供商账户",
+    "provider_col": "提供商",
+    "model_col": "默认模型",
+    "status_col": "运行状态",
+    "usage_col": "Token 用量 (30天)",
+    "cost_col": "预估费用"
+  },
+  "header": {
+    "timezone_and_updated": "{{tz}} · 更新于 {{time}}",
+    "refresh": "刷新"
+  },
+  "filter": {
+    "project_label": "项目",
+    "all_projects": "全部项目",
+    "period_label": "时间范围"
+  },
+  "kpi": {
+    "cost_label": "费用 · {{days}}天",
+    "tokens_label": "Token · {{days}}天",
+    "tokens_hint": "输入 {{input}} · 输出 {{output}}",
+    "run_time_label": "耗时 · {{days}}天",
+    "run_time_hint": "共 {{tasks}} 次运行",
+    "tasks_label": "运行数 · {{days}}天",
+    "tasks_hint": "失败 {{failed}} 个"
+  },
+  "dim": {
+    "label": "维度",
+    "daily": "按天",
+    "weekly": "按周"
+  },
+  "daily": {
+    "title_cost": "每日费用",
+    "title_tokens": "每日 Token",
+    "title_time": "每日耗时",
+    "title_tasks": "每日运行数",
+    "title_errors": "每日错误",
+    "metric_cost": "费用",
+    "metric_tokens": "Token",
+    "metric_time": "耗时",
+    "metric_tasks": "运行数",
+    "no_data": "所选时间范围内暂无消耗。",
+    "metric_label": "指标"
+  },
+  "weekly": {
+    "title_cost": "每周费用",
+    "title_tokens": "每周 Token",
+    "title_time": "每周耗时",
+    "title_tasks": "每周运行数",
+    "title_errors": "每周错误",
+    "partial_label": "{{range}}（未满 · 已过 {{covered}} / 7 天）"
+  },
+  "errors": {
+    "kpi_failed_label": "失败运行 · {{days}}天",
+    "kpi_failed_hint": "共 {{total}} 次运行",
+    "kpi_rate_label": "失败率 · {{days}}天",
+    "kpi_agents_label": "受影响智能体 · {{days}}天",
+    "kpi_agents_hint": "最多 {{name}} · {{count}} 次",
+    "tooltip_rate": "错误率",
+    "class": {
+      "auth": "认证",
+      "rate_limit": "限流",
+      "timeout": "超时",
+      "provider": "模型服务",
+      "runtime": "运行时",
+      "agent": "智能体",
+      "other": "其他"
+    },
+    "title": "错误",
+    "summary": "{{total}} 次运行中有 {{failed}} 次失败 · {{rate}}",
+    "mix_title": "失败构成 · {{failed}}",
+    "mix_label": "失败构成",
+    "codes_label": "错误码",
+    "by_agent": "问题最多的智能体",
+    "sort_label": "错误榜排序依据",
+    "sort_failed": "失败数",
+    "sort_rate": "失败率",
+    "header_agent": "智能体",
+    "header_failed": "失败数",
+    "header_runs": "运行数",
+    "header_rate": "失败率",
+    "other_agents": "其他智能体",
+    "low_sample": "所选时间范围内运行不足 {{count}} 次，失败率参考价值有限。",
+    "no_data": "所选时间范围内没有失败的运行。",
+    "show_reasons": "展开错误码",
+    "hide_reasons": "收起错误码",
+    "show_all": "展开全部 {{count}} 个",
+    "show_less": "只看前 {{count}} 个"
+  },
+  "leaderboard": {
+    "title": "排行榜",
+    "caption": "{{count}} 个智能体",
+    "caption_with_deleted": "{{count}} 个智能体 · {{deleted}} 个已删除",
+    "sort_label": "智能体排序依据",
+    "deleted_agents": "已删除的智能体",
+    "other_agents": "其他智能体",
+    "header_agent": "智能体",
+    "header_tokens": "Token",
+    "header_cost": "费用",
+    "header_time": "耗时",
+    "header_tasks": "运行数",
+    "show_all": "展开全部",
+    "show_less": "只看前 {{count}} 个",
+    "no_data": "所选时间范围内暂无智能体活动。"
+  },
+  "empty": {
+    "title": "暂无消耗数据",
+    "body": "当智能体在这里开始运行后，它们的 token 消耗和耗时将出现在此处。"
+  },
+  "duration": {
+    "less_than_minute": "<1分钟"
+  }
+}

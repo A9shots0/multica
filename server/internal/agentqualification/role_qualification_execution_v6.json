@@ -1,0 +1,2 @@
+{"schema_version":"silver-mediums.role-qualification-execution.v6","execution_id":"role-qualification-structured-outcome-v6","status":"frozen_preflight_required_not_executed","v5_freeze_sha256":"cbe3d5125cb28b716c0db5423b223db1b192aaea21ec73a7925f9c46e4c90c8b","max_cells_per_invocation":12,"fresh_preflight_seconds":600,"retries":0,"fallbacks":false,"transport_error_scope":"observation_local_unscored","continue_unaffected":true,"provider_gate":"exact_v6_freeze_plus_fresh_v6_preflight"}
+

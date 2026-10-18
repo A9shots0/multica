@@ -1,0 +1,68 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-realistic.v36",
+  "batch_id": "claude-subscription-realistic-r03-r04-v36",
+  "status": "prepared_for_independent_review",
+  "provider_calls_allowed": false,
+  "transport": "claude_code_print_restricted_tool_free_v2",
+  "topology": "direct_candidate_to_deterministic_controller_no_reviewer_no_correction",
+  "configuration": {
+    "id": "realistic.generalist.claude46.medium.subscription.v36",
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "runtime_provider": "claude_code_subscription",
+    "serving_provider": "anthropic",
+    "provider_fallbacks": false
+  },
+  "execution_order": ["R03:v2", "R04:v1"],
+  "case_policy": {
+    "r03_pass_gates_r04": true,
+    "candidate_failure_skips_r04": true,
+    "observation_local_invalidity_continues_r04": true,
+    "r04_attempt_1": "harness_forced_interruption_zero_provider_calls",
+    "r04_attempt_2": "exactly_once_resume_same_run_family",
+    "retries": 0,
+    "fallbacks": 0,
+    "owner_interventions": 0
+  },
+  "case_caps": {
+    "R03:v2": {"max_provider_turns":15,"max_total_reported_tokens":75000,"max_generated_tokens":20000,"max_cost_equivalent_micros":200000},
+    "R04:v1": {"max_provider_turns":15,"max_total_reported_tokens":60000,"max_generated_tokens":12000,"max_cost_equivalent_micros":250000}
+  },
+  "campaign_caps": {"max_provider_turns":30,"max_total_reported_tokens":135000,"max_generated_tokens":32000,"max_cost_equivalent_micros":450000},
+  "runtime_identity": {
+    "version_output": "2.1.270 (Claude Code)",
+    "executable_path": "C:\\Users\\a9sho\\AppData\\Roaming\\npm\\claude.cmd",
+    "executable_sha256": "7999fba95dbffe167d9e0a043f29057979a0518ebe89b60c4fcfc6401ea8c424",
+    "route_evidence": "signed_in_claude_code_subscription_non_bare_stdin_json_schema; requested_model_claude-sonnet-4-6; tools_empty; strict_empty_mcp; no_session_persistence; direct_anthropic_subscription_boundary"
+  },
+  "frozen_antecedents": {
+    "realistic_workflow_group_v1.json": "3b7a9d315ef3abd9aac7dca8d879719f5402db538f6e401c59194c09f9594bcf",
+    "realistic_fixture_manifest_v1.json": "e182e08f9946384cbbb8b43316c52932af5c71b19c22ec9df372120f9b474c9d",
+    "realistic_freeze_v1.json": "fd2e81e609ae0521125bc742aa850e70c0412fb6b5c94847803ab99dc8a1933c",
+    "realistic_controller.go": "9f05555585f6778b7be028a09224205da746d005df32c0b44e55283543a1f27d",
+    "realistic_runner.go": "ce28bb3544c59185fc17132dca1e6d2933347b9e838570b8b0d6d9ac05e8746d",
+    "realistic_verifier.go": "a5a36815b134ccf799c85c488c97fef17d7ab2952f4354efdf775e6129ef7a14",
+    "realistic_execution.go": "4d11f2cb3f06abffb41c62b0f1f508391d71f206647ad09bb934aceb6ba99a31",
+    "realistic_seal.go": "3b78e2f2e490d18412811e38ae669f10c3f1c2ccd46f2347a1a1af5b005fa4f6",
+    "realistic_declarations.go": "ab8d084edbba4a220ff96b77654b08b50050b017d054f9f65fde5ea7e94d9100",
+    "realistic_end_to_end_adversarial_test.go": "38f5d8346e1c353ece9c1770f6e8aa13eec6cb0371e6a0abb72c69245db44122",
+    "realistic_validation_matrix_test.go": "2635d678fea855c3ebd2a39b99c930b33253ecb878f3366f0f820e3452dacb7b",
+    "claude_transport.go": "d3f84877dcc07262fce2e42efb1823619ea75c4df71b0436d826a10eaf06d06b",
+    "claude_receipt.go": "63ed9c1cf73762fe5c14d89f0cdece6fae2d8bea74fdc87138f7c034f4a78b70",
+    "claude_subscription_static_v35_freeze.json": "b37d6246a1a3f998e5373f7baadaace2fcc8408a8b040a40074b8481a118b4ee"
+  },
+  "validation_references": [
+    "realistic_end_to_end_adversarial_test.go",
+    "realistic_validation_matrix_test.go",
+    "realistic_declarations_test.go",
+    "realistic_controller_test.go",
+    "realistic_runner_test.go",
+    "realistic_verifier_test.go"
+  ],
+  "global_halt_reasons": ["credential_failure","unsafe_external_action","evidence_corruption","campaign_cap"],
+  "candidate_failure_reasons": ["competence_failure","response_or_tool_protocol_failure","observation_resource_exhaustion"],
+  "observation_local_invalid_reasons": ["provider_transport_invalid","harness_imperfection"],
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "role_selection_allowed": false
+}

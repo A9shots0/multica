@@ -1,0 +1,7 @@
+# Local development override. The base compose file intentionally has no host
+# listeners, so a bare `docker compose up` from a checkout cannot claim the
+# production database port. Supported local flows add this file explicitly.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"

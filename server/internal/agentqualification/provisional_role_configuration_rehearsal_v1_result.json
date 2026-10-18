@@ -1,0 +1,20 @@
+{
+  "schema_version": "silver-mediums.provisional-role-configuration-rehearsal.v1",
+  "run_id": "item-14-provisional-role-configuration-rehearsal-20260914",
+  "execution_mode": "deterministic_provider_free_boundary_rehearsal",
+  "configuration_sha256": "017408d91dbe84c9bb8c966b179ff2e66bb390115865905da732b2188f3ad991",
+  "trace_sha256": "b89baa151438144fd1bc5bebd34f10829112ffa68dc3f1f2d4315fcc4c8c9f66",
+  "scenarios": 20,
+  "allowed": 1,
+  "denied": 19,
+  "mismatches": 0,
+  "provider_calls": 0,
+  "credential_reads": 0,
+  "native_tool_executions": 0,
+  "repository_accesses": 0,
+  "production_accesses": 0,
+  "outbound_actions": 0,
+  "phone_farm_accesses": 0,
+  "model_or_role_selections": 0,
+  "valid": true
+}

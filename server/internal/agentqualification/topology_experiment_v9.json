@@ -1,0 +1,29 @@
+{
+  "schema_version": "silver-mediums.topology-experiment.v9",
+  "experiment_id": "realistic-topology-r04-claude-gpt54-v9",
+  "status": "frozen_reviewed",
+  "cases": [{"case_id":"R04","case_version":"v1","repeats":2}],
+  "arms": [
+    {"arm_id":"direct-v9","reviewed":false,"max_provider_turns":15,"total_token_reservation":60000,"generated_token_ceiling":12000,"cost_ceiling_micros":250000},
+    {"arm_id":"reviewed-v9","reviewed":true,"max_provider_turns":25,"total_token_reservation":140000,"generated_token_ceiling":32000,"cost_ceiling_micros":600000}
+  ],
+  "execution_order": [
+    {"observation_id":"v9-r04-p1-direct","case_id":"R04","repeat":1,"arm_id":"direct-v9"},
+    {"observation_id":"v9-r04-p1-reviewed","case_id":"R04","repeat":1,"arm_id":"reviewed-v9"},
+    {"observation_id":"v9-r04-p2-reviewed","case_id":"R04","repeat":2,"arm_id":"reviewed-v9"},
+    {"observation_id":"v9-r04-p2-direct","case_id":"R04","repeat":2,"arm_id":"direct-v9"}
+  ],
+  "executor": {"configuration_id":"realistic.claudesonnet5.medium.executor.topology-v9","model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic"},
+  "reviewer": {"configuration_id":"realistic.gpt54.medium.reviewer.topology-v9","model":"openrouter/openai/gpt-5.4","effort":"medium","serving_provider":"openai"},
+  "reviewer_total_token_reservation": 20000,
+  "reviewer_generated_token_ceiling": 5000,
+  "max_corrections": 1,
+  "max_total_tokens": 400000,
+  "max_incremental_spend_micros": 1700000,
+  "provider_fallbacks": false,
+  "transport_retries": 0,
+  "owner_interventions": 0,
+  "global_halt_reasons": ["credential_failure","uncontrolled_spending","budget_breach","unsafe_external_action","evidence_corruption"],
+  "invalid_observation_policy": "stage_exhaustion_or_nonsafety_harness_failure_preserves_affected_observation_and_continues_unaffected_observations",
+  "advancement_policy": "testing_only_no_role_or_topology_selection"
+}

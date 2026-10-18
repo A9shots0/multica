@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY uq_issue_workflow_active_regression ON issue_workflow_incident (workspace_id, issue_id, regression_fingerprint) WHERE regression_fingerprint IS NOT NULL AND superseded_at IS NULL AND state NOT IN ('resolved', 'cancelled', 'superseded');

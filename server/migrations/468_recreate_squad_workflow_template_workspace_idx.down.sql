@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS squad_workflow_template_workspace_idx;

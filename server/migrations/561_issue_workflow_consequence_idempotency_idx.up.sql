@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY issue_workflow_consequence_idempotency_idx ON issue_workflow_consequence_receipt (workspace_id, idempotency_key);

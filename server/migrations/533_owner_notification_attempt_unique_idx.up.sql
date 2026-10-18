@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY owner_notification_attempt_unique_idx ON owner_notification_attempt (notification_id, request_key);

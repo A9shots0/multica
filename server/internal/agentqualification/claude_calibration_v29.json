@@ -1,0 +1,45 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-calibration.v1",
+  "calibration_id": "claude-subscription-transport-v29",
+  "status": "frozen_reviewed",
+  "purpose": "Close the live-receipt evidence gap for the Claude Code subscription transport with one frozen, tool-free T11 v4 observation. This does not select a role or permit production use.",
+  "transport": "claude_code_print_restricted_tool_free_v2",
+  "case": {
+    "case_id": "T11",
+    "case_version": "v4",
+    "candidate_packet_sha256": "65f4351c80c3c6d3a4a9462d5e910b5ff78f225959ea2e484e2c06aeeef8621c",
+    "grader_packet_sha256": "53c63e0c5154a3334dfac716841d2686df8e8e1c95cc667e4d1bcbfc0f30a1c4"
+  },
+  "configuration": {
+    "id": "screen.generalist.claude46.medium.subscription.calibration.v29",
+    "role_id": "screening_generalist",
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "instruction_version": "shadow-candidate.v5",
+    "instruction_sha256": "b77e91b1734a72c15080fe9a1092d89b79e040e318056db4d9719364a4709745",
+    "skill_versions": {"silver_mediums_context": "item14.v2-inline"},
+    "skill_content_sha256": {"silver_mediums_context": "abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},
+    "permission_version": "isolated-no-tools.v2",
+    "runtime_provider": "claude_code_subscription"
+  },
+  "caps": {
+    "max_provider_invocations": 1,
+    "max_total_reported_tokens": 15000,
+    "max_output_tokens": 2000,
+    "max_wall_seconds": 120,
+    "max_retries": 0,
+    "max_owner_interventions": 0
+  },
+  "billing_boundary": "anthropic_subscription",
+  "capacity_evidence": "owner_reported_usage_reset_not_authoritative_telemetry",
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "advancement_allowed": false,
+  "stop_rules": [
+    "credential_failure",
+    "timeout_or_transport_failure",
+    "evidence_integrity_failure",
+    "unsafe_external_action",
+    "token_or_output_cap_breach"
+  ]
+}

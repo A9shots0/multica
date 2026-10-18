@@ -1,0 +1,29 @@
+{
+  "schema_version":"silver-mediums.role-qualification-execution-freeze.v2",
+  "freeze_id":"role-qualification-execution-freeze-v2",
+  "status":"frozen_provider_locked",
+  "v1_freeze_sha256":"b047faaec585beee2cf00640f53e35d2b09b54618c6923c6b9458d2851d1b2e4",
+  "provider_calls_allowed":false,
+  "runtime_wiring":"none",
+  "fresh_preflight_required":true,
+  "cells":36,
+  "retries":0,
+  "fallbacks":false,
+  "artifacts":{
+    "server/internal/agentqualification/role_qualification_execution_v2.json":"d11b47cc59a763e171b15af0f6a12aacd961bae4d48d5d056e9e56ccb9d28f93",
+    "server/internal/agentqualification/role_qualification_execution_v2.go":"86f456c0a1376b001aa1c65115b5843d7ed07a1d52266c6bb218a99a0edd3853",
+    "server/internal/agentqualification/role_qualification_execution_v2_lifecycle.go":"5247b2b5676f2023bdc56755308f6fb3ea4528c9302e0c5eb3dda69d0830dc78",
+    "server/internal/agentqualification/role_qualification_execution_v2_test.go":"5f4182c3d294c5cf903e5598da3da04657570e711d4005fafebad1d8fd177654",
+    "server/internal/agentqualification/role_qualification_execution_v2_prevalidation.md":"de56eb740e209421d177b48c55c0038250fa75b5e4b8a2b62703b8b0a78dc90c",
+    "server/internal/agentqualification/role_qualification_execution_v2_freeze.go":"9e83841bf3f050bf0d35f0e716280524d66241e936f32903abc8b444b14f9ac1",
+    "server/internal/agentqualification/role_qualification_execution_v2_freeze_test.go":"52173319980ae13c1bbaf7fa4e7be573e14218da4db190094b8d5a286ef29994",
+    "server/cmd/role-qualification-run/main.go":"72e0d877e738380dab200940ddfb8c06248e4f071a91289a42dacb8ada635260",
+    "server/cmd/role-qualification-run/main_test.go":"16d23c9341c60fff957ba6bc5380d27371bd1329196e428788ef352e058292c7"
+  },
+  "transport_antecedents":{
+    "server/internal/agentqualification/opencode_structured_v33.go":"2fa598d5d7007271cdde388c0a8d102eccf17afd4066af56d88852f76df0ec20",
+    "server/internal/agentqualification/opencode_structured_v33_lifecycle.go":"bb81ca24a6e33d97fa4890504d636385e24369920377d5d43590b5f92aba7fb2",
+    "server/internal/agentqualification/claude_transport.go":"d3f84877dcc07262fce2e42efb1823619ea75c4df71b0436d826a10eaf06d06b",
+    "server/internal/agentqualification/claude_receipt.go":"63ed9c1cf73762fe5c14d89f0cdece6fae2d8bea74fdc87138f7c034f4a78b70"
+  }
+}

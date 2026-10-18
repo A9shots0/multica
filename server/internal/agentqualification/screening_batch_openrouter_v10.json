@@ -1,0 +1,26 @@
+{
+  "schema_version": "silver-mediums.agent-screening-batch.v1",
+  "batch_id": "screen-owner-anchoring-t11-strong-anchor-openrouter-v10",
+  "status": "planned_not_launched",
+  "suite_version": "silver-mediums.minimum-screening-suite.v1",
+  "execution_mode": "isolated_capability",
+  "candidate_transport": "opencode_run_json_stdin_tool_free_routing_receipted_v6",
+  "execution_order_policy": "seeded_permutation_v1",
+  "execution_order_seed": "screen-owner-anchoring-t11-strong-anchor-openrouter-v10:1",
+  "grader_blind_to_candidate": true,
+  "grader_configuration_id": "deterministic-t11.v3",
+  "cases": [{"case_id":"T11","case_version":"v3","candidate_packet_sha256":"52199fbc595d8c2d69ff45e7100edfef1bd79f44f54720240cf6c0ec071ac79c","grader_packet_sha256":"f286d741ad200fef50334127aa5197647818c468220b7282c6f936f8c54aaaee"}],
+  "candidates": [
+    {"id":"screen.generalist.claudesonnet5.medium.openrouter.v10","role_id":"screening_generalist","model":"openrouter/anthropic/claude-sonnet-5","reasoning_effort":"medium","instruction_version":"shadow-candidate.v5","instruction_sha256":"b77e91b1734a72c15080fe9a1092d89b79e040e318056db4d9719364a4709745","skill_versions":{"silver_mediums_context":"item14.v2-inline"},"skill_content_sha256":{"silver_mediums_context":"abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},"permission_version":"isolated-no-tools.v1","runtime_provider":"opencode_cli","serving_provider":"anthropic","provider_fallbacks":false}
+  ],
+  "repeats": 1,
+  "token_ceiling": 20000,
+  "per_launch_token_reservation": 20000,
+  "api_budgets": [{"provider":"openrouter","project_lane":"opencode_local_openrouter","currency":"USD","window_id":"openrouter_account_lifetime","max_spend_micros":102135232,"per_request_reserve_micros":50000,"max_snapshot_age_seconds":30}],
+  "max_owner_interventions": 0,
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "natural_language_intake_run": false,
+  "excluded_capabilities": ["tools","multica_issue_transport","phonefarm_operation","production_release","external_messaging","repository_access"],
+  "stop_rules": ["invalidate_on_any_tool_event","halt_batch_only_on_test_invalidity_evidence_integrity_unsafe_execution_transport_failure_or_budget_breach","stop_before_launch_when_token_reservation_does_not_fit","stop_before_launch_when_api_spend_snapshot_is_missing_or_stale","stop_when_absolute_openrouter_spend_reaches_102135232_micros","hard_cap_each_provider_response_at_8000_generated_tokens","one_observation_no_retries","do_not_escalate_effort_inside_this_batch","require_exact_prompt_hash_before_scoring","require_exact_serving_provider_and_no_fallbacks","comparison_anchor_only_no_role_promotion"]
+}

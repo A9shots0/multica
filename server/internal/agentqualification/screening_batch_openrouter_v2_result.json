@@ -1,0 +1,47 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-blast-radius-t12-openrouter-v2",
+  "status": "stopped_invalid_harness",
+  "grader_configuration_id": "deterministic-t12.v2",
+  "capacity": {
+    "provider": "openrouter",
+    "account_lane": "opencode_local_openrouter",
+    "baseline_usage_micros": 102073860,
+    "final_usage_micros": 102073942,
+    "provider_exact_delta_micros": 83
+  },
+  "observations": [
+    {
+      "candidate_id": "screen.generalist.qwen37flash.high.openrouter.v2",
+      "model": "openrouter/qwen/qwen3.7-flash",
+      "reasoning_effort": "high",
+      "started_at": "2026-09-12T00:45:10.833Z",
+      "completed_at": "2026-09-12T00:45:15.290Z",
+      "provider_session_id": "ses_f6cecbf47ffeLOKirzH6vKExnR",
+      "run_sha256": "df33b10a7c12632450ee70fd152dd02a9ccdfbfbbd79597c2906fd96ec6f1c59",
+      "export_sha256": "7670913c64b8f169630a6a866429fee0d900c39abbc7d27709a3095a049bb6df",
+      "output_sha256": "18fd0450d6c9ea9a61e8a8dd2942192bb2ac28b4a1a3eeec35f6d00e7ead9848",
+      "verdict": "INVALID",
+      "failure_class": "infrastructure",
+      "failed_checks": [
+        "candidate_response_not_json",
+        "multiline_prompt_truncated_by_windows_command_wrapper"
+      ],
+      "input_tokens": 886,
+      "cached_input_tokens": 0,
+      "reasoning_tokens": 397,
+      "output_tokens": 35,
+      "total_tokens": 1318,
+      "provider_reported_cost_micros": 83,
+      "retries": 0,
+      "owner_interventions": 0,
+      "tool_calls": 0,
+      "model_competence_scored": false
+    }
+  ],
+  "stop_reason": "transport_did_not_deliver_exact_prompt",
+  "planned_observations": 2,
+  "executed_observations": 1,
+  "automatic_retry_performed": false,
+  "second_candidate_launched": false
+}

@@ -1,0 +1,23 @@
+/* Respond to the conversation rail itself, including a narrow desktop split. */
+.chat-library-controls { container-type: inline-size; }
+.chat-library-toolbar { display: flex; align-items: center; gap: .25rem; min-width: 0; }
+.chat-library-filter-buttons { display: flex; align-items: center; gap: .25rem; flex-shrink: 0; }
+.chat-library-filter-select { display: none; }
+.chat-library-group-select { height: 2rem; min-width: 0; max-width: 7rem; margin-left: auto; }
+.chat-library-toolbar > button { flex-shrink: 0; }
+
+@container (max-width: 28rem) {
+  .chat-library-filter-buttons { display: none; }
+  .chat-library-filter-select,
+  .chat-library-group-select {
+    display: block;
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    max-width: none;
+    height: 2rem;
+    margin-left: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}

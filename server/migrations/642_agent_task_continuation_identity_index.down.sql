@@ -1,0 +1,2 @@
+DROP INDEX CONCURRENTLY IF EXISTS uq_agent_task_continuation_receipt_root_next_step;
+

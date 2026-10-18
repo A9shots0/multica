@@ -1,0 +1,21 @@
+{
+  "release": "release-20260917",
+  "source_id": "6389f0d062be-local-dffeaef888c4",
+  "source_sha256": "dffeaef888c49c5ce2653d9b62ff4c3fae0d02752f476f8bcdba40b945dc6bc8",
+  "source_head": "6389f0d062be1f4b59ee25b18f44f222e035dcd9",
+  "eol_normalized": true,
+  "images": {
+    "backend": "sha256:2e7bed89783ffdd1d3b93725040d89bc081683ef2a1a3feabc520d5a84185675",
+    "frontend": "sha256:ba6bf43f50145d71c1dd9558331e251110445b8f5e7e42a7ea7f984e235f231e",
+    "postgres": "sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f"
+  },
+  "rollback_images": {
+    "backend": "sha256:108a608b0e3ec6cb708cd5ebe0ccca5516affbbfca0a39b0ebe4f0d45273fb82",
+    "frontend": "sha256:8fe461d27bdfac9ae5c71a2a410a8d044622969a5c478986d8515fb10e36a802"
+  },
+  "rollback_source_id": "60fea34b9770-local-24b0121ef7a0",
+  "rollback_release": "adoption-20260916",
+  "base_compose_sha256": "16fb9b75e8e9847de608cda69b9258d1bcafdbe459c2b24eba4ff9ee0c55deb4",
+  "overlay_sha256": "619d814f2bb446a63c28a4a9ae4b73b61bc48fdfa9b4a220206989a7b7c9dab8",
+  "rollback_overlay_sha256": "57a329fddc96111e17dce45f0c3c08c02a855e4339e23b490ccffbb88cd7732e"
+}

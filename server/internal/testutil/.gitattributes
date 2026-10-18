@@ -1,0 +1,3 @@
+# Inert immutable historical fixture bytes.
+qualification_data/*.gz binary
+qualification_data/manifest.json text eol=lf

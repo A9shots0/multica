@@ -1,0 +1,1 @@
+ALTER TABLE guarded_execution_launch_consumption ADD CONSTRAINT guarded_execution_launch_consumption_pkey PRIMARY KEY USING INDEX guarded_execution_launch_consumption_pkey_idx;

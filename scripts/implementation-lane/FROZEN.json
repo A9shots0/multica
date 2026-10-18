@@ -1,0 +1,341 @@
+{
+  "freeze_version": 11,
+  "kind": "implementation_lane_freeze",
+  "frozen_at": "2026-09-16T06:29:29.083878+00:00",
+  "reason": "Frozen after the first real implementation proof so the repeatability trial runs against an unchanged lane.",
+  "first_proof": {
+    "task_id": "chat-locale-parity",
+    "run_id": "20260916T054524Z-3f9f7e6f",
+    "first_attempt_passed": true,
+    "correction_used": false,
+    "executor_seconds": 49.245,
+    "reviewer_seconds": 4.427,
+    "cost_equivalent_usd": 0.3521,
+    "evidence": ".qualification-evidence/implementation-lane/chat-locale-parity-20260916T054524Z-3f9f7e6f/"
+  },
+  "recorded_harness_failures_before_the_proof": [
+    {
+      "run_id": "20260916T054016Z-e082281b",
+      "failure": "FileNotFoundError: pnpm not resolvable without a shell on Windows",
+      "cleanup_complete": true
+    },
+    {
+      "run_id": "20260916T054054Z-70cddce9",
+      "failure": "UnicodeDecodeError: subprocess text decoding defaulted to cp1252",
+      "cleanup_complete": true
+    }
+  ],
+  "provider_free_tests": 56,
+  "source_hashes": {
+    "scripts/implementation-lane/lane.py": "38b52a2083eaab4ab4bc2fb02d717a865c44d4a3cee01def746e1c8ddb4a0f3b",
+    "scripts/implementation-lane/run_task.py": "780a36396358f5eb1ed4f9914eaad747420b9b4e7a72727f838872b1e728e350",
+    "scripts/implementation-lane/test_lane.py": "ce287483b70c6ddd536a80d527954a5365959ee86b0e75a1e0e21a34f9b28d39",
+    "scripts/implementation-lane/tasks/verify_go_test.py": "76f7053268c07d946797324a052a81239104a5151820c93c40654b62e3eb95a7"
+  },
+  "refrozen_at": "2026-09-17T00:48:36.764857+00:00",
+  "freeze_broken_by_defect": {
+    "defect": "No --permission-mode was passed, so the CLI default left sessions with \"no approval surface available\" and silently denied every Edit and Write. The denial was not consistent between sessions: task 1 and task 2 executors edited files, while task 2 correction and three isolated probes were denied.",
+    "how_it_surfaced": "The task 2 correction session reported it could not write and produced a diff byte-identical to the executor diff (sha c3f2c0d5c1f8), so the correction changed nothing.",
+    "consequence_for_the_trial": "Task 2 is recorded as FAILED exactly as observed and is not retried into a success. But its failure is partly attributable to this harness defect: the correction never actually ran, so \"at most one correction is too tight\" is NOT established by that run.",
+    "fix": "--permission-mode acceptEdits, which auto-approves edits inside the working directory and nothing else. It does not widen Bash, MCP, network or anything outside the worktree.",
+    "verified_by": "Three probes: writes denied before the fix, both Edit and Write working after it, each with cleanup verified.",
+    "runs_on_the_defective_lane": [
+      "chat-locale-parity-20260916T054524Z-3f9f7e6f",
+      "inbox-locale-parity-20260916T062947Z-20334296"
+    ]
+  },
+  "amendment_v3": {
+    "change": "pnpm install now runs with --workspace-concurrency=1 --child-concurrency=1 and a longer timeout.",
+    "why": "Task 3 was killed by the host for low memory twice at the dependency-install phase, before any provider session. Host had 1.7 GB free of 31.7 GB.",
+    "classification": "Resource management for harness setup. It changes how much memory the setup needs, not the tool allowlist, the containment rules, the correction limit, the authority model or anything the agent may do.",
+    "not_changed": [
+      "tool allowlist",
+      "forbidden capabilities",
+      "containment check",
+      "maximum_corrections",
+      "authority expiry and revocation",
+      "reviewer read-only tools",
+      "harness-run verification"
+    ]
+  },
+  "amendment_v4": {
+    "defect": "capture_diff used git diff alone, which covers tracked files only. Files the agent created were referenced by the patch but absent from it, then destroyed with the worktree.",
+    "impact": "Run workspace-leave-debt-20260916T074720Z-c502cdc6 is recorded as a success but its work product is unrecoverable: pending-leave.ts and leave-workspace.test.ts are gone. Applying its patch would give a broken build.",
+    "severity": "the most serious harness defect in this trial - a run can pass every check and still lose the work",
+    "fix": "untracked paths are registered with git add --intent-to-add, by explicit path, before the diff is taken",
+    "not_changed": [
+      "tool allowlist",
+      "forbidden capabilities",
+      "containment check",
+      "maximum_corrections",
+      "authority model",
+      "reviewer read-only tools",
+      "harness-run verification"
+    ]
+  },
+  "reason_v5": "Deliberate revision between trials, approved by the owner after the first repeatability trial. The second trial runs against this unchanged version; every run refuses to start if any file below differs from these hashes.",
+  "superseded_freeze_v4": {
+    "freeze_version": 4,
+    "source_hashes": {
+      "scripts/implementation-lane/lane.py": "a29a6c4578744c8e0de0c39e7ca4ba67e5917c785c04933130468059bf7da544",
+      "scripts/implementation-lane/run_task.py": "050fa9098895e5eed95ed0158ac8e6442055ee85dbfd2e88636b8e6bd72f37c4",
+      "scripts/implementation-lane/test_lane.py": "ac4a69447171395b7757068eaaeda565031ff2c3f753c9db4733c838dec0fd72"
+    },
+    "refrozen_at": "2026-09-16T07:57:36.139852+00:00"
+  },
+  "clean_pass_definition": {
+    "written_before_any_run": true,
+    "per_run_clean_pass_requires_all": [
+      "the run was admitted: freeze intact, memory floor met, no blocking orphan",
+      "baseline verification failed",
+      "executor and reviewer each returned a valid structured verdict; the reviewer's includes out_of_scope_changes",
+      "every server-contract warning has a reviewer resolution",
+      "no Edit or Write permission denial in any receipt",
+      "every configured regression check passes",
+      "harness verification passed after the last agent session",
+      "test_fails_before_change is true",
+      "no path outside the task's allowed scope",
+      "reviewer passed on the first review, with no correction",
+      "authority revoked, worktree removed, cleanup guard safe",
+      "human check of the patch finds no real defect the reviewer missed and no unrequested change the reviewer failed to list"
+    ],
+    "pass_with_correction": "succeeded after the one correction; counts as a pass, not a clean pass",
+    "host_blocked_attempt": "not a run and not counted either way; recorded; three or more in the trial is itself a reliability finding",
+    "trial_is_clean_only_if": [
+      "five different real tasks, one run each, no reruns",
+      "at least four of the five are clean passes and the fifth is at least a pass with correction",
+      "zero lane changes during the trial; any lane fix ends the trial as not clean",
+      "zero harness failures and zero lost work",
+      "zero reviewer misses of a real defect found by the human check"
+    ],
+    "adoption_rule": "Adopt the lane as the standard supervised workflow only if the trial is clean. A trial that is not clean is recorded as observed, not retried into a pass.",
+    "written_before_trial_3": true
+  },
+  "hash_method": "sha256 of file bytes with CRLF normalised to LF",
+  "superseded_freeze_v5": {
+    "freeze_version": 5,
+    "source_hashes": {
+      "scripts/implementation-lane/lane.py": "eed41b47e29748fb94afd51aeb3c2c381c98a571bbdc776d4485ca5162095ed5",
+      "scripts/implementation-lane/run_task.py": "6cb9f514c7505ed7dea654d123924ee658231170f0adcdc02804950947131aad",
+      "scripts/implementation-lane/test_lane.py": "e47e07bf0dfdc5ecf638e0fd609a5a3dba318190796c0d5d82ad366203513a92",
+      "scripts/implementation-lane/tasks/verify_go_test.py": "76f7053268c07d946797324a052a81239104a5151820c93c40654b62e3eb95a7"
+    },
+    "refrozen_at": "2026-09-16T18:28:36.063485+00:00",
+    "revision": {
+      "owner_approved": [
+        "go build, go vet and go test for tasks that declare the go toolchain",
+        "orphan sweep before every run: clean leftovers removed, anything holding work blocks the run",
+        "mechanical test-fails-before check: product change removed, test kept, verification must fail, change restored byte-for-byte",
+        "no JavaScript dependency install for tasks that declare dependencies none",
+        "reviewer must return out_of_scope_changes listing every unrequested change",
+        "cleanup guard: a worktree holding anything the captured patch lacks is kept and the run fails",
+        "host memory floor checked before every run: 4 GB available physical and 4 GB available commit",
+        "permission denials, rate-limit frames, API error status and stderr tail kept in every provider receipt"
+      ],
+      "safety_additions_found_while_building": {
+        "database_isolation": "DATABASE_URL points at 127.0.0.1:9 for every command the lane starts. A native PostgreSQL listens on localhost:5432 and the server's DB-backed tests default to that address, so go test access without this could have written fixtures into a real database.",
+        "credential_withholding": "Environment variables whose names look like credentials are withheld from every command the lane starts. The operator shell held connection strings for four other applications' databases and this session's messaging token; the first trial's executors could have read them through node. No evidence they did.",
+        "offline_go": "GOPROXY=off and GOFLAGS=-mod=readonly -p=2. GOTOOLCHAIN=local was tried and removed: the host's go 1.26.1 must switch to the module's required 1.26.6 from the local cache.",
+        "freeze_enforcement": "every run compares these hashes and refuses to start on any difference",
+        "regenerable_caches": "node_modules, .turbo, .next and *.tsbuildinfo entries do not block cleanup but are recorded; every other new ignored entry blocks it"
+      },
+      "unchanged": [
+        "executor tool list and the pre-existing Bash allowlist",
+        "forbidden capabilities",
+        "path containment check",
+        "maximum_corrections = 1",
+        "authority minting, expiry and revocation",
+        "reviewer read-only tools",
+        "harness-run verification",
+        "model claude-sonnet-4-6 at medium effort"
+      ],
+      "known_residual_risk": "Running tests means running code the agent wrote, with the operator's user rights. Bash(node:*), vitest and go test all allow that. The boundary is a process and environment boundary, not an operating-system sandbox. Unchanged from the first trial and not closed by this revision.",
+      "independent_review": "none; the revision was checked by 36 provider-free tests, including real git and an end-to-end run with a stand-in provider, and an offline go test under the sandbox environment"
+    }
+  },
+  "superseded_freeze_v6": {
+    "freeze_version": 6,
+    "source_hashes": {
+      "scripts/implementation-lane/lane.py": "d2783f1c700884af39fc8b5c38c2d3be3839eed4285bddae528c093b04ad569f",
+      "scripts/implementation-lane/run_task.py": "2dee9f657a1ecc83b106d93b1be1a649dbc79e4b1d16bc33b886f8ba4b10ca5a",
+      "scripts/implementation-lane/test_lane.py": "e91eafe5f7d00748a2796e487e9dae070ba6609581561d971b37db1ffea0785c",
+      "scripts/implementation-lane/tasks/verify_go_test.py": "76f7053268c07d946797324a052a81239104a5151820c93c40654b62e3eb95a7"
+    },
+    "refrozen_at": "2026-09-16T20:27:30.277469+00:00",
+    "revision": {
+      "server_contract_check": "After every executor or correction session, each field the patch adds as required to a TypeScript zod schema is looked up in the Go server's json tags. A field that is omitempty anywhere becomes a warning in the reviewer prompt, and the reviewer must return exactly one resolution per warning, naming the Go file and struct checked. A missing resolution fails the run mechanically.",
+      "replay_on_trial_2": "Run 5's real defect (issue_id) is flagged. Runs 1-4 produce 2 warnings (agent_id, token) and run 5 two more (task_id, type), which are name collisions the reviewer must dismiss against the actual endpoint.",
+      "reviewer_turns": "6 -> 25, so the reviewer can open the server code a claim depends on",
+      "prompts": "executor told to read the Go handler and struct, including omitempty, when client code depends on a server response; reviewer asked whether every claim holds for the real system",
+      "byte_exact_evidence": "final.patch, executor.diff, correction.diff, capture-at-failure.patch and the fails-before product patch are written as bytes, exactly as git produced them",
+      "unchanged": [
+        "tool allowlist and Go access",
+        "sandbox environment and credential withholding",
+        "containment",
+        "maximum_corrections = 1",
+        "authority model",
+        "fails-before check",
+        "cleanup guard",
+        "memory floor",
+        "freeze enforcement",
+        "model and effort"
+      ],
+      "known_limits": [
+        "the contract check is a name-level heuristic for TypeScript zod schemas only; it does not cover Go-side changes or non-schema claims",
+        "running tests still executes agent-written code with the operator's user rights"
+      ]
+    },
+    "reason": "Owner-approved change after trial 2 was not clean: the reviewer passed a client schema that contradicted what the server really sends. Trial 3 runs on this unchanged version."
+  },
+  "superseded_freeze_v7": {
+    "freeze_version": 7,
+    "source_hashes": {
+      "scripts/implementation-lane/lane.py": "1a9e9297688052ce3c8fa4d556bcbee67c2dc77f8cc1d6448efcda5464657ba3",
+      "scripts/implementation-lane/run_task.py": "cc33bdabf9813703f5b08758405603bca6b91f22debf2fbbc9bb15de092b9898",
+      "scripts/implementation-lane/test_lane.py": "a7279476dddc21a3893a0bf867417d69b6ea9f262b9892138637c52d8e6083a1",
+      "scripts/implementation-lane/tasks/verify_go_test.py": "76f7053268c07d946797324a052a81239104a5151820c93c40654b62e3eb95a7"
+    },
+    "refrozen_at": "2026-09-16T20:55:12.249087+00:00",
+    "revision": {
+      "regression_commands": "tasks may declare regression_commands; the harness runs them after every executor or correction session, reports each exit code and output tail to the reviewer, and a failing one fails the run",
+      "contract_check_scope": "server json tags are read only from server/internal/handler and server/pkg/protocol, and a zod field line removed and re-added in the same file counts as moved. Replayed on all eight real patches from trials 2 and 3: warnings fell from 21 to 6 and trial 2's real issue_id defect is still flagged.",
+      "worktree_removal": "rmtree uses the Windows extended-length path prefix; a folder was left behind after a kill",
+      "unchanged": [
+        "tool allowlist and Go access",
+        "sandbox environment and credential withholding",
+        "containment",
+        "maximum_corrections = 1",
+        "authority model",
+        "fails-before check",
+        "cleanup guard",
+        "memory floor",
+        "freeze enforcement",
+        "reviewer contract resolutions",
+        "byte-exact evidence",
+        "model and effort"
+      ],
+      "known_limits": [
+        "the memory floor is checked only at admission; both trial 3 kills happened after admission when other sessions grew",
+        "the contract check is a name-level heuristic for zod schemas only",
+        "running tests still executes agent-written code with the operator's user rights"
+      ]
+    },
+    "reason": "Trial 3 on v6 was ended early by two host memory kills, and applying its two passing runs exposed defects no gate saw: a stricter parser broke an existing test outside the task's new test file, and a new test did not typecheck."
+  },
+  "superseded_freeze_v8": {
+    "freeze_version": 8,
+    "source_hashes": {
+      "scripts/implementation-lane/lane.py": "5e4359d94647d8f2b6b67a2f420ed477db73c5685d7d9d6d9189c23e58d88266",
+      "scripts/implementation-lane/run_task.py": "e7fda237a6cc9e818644258a097b031dd99f453767d68fd7b20c3f85c654bd24",
+      "scripts/implementation-lane/test_lane.py": "b92b40413ec14680963a6103bf5b707c01a286b699bd7a01b8fd48dcfacc1c69",
+      "scripts/implementation-lane/tasks/verify_go_test.py": "76f7053268c07d946797324a052a81239104a5151820c93c40654b62e3eb95a7"
+    },
+    "refrozen_at": "2026-09-16T22:02:54.582303+00:00",
+    "revision": {
+      "warm_dependency_install": "one offline pnpm install per lockfile and scope in a separate reusable worktree (implementation-lane-warm); task worktrees get real node_modules directories whose entries are junctions. Workspace-package entries are redirected to the task worktree's own source so tests never run stale code. Junctions are removed before any recursive delete, in normal cleanup and in the orphan sweep.",
+      "dependency_fingerprint": "size and mtime of every file in the warm install (27,501 files, about 23 s) before and after each run; a change fails the run and discards the warm install, because an agent could otherwise make its tests pass by editing a dependency",
+      "memory_wait": "admission and every heavy step wait with backoff (15 s doubling to 120 s) for 2.5 GB available physical and 3.0 GB commit, up to 30 minutes, instead of refusing; only a timeout fails, recorded as host_memory_timeout",
+      "memory_sampler": "lane process tree working set and host availability sampled every 3 s, peak per run and per phase recorded in outcome.memory",
+      "single_worker_tests": "trial 4 verification and regression vitest commands use --maxWorkers=1 --no-file-parallelism",
+      "smoke_test_on_real_repo": {
+        "warm_install_seconds": 37.82,
+        "link_seconds": 3.31,
+        "junctions": 496,
+        "redirected_to_task": 5,
+        "api_suite": "487/487 through links",
+        "tsc": "clean through links",
+        "warm_install_unchanged_after": true,
+        "peak_lane_tree_mb": {
+          "warm_install": 637,
+          "tsc": 797,
+          "vitest_api_suite": 408,
+          "vitest_one_file": 237,
+          "fingerprint": 96
+        },
+        "host_min_available_gb": 2.35
+      },
+      "unchanged": [
+        "tool allowlist",
+        "sandbox environment and credential withholding",
+        "containment",
+        "maximum_corrections = 1",
+        "authority model",
+        "fails-before check",
+        "cleanup guard",
+        "server-contract check",
+        "regression checks",
+        "freeze enforcement",
+        "model and effort"
+      ],
+      "known_limits": [
+        "the provider session's own memory is outside the lane's control",
+        "the session running the lane can still stop a background command for low memory; the lane lowers its peak but cannot prevent that"
+      ]
+    },
+    "reason": "The host runs permanently near 90% memory (a kernel nonpaged-pool leak; the owner will not reboot) and the live private Multica instance must stay up, so the lane was changed to fit the machine: trial 3 lost two runs to session memory kills."
+  },
+  "reason_v9": "Owner-approved: the reviewer moves to Codex because every same-subscription Claude reviewer miss was an unchecked assumption about how the server behaves.",
+  "revision_v9": {
+    "codex_reviewer": "02-reviewer and 04-review-after-correction run `codex exec` with model gpt-5.6-luna at effort high, named explicitly and recorded in every receipt, in a read-only sandbox with no approvals, in a fresh task-scoped CODEX_HOME holding an opaque copy of the Codex sign-in and a minimal config (no MCP, plugins, web search or personal instructions); the home is deleted after the session. Any web_search, mcp_tool_call, file_change or patch_apply item fails the review. Read commands and token usage are recorded.",
+    "why_isolated_home": "Probing showed the operator's own Codex setup connects an MCP server, and a fresh home with defaults blocked every read command so Codex answered from web searches and got the answer wrong. The minimal config was verified to read the real file.",
+    "fallback": "only when Codex cannot produce a review at all (missing executable or sign-in, non-zero exit without an answer) the Claude reviewer runs and outcome.reviewer_fallbacks records why",
+    "result_file_and_repository": "run_task accepts --result-file for callers such as the issue bridge, and a task may name another local repository",
+    "unchanged": [
+      "executor model and effort",
+      "every gate from v5-v8"
+    ]
+  },
+  "superseded_freeze_v9": {
+    "freeze_version": 9,
+    "source_hashes": {
+      "scripts/implementation-lane/lane.py": "4855619c500c266659c44b717cce71f6b159277b87b2ec18bc8219c1d2709973",
+      "scripts/implementation-lane/run_task.py": "8f5219c7ac081ee0b97918f151462c91ee576c8fe9155655e0344ef29fd1b6e2",
+      "scripts/implementation-lane/test_lane.py": "17c25f35f66a6fdd404804ac10b2fc64876048f883c7c733862001f285110db6",
+      "scripts/implementation-lane/tasks/verify_go_test.py": "76f7053268c07d946797324a052a81239104a5151820c93c40654b62e3eb95a7"
+    },
+    "refrozen_at": "2026-09-16T23:06:10.302854+00:00",
+    "reason": "Owner-approved: the reviewer moves to Codex because every same-subscription Claude reviewer miss was an unchecked assumption about how the server behaves."
+  },
+  "reason_v10": "Engineering fix before the first CRM task: the fails-before check recognised only Go and TypeScript test files, so a task in a Python repository could never pass it.",
+  "revision_v10": {
+    "test_paths": "is_test_path also recognises test_*.py, *_test.py and *.test.mjs (tests/conftest.py and product .py/.js are not tests)",
+    "regenerable_caches": "__pycache__ and .pytest_cache join node_modules, .turbo and .next as caches that do not block worktree deletion",
+    "unchanged": [
+      "executor model and effort",
+      "Codex reviewer",
+      "every gate from v5-v9"
+    ],
+    "freeze_version_constant": "run_task.FREEZE_VERSION = 10"
+  },
+  "superseded_freeze_v10": {
+    "freeze_version": 10,
+    "source_hashes": {
+      "scripts/implementation-lane/lane.py": "807a11ee559b846f68cf3c84514d4c4669397e3551b13377803061e5c185eea6",
+      "scripts/implementation-lane/run_task.py": "bab2dd114e363ccef79b2d8fcd28a3a839ac716fb43a9b3566bb564218354782",
+      "scripts/implementation-lane/test_lane.py": "da39cee76f89958c1b3f1e8f522a649e0908f67470f3a9e10ab28d58cfd948d5",
+      "scripts/implementation-lane/tasks/verify_go_test.py": "76f7053268c07d946797324a052a81239104a5151820c93c40654b62e3eb95a7"
+    },
+    "refrozen_at": "2026-09-17T00:19:03.884333+00:00",
+    "reason": "Engineering fix before the first CRM task: the fails-before check recognised only Go and TypeScript test files, so a task in a Python repository could never pass it.",
+    "revision": {
+      "test_paths": "is_test_path also recognises test_*.py, *_test.py and *.test.mjs (tests/conftest.py and product .py/.js are not tests)",
+      "regenerable_caches": "__pycache__ and .pytest_cache join node_modules, .turbo and .next as caches that do not block worktree deletion",
+      "unchanged": [
+        "executor model and effort",
+        "Codex reviewer",
+        "every gate from v5-v9"
+      ],
+      "freeze_version_constant": "run_task.FREEZE_VERSION = 10"
+    }
+  },
+  "reason_v11": "The owner's first issue proof failed because it started while a CRM lane run was active: the proof's orphan sweep saw the CRM worktree and refused admission. Two runs sharing the worktree directory are also unsafe within one repository, where a sweep removes another run's clean worktree.",
+  "revision_v11": {
+    "run_lock": "run_task takes a host-wide lock (.qualification-evidence/implementation-lane/lane-run.lock, pid and run id) before the orphan sweep; a second run is a host refusal naming the active run; a lock whose process is no longer running is taken over; the lock is released on every exit path",
+    "freeze_version_constant": "run_task.FREEZE_VERSION = 11",
+    "unchanged": [
+      "executor model and effort",
+      "Codex reviewer",
+      "every gate from v5-v10"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+ALTER TABLE qualified_runtime_binding_receipt ADD CONSTRAINT qualified_runtime_binding_receipt_pkey PRIMARY KEY USING INDEX qualified_runtime_binding_receipt_pkey_idx;

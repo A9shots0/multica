@@ -1,0 +1,9 @@
+DROP TRIGGER IF EXISTS trg_guarded_task_capability_revocation_append_only ON guarded_task_capability_revocation;
+DROP TRIGGER IF EXISTS trg_guarded_task_capability_grant_append_only ON guarded_task_capability_grant;
+DROP TRIGGER IF EXISTS trg_qualified_runtime_binding_revocation_append_only ON qualified_runtime_binding_revocation;
+DROP TRIGGER IF EXISTS trg_qualified_runtime_binding_receipt_append_only ON qualified_runtime_binding_receipt;
+DROP FUNCTION IF EXISTS reject_guarded_permission_receipt_update();
+DROP TABLE IF EXISTS guarded_task_capability_revocation;
+DROP TABLE IF EXISTS guarded_task_capability_grant;
+DROP TABLE IF EXISTS qualified_runtime_binding_revocation;
+DROP TABLE IF EXISTS qualified_runtime_binding_receipt;

@@ -1,0 +1,23 @@
+{
+  "schema_version": "silver-mediums.protocol-ablation-freeze.v32",
+  "freeze_id": "realistic-r05-protocol-ablation-freeze-v32",
+  "status": "frozen_reviewed",
+  "review_outcome": "go",
+  "provider_calls_allowed": true,
+  "upstream_freeze_sha256": "cca629d86d79666cc29dae7815e5226430f821adc0a9c5098c974c44598f0f77",
+  "r05_fixture_sha256": "406c40e75d2a39cecc816b3f4506234c3720161aa9cb1e6c56e214b6a1eb721f",
+  "r05_grader_sha256": "1454ccbf164d8152779ecc2768e46132f42df53dee7e36e1c099d777e87bf07a",
+  "local_components": {
+    "protocol_ablation_v32.json": "2aab36ffec471a347da021505b968f95143285931477446a1bb32502590f8734",
+    "protocol_ablation_v32.go": "a8e8e565b0c07befbab8a036952d976c01328f8018f6cfa1b5276f301c937441",
+    "protocol_ablation_v32_test.go": "b587d51bab028b6fbcabd2fa04659bab0602984f4ce39f65010e6a5cc0826252",
+    "protocol_ablation_v32_freeze.go": "7ab332b16a82d3192f2f708b0c653440e42367da6fd246df96b5739d0dcde214",
+    "protocol_ablation_v32_freeze_test.go": "66cc4b1be54a711cf86641289f236161a237f8541a6362bb1e1b226365453878"
+  },
+  "command_sources": {
+    "protocol-ablation-v32/main.go": "e167a0ffe77a8fb85945b6685af49c8482d023d8c81a9e597c006da3e286d079",
+    "protocol-ablation-v32/main_test.go": "4eb3313b89ef29f34e1cfe247a93d868e0b255b8ade24109c767170b76e9ea09",
+    "protocol-ablation-v32/execute.go": "9888822abf6a5eac846c02760601e13e58feb6be25ba1af61acf55a416a443b6",
+    "protocol-ablation-v32/execute_test.go": "1e6703ef67fe9100a0e42608a113decc424f2901cfe8118e040fea7e2f75be9a"
+  }
+}

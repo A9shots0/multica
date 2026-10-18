@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY issue_workflow_consequence_receipt_id_idx ON issue_workflow_consequence_receipt (workspace_id, receipt_id);

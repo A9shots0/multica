@@ -1,0 +1,34 @@
+{
+  "schema_version": "silver-mediums.realistic-next-freeze.v1",
+  "freeze_id": "realistic-continuity-and-rollout-freeze-v1",
+  "status": "frozen_reviewed",
+  "review_outcome": "go",
+  "provider_calls_allowed": true,
+  "local_components": {
+    "realistic_next_group_v1.json": "9ba57c29b2c1729279986474d0630f769c7aa8ce4a0930a969f38ded5ceab727",
+    "realistic_next_group_v1.go": "31c9c49e3eed76d63db4bc72f61e592131ccc9c84435c6907caf45f6ed0c3ca3",
+    "realistic_next_group_v1_test.go": "38578793d7d2cd37c3028b095ccfff131cf411498eb73231b1b7e0a572a24113",
+    "realistic_next_matrix_v1.json": "fb5bd8a4f509556fd0561345a4c10e4e454e5ad39eaf51a40c413b39135f6faa",
+    "realistic_next_matrix_v1.go": "f4cffe2ba934427d7897c23fb8bcccf914c7b8be15705bd58653d5c8261a10e7",
+    "realistic_next_matrix_v1_test.go": "f722d902d4b081b0b96a457d5673f8a1eb25a6a896df3e2353160455254c35f8",
+    "realistic_r05_fixture_v1.json": "406c40e75d2a39cecc816b3f4506234c3720161aa9cb1e6c56e214b6a1eb721f",
+    "realistic_r05_fixture_v1.go": "ae6dfa595bb84d4c62ffb9ac510fe80efc6ef1c4a3dbd1acb9622b2f50173c31",
+    "realistic_r05_fixture_v1_test.go": "57dfedb95581e2b966a3baa4fdd4f3141de8453018227fee412609239f99eb9a",
+    "realistic_r06_fixture_v1.go": "80e79559bb803ecebe65c6a9f2abe983d36eb35746b3880fd22c6bcdebb571b6",
+    "realistic_r06_fixture_v1_test.go": "a0f13a05607512f64bbf2c27ffd3cee0d5b1528d0f41ccb35ca858e64a217c0a",
+    "realistic_next_calibration_v1.go": "1454ccbf164d8152779ecc2768e46132f42df53dee7e36e1c099d777e87bf07a",
+    "realistic_next_calibration_v1_test.go": "9bb8b923db69c428749b6eef52fbf3446c6798d9e9bc000f36f5baa8a5c83800",
+    "realistic_next_harness_v1.go": "a710035c54ce8f261c908198e2de720f088b827e539160dea5d3543af10fcea2",
+    "realistic_next_harness_v1_test.go": "683de8403c8843e595a3325a56b2ffede312477308d6aa884c6164f61de2ef7d",
+    "realistic_next_opencode_v1.go": "116aab6748942182973e403c4716d6e373c85dd92a2b00913ed59b0311830d0e",
+    "opencode_receipt.go": "a9baa81890f6df2f4cf22805b75306358d2e9f6857c6f5de4a4bc8acf637afbe",
+    "opencode_transport.go": "ae8dca674835afdc11bf0e22dec5a33cd39d8135e2e3b14eefd6f90c56d98278"
+  },
+  "command_sources": {
+    "realistic_next_execute_v1.go": "ad1e5ddbb36bc0617db1e503148c9ecf19a9795dc6a56ffa2dd53d506f92255d",
+    "realistic_next_execute_v1_test.go": "2e0d935bcee72a23b702393c324e04b3acaa011648f11aa8c8909cc5acc489fd",
+    "main.go": "926be190c6cb067dfce8d2163090dfee5aa089a1680e232bcedd14ef196fec7e",
+    "realistic_execute.go": "090434a7a7e2fdc9e114600000e9ab66317fa611b0b04f438dd0bf5cfcd7957f",
+    "openrouter_execute.go": "ecf598caf7c80419e4c7d0b1be3ca561d4da6549954cdbf6ed13a48f71664508"
+  }
+}

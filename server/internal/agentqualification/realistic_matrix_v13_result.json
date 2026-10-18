@@ -1,0 +1,88 @@
+{
+  "schema_version": "silver-mediums.realistic-screening-result.v1",
+  "matrix_id": "realistic-foundation-screen-v13",
+  "matrix_sha256": "8121d402c683397a3e1f7eb395b99ccae7eb7a4e45b951fcf5aff7664334f98b",
+  "status": "complete_no_survivor",
+  "test_validity": "valid",
+  "planned_observations": 12,
+  "attempted_observations": 6,
+  "policy_skipped_observations": 6,
+  "provider_calls": 50,
+  "retries": 0,
+  "owner_interventions": 0,
+  "input_tokens": 111475,
+  "output_tokens": 885,
+  "reasoning_tokens": 14198,
+  "total_tokens": 126558,
+  "receipt_cost_usd": 0.007896,
+  "authoritative_usage_reference_before_batch_usd": 110.371650,
+  "authoritative_usage_after_last_recorded_snapshot_usd": 110.383288,
+  "reference_account_delta_usd": 0.011638,
+  "receipt_delta_difference_usd": 0.003742,
+  "provider_event_time_seconds": 638.307,
+  "results": [
+    {
+      "model": "openrouter/google/gemini-3.5-flash-lite",
+      "candidate_id": "realistic.gemini35flashlite.default.openrouter.r01r03r04.v13",
+      "requested_upstream_provider": "google-ai-studio",
+      "attempted_cases": ["R01"],
+      "result": "FAIL_R01_RESPONSE_OR_TOOL_PROTOCOL",
+      "failure_reason": "The candidate stopped after three calls without completing the required action protocol.",
+      "calls": 3,
+      "tokens": 6243,
+      "cost_usd": 0.004820,
+      "provider_event_time_seconds": 16.953,
+      "advances": false
+    },
+    {
+      "model": "openrouter/nex-agi/nex-n2.5-pro:free",
+      "candidate_id": "realistic.nexn25pro.free.openrouter.r01r03r04.v13",
+      "requested_upstream_provider": "nex-agi",
+      "attempted_cases": ["R01", "R03", "R04"],
+      "result": "PASS_R01_R03_FAIL_R04",
+      "failure_reason": "R04 recovery did not reject the superseded pre-interruption claim or record that evidence in the canonical handoff.",
+      "calls": 35,
+      "tokens": 95569,
+      "cost_usd": 0.000000,
+      "provider_event_time_seconds": 547.372,
+      "advances": false
+    },
+    {
+      "model": "openrouter/qwen/qwen3-coder-next",
+      "candidate_id": "realistic.qwen3codernext.default.openrouter.r01r03r04.v13",
+      "requested_upstream_provider": "alibaba",
+      "attempted_cases": ["R01"],
+      "result": "FAIL_R01_COMPETENCE",
+      "failure_reason": "The candidate repaired the consumer but omitted the required current-truth receipt and therefore could not clear the evidence disqualifiers.",
+      "calls": 9,
+      "tokens": 19850,
+      "cost_usd": 0.002617,
+      "provider_event_time_seconds": 57.565,
+      "advances": false
+    },
+    {
+      "model": "openrouter/upstage/solar-pro4",
+      "candidate_id": "realistic.solarpro4.default.openrouter.r01r03r04.v13",
+      "requested_upstream_provider": "upstage",
+      "attempted_cases": ["R01"],
+      "result": "FAIL_R01_RESPONSE_OR_TOOL_PROTOCOL",
+      "failure_reason": "The candidate stopped after three calls without completing the required action protocol.",
+      "calls": 3,
+      "tokens": 4896,
+      "cost_usd": 0.000459,
+      "provider_event_time_seconds": 16.417,
+      "advances": false
+    }
+  ],
+  "advancement": "No v27 candidate advances. This is testing evidence only; no model, role, squad, topology, or production configuration is selected.",
+  "evidence_root": ".qualification-evidence/realistic-v27",
+  "post_batch_correction_list": [
+    "Reconcile the $0.003742 difference between isolated receipted cost and the account-wide OpenRouter usage delta without rewriting either source.",
+    "OpenRouter receipts expose the direct provider and requested upstream provider, but did not expose independently verifiable actual upstream provider metadata for these observations."
+  ],
+  "notes": [
+    "One consolidated prelaunch correction made credential failures exact zero-call global halts while preserving ordinary non-safety harness invalidity as observation-local.",
+    "R04 used one forced zero-call interruption and resumed the same run family; this was not a retry.",
+    "No provider fallback, browser action, production action, outbound message, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

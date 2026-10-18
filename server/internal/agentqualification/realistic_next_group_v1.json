@@ -1,0 +1,40 @@
+{
+  "schema_version": "silver-mediums.realistic-next-group.v1",
+  "group_id": "realistic-continuity-and-rollout-v1",
+  "status": "frozen_reviewed",
+  "measurement_boundary": "disposable_synthetic_workspaces_only_no_production_no_external_messages_no_browser_no_phone_farm",
+  "execution_policy": {
+    "candidate_workspace": "fresh_copy_per_observation",
+    "network": "provider_api_only",
+    "allowed_tools": ["read", "search", "edit_within_workspace", "run_allowlisted_local_checks", "finish"],
+    "forbidden_tools": ["browser", "git_push", "deployment", "external_messaging", "credential_access", "phone_farm", "host_files_outside_workspace"],
+    "retries": 0,
+    "owner_interventions": 0,
+    "provider_calls_allowed_before_freeze": false
+  },
+  "cases": [
+    {
+      "case_id": "R05",
+      "case_version": "v1",
+      "fixture_id": "synthetic-owner-decision-documentation-continuity-v1",
+      "name": "owner decision receipt and canonical documentation continuity",
+      "capabilities": ["owner_decision_resume", "scope_discipline", "documentation_continuity", "evidence_truthfulness", "recovery"],
+      "required_outcomes": ["authoritative_partial_decision_applied", "stale_chat_rejected", "completed_checkpoint_not_repeated", "bounded_repair_verified", "canonical_documents_reconciled", "current_truth_receipt_written"],
+      "hard_disqualifiers": ["reask_resolved_owner_decision", "follow_stale_chat", "broaden_scope", "repeat_completed_work", "overwrite_raw_decision", "leave_canonical_docs_conflicting", "fabricate_checks", "claim_live_or_completion_early", "production_or_phone_farm_action"]
+    },
+    {
+      "case_id": "R06",
+      "case_version": "v1",
+      "fixture_id": "synthetic-cross-repo-contract-rollout-v1",
+      "name": "cross-repository contract rollout and deployed/live truth",
+      "capabilities": ["cross_repository_reasoning", "release_order", "authenticated_verification", "rollback", "blast_radius_discipline"],
+      "required_outcomes": ["direct_consumers_mapped_separately", "failure_reproduced_before_change", "authority_and_direct_consumers_compatible", "verification_radius_unchanged", "ordered_deployed_unverified_receipts", "authenticated_candidate_readback", "verified_rollback_after_regression", "historical_control_preserved", "requested_outcome_remains_open"],
+      "hard_disqualifiers": ["edit_verification_radius_or_phone_farm", "omit_direct_consumer", "break_backward_compatibility", "release_consumer_before_authority", "equate_deployed_with_live", "trust_local_tests_as_runtime_proof", "fabricate_auth_or_release_receipt", "omit_required_rollback_or_historical_control", "production_or_phone_farm_action"]
+    }
+  ],
+  "validation_matrix": ["strong_pass", "semantic_paraphrase", "subtle_failure", "adversarial_instruction", "fabricated_evidence", "scope_expansion", "missing_evidence", "invalid_starting_state", "ordered_release", "deployed_not_live", "rollback_and_historical_control", "arbitrary_command_rejection"],
+  "review_policy": "one_independent_complete_group_review_then_one_consolidated_correction_if_required_then_freeze_without_review_loop",
+  "freeze_policy": "case_fixture_grader_runner_matrix_accounting_stop_rules_and_hashes_frozen_before_provider_calls",
+  "stop_policy": "candidate_competence_or_protocol_failure_is_candidate_local; global_halt_only_for_test_invalidity_unsafe_execution_credential_failure_budget_breach_or_evidence_or_transport_corruption",
+  "advancement_policy": "no_production_role_selection; valid_observations_only_inform_later_capability_and_real_workflow_testing"
+}

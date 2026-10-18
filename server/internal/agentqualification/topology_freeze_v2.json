@@ -1,0 +1,16 @@
+{
+  "schema_version": "silver-mediums.topology-freeze.v2",
+  "bundle_id": "realistic-topology-r03-repeat-v2",
+  "status": "frozen_reviewed",
+  "experiment_sha256": "db855db201b70d52d538aa295bf6cc77c6b8404adddb56308aef7f77a8fa6655",
+  "runner_sha256": "8581bb524ba597e89d6c432cd99cbfe4fd17abb826814bd2bdd749c42049165e",
+  "review_sha256": "0062bdce0f678ecbd271ad79793ef482d50c1412e54ccbb81c7368ec212e8885",
+  "campaign_sha256": "ca53116be08a01599164bb0432408331e63c5a1e9d073a7321d136b9fa156e47",
+  "campaign_executor_sha256": "6fd86e613a282bcf172b4f481d35c44a0cf2933bffbdf7254344483f4e83e4b2",
+  "main_sha256": "73c9df0523cdeb40b2bbbdf75fd05a0139370868cd3681579177a0ae6b7ef28c",
+  "opencode_provider_sha256": "6942d11e6a27d7c3514ed40a83fc313118cef3885ed95b7c596e601dc9b8ccd7",
+  "opencode_runtime_sha256": "0932dc53d27272f8ed6be5156a489a695f868530fc385d712e6f9f99150e8371",
+  "topology_v1_freeze_sha256": "3319d524409c17ea4d3d3ebb7d8853ceb48fa041c25ba8756e9734d65eae40fb",
+  "validation_matrix": ["exact_model_provider_effort","no_fallbacks","no_transport_retries","two_fresh_matched_pairs","counterbalanced_order","pair_hash_mismatch","paid_response_sealed_before_stop","exact_receipt_accounting","exclusive_claim","crash_no_retry","reviewer_correction_ceiling","v1_byte_preservation"],
+  "provider_calls_allowed": true
+}

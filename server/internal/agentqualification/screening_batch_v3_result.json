@@ -1,0 +1,64 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-owner-cause-t11-codex-v3",
+  "status": "complete_invalid_harness",
+  "grader_configuration_id": "deterministic-t11.v1",
+  "capacity": {
+    "provider": "codex",
+    "limit_id": "codex",
+    "account_lane": "primary_subscription",
+    "baseline_used_percent": 52,
+    "final_used_percent": 53
+  },
+  "observations": [
+    {
+      "candidate_id": "screen.generalist.luna.medium.v3",
+      "issue_identifier": "SILV-35",
+      "issue_id": "01a0927f-5e57-7e0a-9f84-bc03b36c7708",
+      "trigger_comment_id": "01a0927f-9e3e-7d25-ad94-f5ba6da08830",
+      "run_id": "01a0927f-9e49-7e46-854b-242b10615260",
+      "session_id": "01a0927f-ab71-7fe1-8d09-aa33e53e2748",
+      "started_at": "2026-09-11T22:03:53Z",
+      "completed_at": "2026-09-11T22:04:11Z",
+      "output_sha256": "129e9b5df7e6c9e0e30c9f0141145035c01a7f3ae4e7cb6f5ff1ef7b698e35e1",
+      "verdict": "INVALID",
+      "failed_checks": ["candidate_skill_response_contract_conflict"],
+      "input_tokens": 12556,
+      "cached_input_tokens": 9984,
+      "fresh_input_tokens": 2572,
+      "output_tokens": 827,
+      "total_tokens": 13383,
+      "retries": 0,
+      "owner_interventions": 0
+    },
+    {
+      "candidate_id": "screen.generalist.terra.medium.v3",
+      "issue_identifier": "SILV-36",
+      "issue_id": "01a09282-2d26-78f2-a24c-7645d28ffd02",
+      "trigger_comment_id": "01a09282-4bf6-757c-9dea-96252e1222ae",
+      "run_id": "01a09282-4c05-70e7-8b4b-0283f59d1183",
+      "session_id": "01a09282-5867-7950-92f1-ac99f920c545",
+      "started_at": "2026-09-11T22:06:49Z",
+      "completed_at": "2026-09-11T22:07:07Z",
+      "output_sha256": "ef76302bfa40c211aebdea9fe6e1c8cdf42e3523655a2285f144fec5280ca69b",
+      "verdict": "INVALID",
+      "failed_checks": ["candidate_skill_response_contract_conflict", "undisclosed_response_type_enforcement"],
+      "input_tokens": 13089,
+      "cached_input_tokens": 11008,
+      "fresh_input_tokens": 2081,
+      "output_tokens": 766,
+      "total_tokens": 13855,
+      "retries": 0,
+      "owner_interventions": 0
+    }
+  ],
+  "totals": {
+    "fresh_input_tokens": 4653,
+    "cached_input_tokens": 20992,
+    "output_tokens": 1593,
+    "total_tokens": 27238,
+    "runs": 2,
+    "retries": 0,
+    "owner_interventions": 0
+  }
+}

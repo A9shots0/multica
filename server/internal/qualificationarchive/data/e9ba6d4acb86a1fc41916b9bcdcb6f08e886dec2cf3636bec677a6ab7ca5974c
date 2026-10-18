@@ -1,0 +1,849 @@
+package workflowprojection
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/multica-ai/multica/server/internal/workflowstore"
+	db "github.com/multica-ai/multica/server/pkg/db/generated"
+)
+
+func TestProjectDeterministicCompleteCurrentPicture(t *testing.T) {
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	records := []Record{
+		fixture("outcome", "00000000-0000-0000-0000-000000000001", 2, base, map[string]any{"state": "open", "acceptance_version": 3}),
+		fixture("scope", "00000000-0000-0000-0000-000000000002", 3, base.Add(time.Minute), map[string]any{"state": "accepted", "acceptance_version": 3, "statement": map[string]any{"goal": "ship"}}),
+		fixture("authority", "00000000-0000-0000-0000-000000000003", 4, base.Add(2*time.Minute), map[string]any{"state": "active", "scope_id": "00000000-0000-0000-0000-000000000002", "scope_revision": 3, "envelope": map[string]any{"deploy": true}}),
+		fixture("execution", "00000000-0000-0000-0000-000000000004", 5, base.Add(3*time.Minute), map[string]any{"state": "blocked_external", "branch_key": "main", "operation_type": "release", "scope_id": "00000000-0000-0000-0000-000000000002", "scope_revision": 3, "authority_id": "00000000-0000-0000-0000-000000000003", "authority_revision": 4, "candidate_id": "00000000-0000-0000-0000-000000000005", "target_key": "production", "actor_type": "agent", "actor_id": "agent-1", "expected_event": map[string]any{"type": "provider_readback"}, "wait_reason": map[string]any{"code": "provider"}, "next_action_at": base.Add(time.Hour).Format(time.RFC3339Nano)}),
+		fixture("candidate", "00000000-0000-0000-0000-000000000005", 2, base.Add(4*time.Minute), map[string]any{"state": "ready", "candidate_type": "source", "scope_id": "00000000-0000-0000-0000-000000000002", "scope_revision": 3, "source_revision": "abc123"}),
+		fixture("candidate", "00000000-0000-0000-0000-000000000006", 1, base.Add(-time.Minute), map[string]any{"state": "ready", "superseded_at": base.Format(time.RFC3339Nano)}),
+		fixture("release", "00000000-0000-0000-0000-000000000007", 6, base.Add(5*time.Minute), map[string]any{"state": "deployed", "candidate_id": "00000000-0000-0000-0000-000000000005", "candidate_revision": 2, "scope_id": "00000000-0000-0000-0000-000000000002", "scope_revision": 3, "authority_id": "00000000-0000-0000-0000-000000000003", "authority_revision": 4, "target_key": "production", "target_generation": 7}),
+		fixture("target_head", "00000000-0000-0000-0000-000000000007", 7, base.Add(6*time.Minute), map[string]any{"release_id": "00000000-0000-0000-0000-000000000007", "issue_id": "issue-1", "state": "deployed", "target_key": "production", "generation": 7, "candidate_id": "00000000-0000-0000-0000-000000000005"}),
+		fixture("evidence", "00000000-0000-0000-0000-000000000009", 1, base.Add(7*time.Minute), map[string]any{"evidence_type": "runtime", "level": "runtime", "source": "provider", "producer_type": "verifier", "observed_at": base.Add(7 * time.Minute).Format(time.RFC3339Nano), "coverage": map[string]any{"region": "all"}, "limitations": []any{"synthetic"}, "candidate_id": "00000000-0000-0000-0000-000000000005", "target_key": "production", "contradictions": []any{}, "payload": map[string]any{"candidate_revision": 2, "release_id": "00000000-0000-0000-0000-000000000007", "target_generation": 7, "acceptance_version": 3, "scope_id": "00000000-0000-0000-0000-000000000002", "scope_revision": 3, "freshness": "current"}}),
+		fixture("review", "00000000-0000-0000-0000-000000000014", 1, base.Add(7*time.Minute), map[string]any{"candidate_id": "00000000-0000-0000-0000-000000000005", "candidate_revision": 2, "scope_id": "00000000-0000-0000-0000-000000000002", "scope_revision": 3, "reviewer_id": "reviewer-1", "outcome": "passed", "coverage": map[string]any{"tests": "focused"}}),
+		fixture("decision", "00000000-0000-0000-0000-000000000010", 1, base.Add(8*time.Minute), map[string]any{"state": "unanswered", "decision_type": "approval", "question": "Proceed?", "accountable_owner_id": "owner-1"}),
+		fixture("incident", "00000000-0000-0000-0000-000000000011", 1, base.Add(9*time.Minute), map[string]any{"state": "open", "release_id": "00000000-0000-0000-0000-000000000007", "target_key": "production", "incident_type": "readback_gap", "severity": "warning"}),
+		fixture("attention", "00000000-0000-0000-0000-000000000012", 1, base.Add(10*time.Minute), map[string]any{"attention_type": "decision", "resolution_state": "open", "next_action": map[string]any{"type": "answer"}}),
+		fixture("budget", "00000000-0000-0000-0000-000000000013", 1, base.Add(11*time.Minute), map[string]any{"state": "active", "concern_type": "execution", "limits": map[string]any{"attempts": 3}}),
+		fixture("action_receipt", "00000000-0000-0000-0000-000000000015", 1, base.Add(12*time.Minute), map[string]any{}),
+	}
+
+	first, err := Project(records, 1, base.Add(12*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	reversed := append([]Record(nil), records...)
+	for left, right := 0, len(reversed)-1; left < right; left, right = left+1, right-1 {
+		reversed[left], reversed[right] = reversed[right], reversed[left]
+	}
+	second, err := Project(reversed, 99, base.Add(12*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !SemanticEqual(first, second) {
+		t.Fatalf("rebuild semantic bytes differ\nfirst document: %s\nsecond document: %s\nfirst sources: %s\nsecond sources: %s", first.Document, second.Document, first.SourceRevisions, second.SourceRevisions)
+	}
+	if first.ReleaseState != "deployed" || first.ReleaseState == "live" {
+		t.Fatalf("release state = %q, want deployed without inferred live", first.ReleaseState)
+	}
+	if first.HealthState != "verifying" || first.AttentionState != "open" || first.CurrentMilestone != "needs_attention" {
+		t.Fatalf("states = health %q attention %q milestone %q", first.HealthState, first.AttentionState, first.CurrentMilestone)
+	}
+	if first.ScopeRevision == nil || *first.ScopeRevision != 3 || first.AuthorityRevision == nil || *first.AuthorityRevision != 4 {
+		t.Fatalf("scope/authority revisions = %v/%v, want 3/4", first.ScopeRevision, first.AuthorityRevision)
+	}
+
+	var document Document
+	if err := json.Unmarshal(first.Document, &document); err != nil {
+		t.Fatal(err)
+	}
+	if len(document.UnresolvedDecisions) != 1 || len(document.UnresolvedIncidents) != 1 || len(document.UnresolvedDependencies) != 1 || len(document.Budgets) != 1 {
+		t.Fatalf("unresolved/budget cardinalities = %d/%d/%d/%d, want all 1", len(document.UnresolvedDecisions), len(document.UnresolvedIncidents), len(document.UnresolvedDependencies), len(document.Budgets))
+	}
+	if document.EvidenceSummary["runtime_current"] != false || document.EvidenceSummary["business_current"] != false {
+		t.Fatalf("evidence summary = %#v", document.EvidenceSummary)
+	}
+	if len(document.EvidenceSummary["items"].([]any)) != 1 || len(document.EvidenceSummary["technical_reviews"].([]any)) != 1 {
+		t.Fatalf("evidence detail = %#v", document.EvidenceSummary)
+	}
+	if document.NextActor["type"] != "owner" || document.TerminalReason != "" || document.LatestMeaningfulChange["record_type"] != "incident" {
+		t.Fatalf("next actor/terminal/latest = %#v/%q/%#v", document.NextActor, document.TerminalReason, document.LatestMeaningfulChange)
+	}
+	if document.OriginalBusinessRequest["available"] != false || document.OriginalBusinessRequest["reason"] != "owner_request_evidence_unavailable" {
+		t.Fatalf("original request = %#v, want explicit unavailable", document.OriginalBusinessRequest)
+	}
+	if document.Supersession["total"] != float64(1) {
+		t.Fatalf("supersession = %#v", document.Supersession)
+	}
+}
+
+func TestProjectEmitsV3OnlyForCompleteAuthoritativeReleaseTruth(t *testing.T) {
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	records := []Record{
+		fixture("outcome", "outcome-v3", 1, base, map[string]any{"state": "open"}),
+		fixture("scope", "scope-v3", 1, base, map[string]any{"requires_deployment": true}),
+		fixture("authority", "authority-v3", 1, base, map[string]any{"scope_id": "scope-v3", "scope_revision": 1}),
+		fixture("candidate", "candidate-v3", 1, base, map[string]any{"scope_id": "scope-v3", "scope_revision": 1, "source_revision": "source-sha"}),
+		fixture("execution", "execution-v3", 1, base, map[string]any{"state": "waiting_automatic", "scope_id": "scope-v3", "scope_revision": 1, "authority_id": "authority-v3", "authority_revision": 1, "candidate_id": "candidate-v3", "target_key": "production", "next_action_at": base.Add(time.Hour).Format(time.RFC3339Nano), "expected_event": map[string]any{"type": "deploy_exact_release"}}),
+		fixture("release", "release-v3", 2, base, map[string]any{
+			"attempt_contract_version": 3, "state": "authorized", "candidate_id": "candidate-v3", "candidate_revision": 1,
+			"scope_id": "scope-v3", "scope_revision": 1, "authority_id": "authority-v3", "authority_revision": 1,
+			"target_key": "production", "target_generation": 1, "acceptance_version": 1, "operation_id": "operation-v3", "branch_key": "main",
+			"expected_target_release_id": "", "expected_target_generation": 0, "release_kind": "forward", "recovery_of_release_id": "",
+			"release_operator_id": "operator-v3", "planned_verifier_id": "verifier-v3", "build_manifest_digest": "build-sha",
+			"artifact_digest": "artifact-sha", "runtime_contract_digest": "runtime-sha", "authority_capability": "deploy_exact_release",
+			"authority_evidence_id": "owner-proof", "recovery_policy_revision": 1, "authority_envelope_digest": "authority-sha",
+			"owner_evidence_revision": 1, "exposure_policy_digest": "exposure-sha", "rollback_target_release_id": "",
+			"irreversible_effects_digest": "irreversible-sha", "reviewed_review_id": "review-v3", "reviewed_review_revision": 1,
+		}),
+	}
+	projection, err := Project(records, 9, base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if projection.ContractVersion != 3 {
+		t.Fatalf("contract version = %d, want 3: %s", projection.ContractVersion, projection.Document)
+	}
+	var document Document
+	if err := json.Unmarshal(projection.Document, &document); err != nil {
+		t.Fatal(err)
+	}
+	if document.ReleaseStatus == nil || document.ReleaseStatus.Phase != "releasing" || !ValidReleaseStatusDocument(projection.Document) {
+		t.Fatalf("release status = %#v", document.ReleaseStatus)
+	}
+	if projection.CurrentMilestone != "releasing" || document.CurrentMilestone != "releasing" {
+		t.Fatalf("v3 milestone = projection %q document %q, want typed phase releasing", projection.CurrentMilestone, document.CurrentMilestone)
+	}
+	if summary := OwnerIssueSummaryFromDocument(projection.Document, projection.Revision, projection.GeneratedAt); summary.Stage != OwnerStageReleasing {
+		t.Fatalf("owner summary = %#v, want releasing", summary)
+	}
+
+	var fields map[string]any
+	if err := json.Unmarshal(records[len(records)-1].Payload, &fields); err != nil {
+		t.Fatal(err)
+	}
+	delete(fields, "artifact_digest")
+	records[len(records)-1].Payload, _ = json.Marshal(fields)
+	if _, err := Project(records, 10, base); err == nil {
+		t.Fatal("incomplete v3 release snapshot was accepted")
+	}
+}
+
+func TestExactDeploymentReceiptRequiresImmutableApplicableProviderIdentity(t *testing.T) {
+	fresh := map[string]any{"current": true}
+	if got := exactDeploymentReceipt(map[string]any{"items": []map[string]any{{
+		"evidence_type": "deployment", "applies": true, "freshness": fresh,
+		"observed_at": "2026-09-10T12:00:00Z",
+	}}}); got != nil {
+		t.Fatalf("timestamp-only evidence produced deployed revision %q", *got)
+	}
+
+	if got := exactDeploymentReceipt(map[string]any{"items": []map[string]any{{
+		"evidence_type": "deployment", "applies": true, "freshness": fresh,
+		"provider_receipt_id": "provider-revision-7",
+	}}}); got == nil || *got != "provider-revision-7" {
+		t.Fatalf("exact provider receipt = %v, want provider-revision-7", got)
+	}
+
+	if got := exactDeploymentReceipt(map[string]any{"items": []map[string]any{
+		{"evidence_type": "deployment", "applies": true, "provider_receipt_id": "provider-revision-7"},
+		{"evidence_type": "deployment", "applies": true, "provider_receipt_id": "provider-revision-8"},
+	}}); got != nil {
+		t.Fatalf("conflicting provider receipts produced deployed revision %q", *got)
+	}
+}
+
+func TestProjectPreservesHistoricalCompletionDuringCurrentFailure(t *testing.T) {
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	for _, releaseState := range []string{"rolling_back", "rolled_back"} {
+		t.Run(releaseState, func(t *testing.T) {
+			records := []Record{
+				fixture("outcome", "00000000-0000-0000-0000-000000000021", 1, base, map[string]any{"state": "satisfied", "completion_evidence_id": "evidence-1", "superseded_at": base.Add(time.Minute).Format(time.RFC3339Nano)}),
+				fixture("outcome", "00000000-0000-0000-0000-000000000022", 2, base.Add(2*time.Minute), map[string]any{"state": "open"}),
+				fixture("scope", "scope-1", 1, base, map[string]any{}),
+				fixture("authority", "authority-1", 1, base, map[string]any{"scope_id": "scope-1"}),
+				fixture("candidate", "candidate-1", 1, base, map[string]any{"scope_id": "scope-1"}),
+				fixture("execution", "execution-1", 1, base, map[string]any{"scope_id": "scope-1", "authority_id": "authority-1", "candidate_id": "candidate-1", "target_key": "production"}),
+				fixture("release", "00000000-0000-0000-0000-000000000023", 3, base.Add(3*time.Minute), map[string]any{"state": releaseState, "candidate_id": "candidate-1", "scope_id": "scope-1", "authority_id": "authority-1"}),
+			}
+			projection, err := Project(records, 1, base.Add(4*time.Minute))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var document Document
+			if err := json.Unmarshal(projection.Document, &document); err != nil {
+				t.Fatal(err)
+			}
+			if projection.OutcomeState != "open" || projection.OutcomeOpen != true || document.HistoricalCompletion["satisfied"] != true {
+				t.Fatalf("outcome = %q open=%v historical=%#v", projection.OutcomeState, projection.OutcomeOpen, document.HistoricalCompletion)
+			}
+			wantHealth := "degraded"
+			if projection.HealthState != wantHealth {
+				t.Fatalf("health = %q, want %q", projection.HealthState, wantHealth)
+			}
+		})
+	}
+}
+
+func TestProjectHealthRequiresExactCurrentReleaseEvidence(t *testing.T) {
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	baseRecords := []Record{
+		fixture("scope", "00000000-0000-0000-0000-000000000031", 3, base, map[string]any{"state": "accepted", "acceptance_version": 4}),
+		fixture("authority", "authority-1", 2, base, map[string]any{"scope_id": "00000000-0000-0000-0000-000000000031", "scope_revision": 3}),
+		fixture("candidate", "candidate-1", 2, base, map[string]any{"scope_id": "00000000-0000-0000-0000-000000000031", "scope_revision": 3}),
+		fixture("execution", "execution-1", 1, base, map[string]any{"scope_id": "00000000-0000-0000-0000-000000000031", "scope_revision": 3, "authority_id": "authority-1", "authority_revision": 2, "candidate_id": "candidate-1", "target_key": "production"}),
+		fixture("release", "00000000-0000-0000-0000-000000000032", 6, base.Add(time.Minute), map[string]any{"state": "live", "candidate_id": "candidate-1", "candidate_revision": 2, "scope_id": "00000000-0000-0000-0000-000000000031", "scope_revision": 3, "authority_id": "authority-1", "authority_revision": 2, "target_key": "production", "target_generation": 9, "release_operator_id": "operator-1", "planned_verifier_id": "verifier-1"}),
+		fixture("target_head", "00000000-0000-0000-0000-000000000032", 3, base.Add(time.Minute), map[string]any{"release_id": "00000000-0000-0000-0000-000000000032", "issue_id": "issue-1", "candidate_id": "candidate-1", "target_key": "production", "generation": 9, "state": "live"}),
+	}
+	evidence := func(id, evidenceType string, acceptanceVersion int64) Record {
+		return fixture("evidence", id, 1, base.Add(2*time.Minute), map[string]any{
+			"evidence_type": evidenceType, "level": evidenceType, "producer_id": "verifier-1", "candidate_id": "candidate-1",
+			"target_key": "production", "contradictions": []any{},
+			"payload": map[string]any{"candidate_revision": 2, "release_id": "00000000-0000-0000-0000-000000000032", "target_generation": 9, "acceptance_version": acceptanceVersion, "scope_id": "00000000-0000-0000-0000-000000000031", "scope_revision": 3, "freshness": "current"},
+		})
+	}
+
+	complete := append(append([]Record(nil), baseRecords...),
+		evidence("00000000-0000-0000-0000-000000000033", "runtime", 4),
+		evidence("00000000-0000-0000-0000-000000000034", "business", 4),
+		evidence("00000000-0000-0000-0000-000000000038", "regression", 4),
+	)
+	projection, err := Project(complete, 1, base.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if projection.ReleaseState != "live" || projection.HealthState != "healthy" {
+		t.Fatalf("exact proof produced release/health %q/%q, want live/healthy", projection.ReleaseState, projection.HealthState)
+	}
+
+	staleAcceptance := append(append([]Record(nil), baseRecords...),
+		evidence("00000000-0000-0000-0000-000000000035", "runtime", 3),
+		evidence("00000000-0000-0000-0000-000000000036", "business", 4),
+	)
+	projection, err = Project(staleAcceptance, 1, base.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if projection.HealthState != "unverified" || projection.ReleaseState == "live" || projection.CurrentMilestone == "live" {
+		t.Fatalf("stale acceptance evidence leaked live: release=%q health=%q milestone=%q", projection.ReleaseState, projection.HealthState, projection.CurrentMilestone)
+	}
+	var staleDocument Document
+	if err := json.Unmarshal(projection.Document, &staleDocument); err != nil || staleDocument.Release["state"] != projection.ReleaseState {
+		t.Fatalf("document/top-level release state diverged: document=%#v top=%q err=%v", staleDocument.Release["state"], projection.ReleaseState, err)
+	}
+
+	wrongProducer := append([]Record(nil), complete...)
+	wrongProducer[6] = evidence("00000000-0000-0000-0000-000000000033", "runtime", 4)
+	var wrongFields map[string]any
+	_ = json.Unmarshal(wrongProducer[6].Payload, &wrongFields)
+	wrongFields["producer_id"] = "other-verifier"
+	wrongProducer[6].Payload, _ = json.Marshal(wrongFields)
+	projection, err = Project(wrongProducer, 1, base.Add(time.Hour))
+	if err != nil || projection.HealthState != "unverified" || projection.ReleaseState == "live" {
+		t.Fatalf("wrong verifier leaked live: release=%q health=%q err=%v", projection.ReleaseState, projection.HealthState, err)
+	}
+
+	for _, tc := range []struct {
+		name, field, value string
+	}{{"operator disagreement", "release_operator_id", "other-operator"}, {"verifier disagreement", "planned_verifier_id", "other-verifier"}} {
+		t.Run(tc.name, func(t *testing.T) {
+			conflicting := append([]Record(nil), complete...)
+			var releaseFields map[string]any
+			if err := json.Unmarshal(conflicting[4].Payload, &releaseFields); err != nil {
+				t.Fatal(err)
+			}
+			releaseFields["facets"] = map[string]any{tc.field: tc.value}
+			conflicting[4].Payload, _ = json.Marshal(releaseFields)
+			got, err := Project(conflicting, 1, base.Add(time.Hour))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var document Document
+			if err := json.Unmarshal(got.Document, &document); err != nil {
+				t.Fatal(err)
+			}
+			if got.HealthState != "unverified" || got.ReleaseState == "live" || got.CurrentMilestone == "live" || document.Release["state"] != got.ReleaseState {
+				t.Fatalf("identity disagreement leaked live: release=%q health=%q milestone=%q document=%#v", got.ReleaseState, got.HealthState, got.CurrentMilestone, document.Release)
+			}
+		})
+	}
+
+	staleHead := append([]Record(nil), complete...)
+	staleHead[5] = fixture("target_head", "old-release", 1, base.Add(time.Minute), map[string]any{"release_id": "old-release", "candidate_id": "candidate-1", "target_key": "production", "generation": 9})
+	projection, err = Project(staleHead, 1, base.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if projection.HealthState != "unverified" || projection.ReleaseState == "live" || projection.CurrentMilestone == "live" {
+		t.Fatalf("stale target head leaked live: release=%q health=%q milestone=%q", projection.ReleaseState, projection.HealthState, projection.CurrentMilestone)
+	}
+
+	staleReleaseProof := append([]Record(nil), complete...)
+	staleReleaseProof[6] = evidence("00000000-0000-0000-0000-000000000037", "runtime", 4)
+	var staleFields map[string]any
+	if err := json.Unmarshal(staleReleaseProof[6].Payload, &staleFields); err != nil {
+		t.Fatal(err)
+	}
+	staleFields["payload"].(map[string]any)["release_id"] = "old-release"
+	staleReleaseProof[6].Payload, _ = json.Marshal(staleFields)
+	projection, err = Project(staleReleaseProof, 1, base.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if projection.HealthState != "unverified" {
+		t.Fatalf("stale release evidence produced health %q, want unverified", projection.HealthState)
+	}
+
+	deployed := append([]Record(nil), complete...)
+	deployed[4] = fixture("release", "00000000-0000-0000-0000-000000000032", 6, base.Add(time.Minute), map[string]any{"state": "deployed", "candidate_id": "candidate-1", "candidate_revision": 2, "scope_id": "00000000-0000-0000-0000-000000000031", "scope_revision": 3, "authority_id": "authority-1", "authority_revision": 2, "target_key": "production", "target_generation": 9})
+	projection, err = Project(deployed, 1, base.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if projection.ReleaseState != "deployed" || projection.HealthState != "verifying" {
+		t.Fatalf("deployment produced release/health %q/%q, want deployed/verifying", projection.ReleaseState, projection.HealthState)
+	}
+}
+
+func TestProjectCurrentTargetRegressionOutranksNewerPendingBranch(t *testing.T) {
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	scopeID, authorityID := "scope-8a", "authority-8a"
+	oldCandidate, newCandidate := "candidate-old", "candidate-new"
+	oldRelease, newRelease := "release-old", "release-new"
+	records := []Record{
+		fixture("scope", scopeID, 1, base, map[string]any{}),
+		fixture("authority", authorityID, 1, base, map[string]any{"scope_id": scopeID}),
+		fixture("candidate", oldCandidate, 1, base, map[string]any{"scope_id": scopeID}),
+		fixture("candidate", newCandidate, 1, base.Add(time.Minute), map[string]any{"scope_id": scopeID}),
+		fixture("execution", "execution-old", 1, base, map[string]any{"state": "completed", "scope_id": scopeID, "authority_id": authorityID, "candidate_id": oldCandidate, "target_key": "production", "branch_key": "old"}),
+		fixture("execution", "execution-new", 1, base.Add(2*time.Minute), map[string]any{"state": "working", "scope_id": scopeID, "authority_id": authorityID, "candidate_id": newCandidate, "target_key": "production", "branch_key": "new"}),
+		fixture("release", oldRelease, 3, base, map[string]any{"state": "degraded", "candidate_id": oldCandidate, "scope_id": scopeID, "authority_id": authorityID, "target_generation": 4, "head_observed_at": base.Format(time.RFC3339Nano)}),
+		fixture("release", newRelease, 1, base.Add(2*time.Minute), map[string]any{"state": "pending", "candidate_id": newCandidate, "scope_id": scopeID, "authority_id": authorityID, "target_generation": 5, "expected_target_generation": 4, "expected_target_release_id": oldRelease}),
+		fixture("target_head", oldRelease, 2, base.Add(3*time.Minute), map[string]any{"release_id": oldRelease, "candidate_id": oldCandidate, "generation": 4, "state": "degraded", "issue_id": "issue-1"}),
+		fixture("incident", "incident-current", 1, base.Add(4*time.Minute), map[string]any{"release_id": oldRelease, "target_key": "production", "state": "open"}),
+	}
+	projection, err := Project(records, 1, base.Add(5*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document Document
+	if err := json.Unmarshal(projection.Document, &document); err != nil {
+		t.Fatal(err)
+	}
+	if projection.ReleaseState != "pending" || projection.HealthState != "degraded" {
+		t.Fatalf("primary release/current health = %q/%q, want pending/degraded", projection.ReleaseState, projection.HealthState)
+	}
+	if document.Release["id"] != newRelease || document.ObservedRelease["id"] != oldRelease || document.Target["release_id"] != oldRelease {
+		t.Fatalf("attempt/observed target relation = release %#v observed %#v target %#v", document.Release, document.ObservedRelease, document.Target)
+	}
+}
+
+func TestProjectRestorationRequiresExactDurableProof(t *testing.T) {
+	release := map[string]any{"id": "recovery-2", "state": "restored", "target_generation": float64(2)}
+	target := map[string]any{"release_id": "recovery-2", "generation": float64(2), "state": "restored"}
+	if got := deriveHealth(release, target, nil, emptyEvidenceSummary()); got != "unverified" {
+		t.Fatalf("restored state without proof health = %q, want unverified", got)
+	}
+	evidence := emptyEvidenceSummary()
+	evidence["runtime_current"] = true
+	evidence["business_current"] = true
+	evidence["regression_current"] = true
+	evidence["restoration_current"] = true
+	if got := deriveHealth(release, target, nil, evidence); got != "restored" {
+		t.Fatalf("exact restoration proof health = %q, want restored", got)
+	}
+	release["state"], target["state"] = "rolled_back", "rolled_back"
+	if got := deriveHealth(release, target, nil, evidence); got != "degraded" {
+		t.Fatalf("rollback receipt health = %q, want degraded until restoration", got)
+	}
+}
+
+func TestProjectRejectsMalformedReleaseAttemptMetadata(t *testing.T) {
+	now := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		name  string
+		field string
+		value any
+	}{
+		{"fractional predecessor", "expected_target_generation", 1.5},
+		{"object recovery identity", "recovery_of_release_id", map[string]any{}},
+		{"array observed time", "head_observed_at", []any{}},
+		{"boolean incident generation", "target_generation", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			typ := "release"
+			if tc.name == "boolean incident generation" {
+				typ = "incident"
+			}
+			record := fixture(typ, "record-1", 1, now, map[string]any{tc.field: tc.value})
+			if _, err := Project([]Record{record}, 1, now); err == nil {
+				t.Fatal("Project accepted malformed release metadata")
+			}
+		})
+	}
+}
+
+func TestProjectRequiresExactIncidentReleaseRelation(t *testing.T) {
+	now := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	records := []Record{
+		fixture("release", "release-a", 2, now, map[string]any{"candidate_id": "candidate-a", "candidate_revision": 3, "target_key": "production", "target_generation": 7}),
+		fixture("release", "release-b", 1, now, map[string]any{"candidate_id": "candidate-b", "candidate_revision": 1, "target_key": "staging", "target_generation": 2}),
+		fixture("evidence", "detection-a", 1, now, map[string]any{}),
+		fixture("incident", "incident-a", 1, now, map[string]any{"release_id": "release-a", "release_revision": 2, "candidate_id": "candidate-a", "candidate_revision": 3, "target_key": "production", "target_generation": 7, "detection_evidence_id": "detection-a"}),
+	}
+	if _, err := Project(records, 1, now); err != nil {
+		t.Fatalf("exact incident relation rejected: %v", err)
+	}
+	for _, tc := range []struct {
+		name  string
+		field string
+		value any
+	}{{"partial", "candidate_revision", nil}, {"wrong release revision", "release_revision", 1}, {"wrong candidate", "candidate_id", "candidate-b"}, {"wrong target", "target_key", "staging"}, {"wrong generation", "target_generation", 2}, {"missing detection evidence", "detection_evidence_id", "missing"}} {
+		t.Run(tc.name, func(t *testing.T) {
+			bad := append([]Record(nil), records...)
+			bad[3] = fixture("incident", "incident-a", 1, now, map[string]any{"release_id": "release-a", "release_revision": 2, "candidate_id": "candidate-a", "candidate_revision": 3, "target_key": "production", "target_generation": 7, "detection_evidence_id": "detection-a", tc.field: tc.value})
+			if _, err := Project(bad, 1, now); err == nil {
+				t.Fatal("Project accepted inconsistent incident binding")
+			}
+		})
+	}
+}
+
+func TestProjectRejectsIncompleteV2ReleaseAttemptSnapshot(t *testing.T) {
+	now := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	complete := map[string]any{
+		"attempt_contract_version": 2, "acceptance_version": 1, "operation_id": "operation-a", "branch_key": "main",
+		"expected_target_generation": 0, "release_operator_id": "operator-a", "planned_verifier_id": "verifier-a",
+		"build_manifest_digest": "build", "artifact_digest": "artifact", "runtime_contract_digest": "runtime",
+		"authority_capability": "deploy", "authority_evidence_id": "owner-proof", "recovery_policy_revision": 1,
+	}
+	if _, err := Project([]Record{fixture("release", "release-a", 1, now, complete)}, 1, now); err != nil {
+		t.Fatalf("complete v2 attempt rejected: %v", err)
+	}
+	for _, missing := range []string{"acceptance_version", "operation_id", "branch_key", "expected_target_generation", "release_operator_id", "planned_verifier_id", "build_manifest_digest", "artifact_digest", "runtime_contract_digest", "authority_capability", "authority_evidence_id", "recovery_policy_revision"} {
+		t.Run(missing, func(t *testing.T) {
+			fields := cloneMap(complete)
+			fields[missing] = nil
+			if _, err := Project([]Record{fixture("release", "release-a", 1, now, fields)}, 1, now); err == nil {
+				t.Fatalf("Project accepted v2 attempt missing %s", missing)
+			}
+		})
+	}
+}
+
+func TestProjectDoesNotExposeRestoredMilestoneWithoutCompleteProof(t *testing.T) {
+	now := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	records := []Record{
+		fixture("scope", "scope-a", 1, now, map[string]any{"acceptance_version": 1}),
+		fixture("authority", "authority-a", 1, now, map[string]any{"scope_id": "scope-a"}),
+		fixture("candidate", "candidate-a", 1, now, map[string]any{"scope_id": "scope-a"}),
+		fixture("execution", "execution-a", 1, now, map[string]any{"scope_id": "scope-a", "authority_id": "authority-a", "candidate_id": "candidate-a", "target_key": "production"}),
+		fixture("release", "release-a", 1, now, map[string]any{"state": "restored", "candidate_id": "candidate-a", "scope_id": "scope-a", "authority_id": "authority-a", "target_key": "production", "target_generation": 2}),
+		fixture("target_head", "release-a", 1, now, map[string]any{"release_id": "release-a", "issue_id": "issue-1", "candidate_id": "candidate-a", "target_key": "production", "generation": 2, "state": "restored"}),
+	}
+	projection, err := Project(records, 1, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if projection.ReleaseState == "restored" || projection.CurrentMilestone == "restored" || projection.HealthState != "unverified" {
+		t.Fatalf("unproven restoration leaked: release=%q milestone=%q health=%q", projection.ReleaseState, projection.CurrentMilestone, projection.HealthState)
+	}
+	var document Document
+	if err := json.Unmarshal(projection.Document, &document); err != nil || document.Release["state"] != projection.ReleaseState || document.ObservedRelease["state"] != "restored" {
+		t.Fatalf("restoration document truth = release %#v observed %#v top %q err=%v", document.Release, document.ObservedRelease, projection.ReleaseState, err)
+	}
+}
+
+func TestProjectEvidenceExpiryBoundaryAndOwnerRequestAttribution(t *testing.T) {
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	validUntil := base.Add(time.Hour)
+	records := []Record{
+		fixture("scope", "00000000-0000-0000-0000-000000000041", 1, base, map[string]any{"state": "accepted", "acceptance_version": 1}),
+		fixture("authority", "authority-1", 1, base, map[string]any{"scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1}),
+		fixture("candidate", "candidate-1", 1, base, map[string]any{"scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1}),
+		fixture("execution", "execution-1", 1, base, map[string]any{"scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "authority_id": "authority-1", "authority_revision": 1, "candidate_id": "candidate-1", "target_key": "production"}),
+		fixture("release", "00000000-0000-0000-0000-000000000042", 1, base, map[string]any{"state": "live", "candidate_id": "candidate-1", "candidate_revision": 1, "scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "authority_id": "authority-1", "authority_revision": 1, "target_key": "production", "target_generation": 1, "release_operator_id": "operator-1", "planned_verifier_id": "verifier-1"}),
+		fixture("target_head", "00000000-0000-0000-0000-000000000042", 1, base, map[string]any{"release_id": "00000000-0000-0000-0000-000000000042", "issue_id": "issue-1", "candidate_id": "candidate-1", "target_key": "production", "generation": 1, "state": "live"}),
+		fixture("evidence", "00000000-0000-0000-0000-000000000043", 1, base, map[string]any{"evidence_type": "owner_request", "producer_type": "owner", "producer_id": "owner-1", "source": "owner_action", "observed_at": base.Format(time.RFC3339Nano), "payload": map[string]any{"request": "Restore customer access"}}),
+		fixture("evidence", "00000000-0000-0000-0000-000000000044", 1, base, map[string]any{"evidence_type": "runtime", "level": "runtime", "candidate_id": "candidate-1", "target_key": "production", "valid_until": validUntil.Format(time.RFC3339Nano), "contradictions": []any{}, "payload": map[string]any{"candidate_revision": 1, "release_id": "00000000-0000-0000-0000-000000000042", "target_generation": 1, "acceptance_version": 1, "scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "freshness": "current"}}),
+		fixture("evidence", "00000000-0000-0000-0000-000000000045", 1, base, map[string]any{"evidence_type": "business", "level": "business", "candidate_id": "candidate-1", "target_key": "production", "valid_until": validUntil.Format(time.RFC3339Nano), "contradictions": []any{}, "payload": map[string]any{"candidate_revision": 1, "release_id": "00000000-0000-0000-0000-000000000042", "target_generation": 1, "acceptance_version": 1, "scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "freshness": "current"}}),
+	}
+
+	before, err := Project(records, 1, validUntil.Add(-time.Nanosecond))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.HealthState != "unverified" {
+		t.Fatalf("finite-deadline evidence produced health %q, want fail-closed unverified", before.HealthState)
+	}
+	var document Document
+	if err := json.Unmarshal(before.Document, &document); err != nil {
+		t.Fatal(err)
+	}
+	if document.OriginalBusinessRequest["available"] != true || document.OriginalBusinessRequest["producer_id"] != "owner-1" {
+		t.Fatalf("original owner request = %#v", document.OriginalBusinessRequest)
+	}
+
+	for _, at := range []time.Time{validUntil, validUntil.Add(time.Nanosecond)} {
+		expired, err := Project(records, 99, at)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if expired.HealthState != "unverified" || !SemanticEqual(before, expired) {
+			t.Fatalf("projection time changed semantics at %s: health=%q before=%s after=%s", at.Format(time.RFC3339Nano), expired.HealthState, before.Document, expired.Document)
+		}
+	}
+
+	current := append([]Record(nil), records...)
+	current[7] = fixture("evidence", "00000000-0000-0000-0000-000000000046", 1, base.Add(time.Minute), map[string]any{"evidence_type": "runtime", "level": "runtime", "producer_id": "verifier-1", "candidate_id": "candidate-1", "target_key": "production", "payload": map[string]any{"candidate_revision": 1, "release_id": "00000000-0000-0000-0000-000000000042", "target_generation": 1, "acceptance_version": 1, "scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "freshness": "current"}})
+	current[8] = fixture("evidence", "00000000-0000-0000-0000-000000000047", 1, base.Add(time.Minute), map[string]any{"evidence_type": "business", "level": "business", "producer_id": "verifier-1", "candidate_id": "candidate-1", "target_key": "production", "payload": map[string]any{"candidate_revision": 1, "release_id": "00000000-0000-0000-0000-000000000042", "target_generation": 1, "acceptance_version": 1, "scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "freshness": "current"}})
+	current = append(current, fixture("evidence", "00000000-0000-0000-0000-000000000048", 1, base.Add(time.Minute), map[string]any{"evidence_type": "regression", "level": "regression", "producer_id": "verifier-1", "candidate_id": "candidate-1", "target_key": "production", "payload": map[string]any{"candidate_revision": 1, "release_id": "00000000-0000-0000-0000-000000000042", "target_generation": 1, "acceptance_version": 1, "scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "freshness": "current"}}))
+	healthy, err := Project(current, 2, base.Add(24*time.Hour))
+	if err != nil || healthy.HealthState != "healthy" {
+		t.Fatalf("normalized current receipts health=%q err=%v, want healthy", healthy.HealthState, err)
+	}
+	contradicted := append([]Record(nil), current...)
+	contradicted[7] = fixture("evidence", "00000000-0000-0000-0000-000000000046", 1, base.Add(time.Minute), map[string]any{"evidence_type": "runtime", "level": "runtime", "candidate_id": "candidate-1", "target_key": "production", "contradictions": []any{"provider mismatch"}, "payload": map[string]any{"candidate_revision": 1, "release_id": "00000000-0000-0000-0000-000000000042", "target_generation": 1, "acceptance_version": 1, "scope_id": "00000000-0000-0000-0000-000000000041", "scope_revision": 1, "freshness": "current"}})
+	invalidated, err := Project(contradicted, 3, base.Add(24*time.Hour))
+	if err != nil || invalidated.HealthState != "unverified" {
+		t.Fatalf("contradicted receipt health=%q err=%v, want unverified", invalidated.HealthState, err)
+	}
+}
+
+func TestProjectKeepsBranchesAttemptsAndTargetsRelated(t *testing.T) {
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	records := []Record{
+		fixture("scope", "scope-1", 1, base, map[string]any{}),
+		fixture("authority", "authority-1", 1, base, map[string]any{"scope_id": "scope-1"}),
+		fixture("candidate", "candidate-a", 1, base, map[string]any{"scope_id": "scope-1"}),
+		fixture("candidate", "candidate-b", 2, base, map[string]any{"scope_id": "scope-1"}),
+		fixture("execution", "attempt-a1", 1, base.Add(time.Minute), map[string]any{"branch_key": "repair", "operation_type": "implementation", "state": "working", "scope_id": "scope-1", "authority_id": "authority-1", "candidate_id": "candidate-a", "target_key": "production"}),
+		fixture("execution", "attempt-a2", 1, base.Add(2*time.Minute), map[string]any{"branch_key": "repair", "operation_type": "implementation", "state": "correction", "scope_id": "scope-1", "authority_id": "authority-1", "candidate_id": "candidate-a", "target_key": "production"}),
+		fixture("execution", "attempt-b1", 1, base.Add(3*time.Minute), map[string]any{"branch_key": "canary", "operation_type": "release", "state": "working", "scope_id": "scope-1", "authority_id": "authority-1", "candidate_id": "candidate-b", "target_key": "staging"}),
+		fixture("release", "release-a", 1, base, map[string]any{"candidate_id": "candidate-a", "scope_id": "scope-1", "authority_id": "authority-1", "target_key": "production", "target_generation": 4}),
+		fixture("release", "release-b", 1, base, map[string]any{"candidate_id": "candidate-b", "candidate_revision": 2, "scope_id": "scope-1", "authority_id": "authority-1", "target_key": "staging", "target_generation": 8}),
+		fixture("target_head", "release-a", 1, base, map[string]any{"release_id": "release-a", "candidate_id": "candidate-a", "target_key": "production", "generation": 4}),
+		fixture("target_head", "release-b", 1, base, map[string]any{"release_id": "release-b", "candidate_id": "candidate-b", "target_key": "staging", "generation": 8}),
+	}
+	projection, err := Project(records, 1, base.Add(4*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document Document
+	if err := json.Unmarshal(projection.Document, &document); err != nil {
+		t.Fatal(err)
+	}
+	if len(document.ActiveBranches) != 3 {
+		t.Fatalf("active branch attempts = %d, want 3", len(document.ActiveBranches))
+	}
+	if document.Execution["id"] != "attempt-b1" || document.Candidate["id"] != "candidate-b" || document.Release["id"] != "release-b" || document.Target["target_key"] != "staging" {
+		t.Fatalf("primary relationship mixed: execution=%#v candidate=%#v release=%#v target=%#v", document.Execution, document.Candidate, document.Release, document.Target)
+	}
+	for _, branch := range document.ActiveBranches {
+		execution := branch["execution"].(map[string]any)
+		candidate := branch["candidate"].(map[string]any)
+		release := branch["release"].(map[string]any)
+		target := branch["target"].(map[string]any)
+		if execution["candidate_id"] != candidate["id"] || release["candidate_id"] != candidate["id"] || release["id"] != target["release_id"] || release["target_key"] != target["target_key"] {
+			t.Fatalf("branch relationship mixed: %#v", branch)
+		}
+	}
+}
+
+func TestProjectMissingReferencesFailClosedWithoutCrossJoin(t *testing.T) {
+	base := time.Now().UTC()
+	records := []Record{
+		fixture("scope", "scope-1", 1, base, map[string]any{}),
+		fixture("candidate", "unrelated", 1, base, map[string]any{"scope_id": "scope-1"}),
+		fixture("release", "unrelated-release", 1, base, map[string]any{"candidate_id": "unrelated", "scope_id": "scope-1"}),
+		fixture("execution", "execution-1", 1, base.Add(time.Minute), map[string]any{"scope_id": "scope-1", "candidate_id": "missing-candidate", "target_key": "production"}),
+	}
+	projection, err := Project(records, 1, base.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document Document
+	if err := json.Unmarshal(projection.Document, &document); err != nil {
+		t.Fatal(err)
+	}
+	if len(document.Candidate) != 0 || len(document.Release) != 0 || len(document.Target) != 0 {
+		t.Fatalf("missing reference cross-joined unrelated records: candidate=%#v release=%#v target=%#v", document.Candidate, document.Release, document.Target)
+	}
+}
+
+func TestProjectFailsClosedOnInvalidInput(t *testing.T) {
+	now := time.Now().UTC()
+	for _, test := range []struct {
+		name   string
+		record Record
+	}{
+		{name: "unknown type", record: fixture("legacy_event", "id", 1, now, map[string]any{})},
+		{name: "malformed payload", record: Record{Type: "outcome", ID: "id", Revision: 1, CreatedAt: now, Payload: []byte(`{`)}},
+		{name: "invalid revision", record: fixture("outcome", "id", 0, now, map[string]any{})},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := Project([]Record{test.record}, 1, now); err == nil {
+				t.Fatal("Project succeeded, want fail-closed error")
+			}
+		})
+	}
+	if _, err := Project(nil, 0, now); err == nil {
+		t.Fatal("Project accepted invalid Current Picture revision")
+	}
+	valid := fixture("outcome", "envelope-id", 2, now, map[string]any{"state": "open"})
+	for _, mutate := range []func(map[string]any){
+		func(fields map[string]any) { fields["id"] = "different" },
+		func(fields map[string]any) { fields["revision"] = 3 },
+		func(fields map[string]any) { fields["state"] = nil },
+		func(fields map[string]any) { fields["acceptance_version"] = 1.5 },
+	} {
+		var fields map[string]any
+		if err := json.Unmarshal(valid.Payload, &fields); err != nil {
+			t.Fatal(err)
+		}
+		mutate(fields)
+		payload, _ := json.Marshal(fields)
+		invalid := valid
+		invalid.Payload = payload
+		if _, err := Project([]Record{invalid}, 1, now); err == nil {
+			t.Fatalf("Project accepted invalid payload %s", payload)
+		}
+	}
+}
+
+func TestNumberInt64RejectsUnsafeJSONNumbers(t *testing.T) {
+	for _, value := range []any{1.5, math.Inf(1), 9223372036854775808.0, json.Number("9223372036854775808"), json.Number("1.1")} {
+		if got, ok := numberInt64(value); ok {
+			t.Fatalf("numberInt64(%v) = %d, true; want rejection", value, got)
+		}
+	}
+	for _, value := range []any{float64(0), float64(-1), json.Number("9223372036854775807")} {
+		if _, ok := numberInt64(value); !ok {
+			t.Fatalf("numberInt64(%v) rejected exact integer", value)
+		}
+	}
+}
+
+func TestProjectAllowsEmptyPendingReleaseTargetButRejectsWrongType(t *testing.T) {
+	now := time.Now().UTC()
+	release := fixture("release", "release-1", 1, now, map[string]any{
+		"target_key":        "",
+		"target_generation": 0,
+		"state":             "pending",
+	})
+	if _, err := Project([]Record{release}, 1, now); err != nil {
+		t.Fatalf("Project rejected typed empty pending target: %v", err)
+	}
+
+	var fields map[string]any
+	if err := json.Unmarshal(release.Payload, &fields); err != nil {
+		t.Fatal(err)
+	}
+	fields["target_key"] = 0
+	release.Payload, _ = json.Marshal(fields)
+	if _, err := Project([]Record{release}, 1, now); err == nil {
+		t.Fatal("Project accepted non-string release target_key")
+	}
+}
+
+func TestProjectAndStoreRebuildAndCAS(t *testing.T) {
+	databaseURL := os.Getenv("WORKFLOW_V2_TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("integration test requires isolated WORKFLOW_V2_TEST_DATABASE_URL")
+	}
+	ctx := context.Background()
+	conn, err := pgx.Connect(ctx, databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema := fmt.Sprintf("workflow_projection_contract_test_%d", time.Now().UnixNano())
+	identifier := pgx.Identifier{schema}.Sanitize()
+	_, _ = conn.Exec(ctx, "DROP SCHEMA IF EXISTS "+identifier+" CASCADE")
+	if _, err := conn.Exec(ctx, "CREATE SCHEMA "+identifier); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(ctx, `SELECT set_config('search_path', $1, false)`, schema); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = conn.Exec(context.Background(), "SET search_path TO public")
+		_, _ = conn.Exec(context.Background(), "DROP SCHEMA IF EXISTS "+identifier+" CASCADE")
+		_ = conn.Close(context.Background())
+	})
+
+	if _, err := conn.Exec(ctx, `
+		CREATE TABLE workspace (id UUID PRIMARY KEY);
+		CREATE TABLE issue (id UUID PRIMARY KEY, workspace_id UUID NOT NULL);
+		CREATE TABLE squad (id UUID PRIMARY KEY, workspace_id UUID, archived_at TIMESTAMPTZ);
+		CREATE TABLE agent (id UUID PRIMARY KEY, workspace_id UUID, archived_at TIMESTAMPTZ);
+		CREATE TABLE squad_workflow_template (
+			squad_id UUID PRIMARY KEY CONSTRAINT squad_workflow_template_squad_id_fkey REFERENCES squad(id) ON DELETE CASCADE,
+			workspace_id UUID NOT NULL CONSTRAINT squad_workflow_template_workspace_id_fkey REFERENCES workspace(id) ON DELETE CASCADE,
+			implementer_id UUID NOT NULL CONSTRAINT squad_workflow_template_implementer_id_fkey REFERENCES agent(id),
+			reviewer_id UUID NOT NULL CONSTRAINT squad_workflow_template_reviewer_id_fkey REFERENCES agent(id),
+			release_agent_id UUID CONSTRAINT squad_workflow_template_release_agent_id_fkey REFERENCES agent(id),
+			verifier_id UUID CONSTRAINT squad_workflow_template_verifier_id_fkey REFERENCES agent(id),
+			requires_owner BOOLEAN NOT NULL DEFAULT FALSE, requires_deployment BOOLEAN NOT NULL DEFAULT FALSE,
+			max_corrections INTEGER NOT NULL DEFAULT 1, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+		);
+		CREATE INDEX squad_workflow_template_workspace_idx ON squad_workflow_template(workspace_id);
+	`); err != nil {
+		t.Fatal(err)
+	}
+	applySQLFile(t, ctx, conn, filepath.Join("..", "..", "migrations", "466_issue_workflow_v2_records.up.sql"))
+	applySQLFile(t, ctx, conn, filepath.Join("..", "..", "migrations", "482_issue_current_picture_key_idx.up.sql"))
+
+	workspaceID, issueID := testUUID(1), testUUID(2)
+	if _, err := conn.Exec(ctx, `INSERT INTO workspace(id) VALUES($1)`, workspaceID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(ctx, `INSERT INTO issue(id, workspace_id) VALUES($1, $2)`, issueID, workspaceID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(ctx, `INSERT INTO issue_workflow_outcome(id, workspace_id, issue_id, state, acceptance_version) VALUES($1, $2, $3, 'open', 1)`, testUUID(3), workspaceID, issueID); err != nil {
+		t.Fatal(err)
+	}
+	queries := db.New(conn)
+	base := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	if _, err := ProjectAndStore(ctx, conn, queries, workspaceID, issueID, 1, 1, base); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("nonzero initial expected revision error = %v, want pgx.ErrNoRows", err)
+	}
+	if _, err := queries.GetIssueCurrentPicture(ctx, db.GetIssueCurrentPictureParams{WorkspaceID: workspaceID, IssueID: issueID}); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("nonzero initial expected revision created picture: %v", err)
+	}
+
+	otherWorkspaceID, otherIssueID := testUUID(10), testUUID(11)
+	if _, err := conn.Exec(ctx, `INSERT INTO workspace(id) VALUES($1)`, otherWorkspaceID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(ctx, `INSERT INTO issue(id, workspace_id) VALUES($1, $2)`, otherIssueID, otherWorkspaceID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(ctx, `INSERT INTO issue_workflow_outcome(id, workspace_id, issue_id, state, acceptance_version) VALUES($1, $2, $3, 'satisfied', 9)`, testUUID(12), otherWorkspaceID, otherIssueID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ProjectAndStore(ctx, conn, queries, otherWorkspaceID, issueID, 0, 1, base); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("cross-tenant issue admission error = %v, want pgx.ErrNoRows", err)
+	}
+
+	first, err := ProjectAndStore(ctx, conn, queries, workspaceID, issueID, 0, 1, base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := queries.DeleteIssueCurrentPictureForRebuild(ctx, db.DeleteIssueCurrentPictureForRebuildParams{WorkspaceID: workspaceID, IssueID: issueID}); err != nil {
+		t.Fatal(err)
+	}
+	rebuilt, err := ProjectAndStore(ctx, conn, queries, workspaceID, issueID, 0, 1, base.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(first.Document, rebuilt.Document) || !bytes.Equal(first.SourceRevisions, rebuilt.SourceRevisions) {
+		t.Fatalf("rebuild changed semantic bytes\nfirst=%s\nrebuilt=%s", first.Document, rebuilt.Document)
+	}
+	if _, err := ProjectAndStore(ctx, conn, queries, workspaceID, issueID, 0, 2, base.Add(2*time.Hour)); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("stale CAS error = %v, want pgx.ErrNoRows", err)
+	}
+	updated, err := ProjectAndStore(ctx, conn, queries, workspaceID, issueID, 1, 2, base.Add(2*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Revision != 2 {
+		t.Fatalf("updated revision = %d, want 2", updated.Revision)
+	}
+
+	rows, err := queries.ListIssueWorkflowProjectionInputs(ctx, db.ListIssueWorkflowProjectionInputsParams{WorkspaceID: workspaceID, IssueID: issueID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	records := make([]Record, 0, len(rows))
+	for _, row := range rows {
+		records = append(records, Record{Type: row.RecordType, ID: uuidString(row.ID), Revision: row.Revision, CreatedAt: row.CreatedAt.Time.UTC(), Payload: row.Payload})
+	}
+	if len(records) != 1 || records[0].ID != uuidString(testUUID(3)) {
+		t.Fatalf("tenant-isolated source records = %#v", records)
+	}
+	rollbackProjection, err := Project(records, 3, base.Add(3*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rollbackErr := errors.New("force rollback after projection write")
+	err = workflowstore.InIssueWriteTransaction(ctx, conn, queries, workspaceID, issueID, func(write *workflowstore.IssueWrite) error {
+		if _, err := write.UpsertCurrentPictureCAS(ctx, rollbackProjection.params(workspaceID, issueID, 2)); err != nil {
+			return err
+		}
+		return rollbackErr
+	})
+	if !errors.Is(err, rollbackErr) {
+		t.Fatalf("rollback transaction error = %v, want sentinel", err)
+	}
+	afterRollback, err := queries.GetIssueCurrentPicture(ctx, db.GetIssueCurrentPictureParams{WorkspaceID: workspaceID, IssueID: issueID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if afterRollback.Revision != 2 || !bytes.Equal(afterRollback.Document, updated.Document) {
+		t.Fatalf("partial write escaped rollback: revision=%d document=%s", afterRollback.Revision, afterRollback.Document)
+	}
+}
+
+func fixture(recordType, id string, revision int64, createdAt time.Time, fields map[string]any) Record {
+	defaults := map[string]map[string]any{
+		"outcome":           {"state": "open", "acceptance_version": 1},
+		"scope":             {"state": "accepted", "acceptance_version": 1, "owner_evidence_id": "owner-evidence", "created_by": "owner", "statement": map[string]any{}, "impact": map[string]any{}},
+		"authority":         {"state": "active", "scope_id": "scope", "scope_revision": 1, "owner_evidence_id": "owner-evidence", "created_by": "owner", "envelope": map[string]any{}},
+		"execution":         {"branch_key": "main", "operation_type": "implementation", "state": "received", "scope_id": "scope", "scope_revision": 1, "authority_revision": 1, "checkpoint": map[string]any{}, "expected_event": map[string]any{}, "wait_reason": map[string]any{}, "attempt_count": 0},
+		"decision":          {"decision_type": "approval", "state": "unanswered", "resolution_state": "open", "question": "Proceed?", "options": []any{}, "requester_id": "requester", "accountable_owner_id": "owner", "suspended_operation_id": "operation"},
+		"decision_response": {"decision_id": "decision", "decision_revision": 1, "response_type": "approve", "actor_id": "owner", "idempotency_key": "key", "request_hash": "hash", "selected_options": []any{}, "content": map[string]any{}, "scope_change": map[string]any{}},
+		"candidate":         {"scope_id": "scope", "scope_revision": 1, "candidate_type": "source", "state": "ready", "artifact": map[string]any{}, "build_contract": map[string]any{}, "created_by": "agent"},
+		"review":            {"candidate_id": "candidate", "candidate_revision": 1, "scope_id": "scope", "scope_revision": 1, "reviewer_id": "reviewer", "outcome": "passed", "criteria": []any{}, "coverage": map[string]any{}, "evidence_refs": []any{}, "gaps": []any{}, "correction_packet": map[string]any{}, "correction_count": 0, "max_corrections": 0},
+		"release":           {"candidate_id": "candidate", "candidate_revision": 1, "scope_id": "scope", "scope_revision": 1, "authority_id": "authority", "authority_revision": 1, "target_key": "production", "target_generation": 1, "state": "pending", "facets": map[string]any{}, "recovery_policy": map[string]any{}, "exposed_population": map[string]any{}},
+		"evidence":          {"evidence_type": "other", "level": "local", "source": "test", "producer_type": "verifier", "observed_at": createdAt.Format(time.RFC3339Nano), "coverage": map[string]any{}, "limitations": []any{}, "contradictions": []any{}, "payload": map[string]any{}},
+		"incident":          {"incident_type": "regression", "severity": "warning", "state": "open", "consequence": map[string]any{}, "recovery": map[string]any{}},
+		"action_receipt":    {"action_key": "action", "request_hash": "hash", "command_id": "command", "action_type": "dispatch", "state": "admitted", "payload": map[string]any{}, "attempt_count": 0, "max_attempts": 1},
+		"attention":         {"attention_type": "decision", "read_state": "unread", "resolution_state": "open", "context": map[string]any{}, "next_action": map[string]any{}},
+		"budget":            {"scope_id": "scope", "concern_type": "execution", "state": "active", "limits": map[string]any{}, "consumption": map[string]any{}},
+		"target_head":       {"target_key": "production", "generation": 1, "release_id": id, "issue_id": "issue", "candidate_id": "candidate", "state": "pending"},
+	}
+	merged := cloneMap(defaults[recordType])
+	for key, value := range fields {
+		merged[key] = value
+	}
+	fields = merged
+	fields["id"] = id
+	fields["revision"] = revision
+	fields["created_at"] = createdAt.Format(time.RFC3339Nano)
+	if recordType == "target_head" {
+		fields["updated_at"] = createdAt.Format(time.RFC3339Nano)
+	}
+	payload, err := json.Marshal(fields)
+	if err != nil {
+		panic(err)
+	}
+	return Record{Type: recordType, ID: id, Revision: revision, CreatedAt: createdAt, Payload: payload}
+}
+
+func applySQLFile(t *testing.T, ctx context.Context, conn *pgx.Conn, path string) {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(ctx, string(body)); err != nil {
+		t.Fatalf("apply %s: %v", path, err)
+	}
+}
+
+func testUUID(last byte) pgtype.UUID {
+	var value [16]byte
+	value[15] = last
+	return pgtype.UUID{Bytes: value, Valid: true}
+}

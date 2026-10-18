@@ -1,0 +1,10 @@
+{
+  "summary": "Operator recovery plan: produce and independently review the CRM handoff from the captured snapshot; the three failed planner tasks remain recorded.",
+  "plan": [
+    "Explain the captured local CRM state: branch main, HEAD ba1447ac85cbce4c1b04273c14f3d2c4a524582e, 6 tracked-change records and 110 individual untracked files. Use the evidence timestamp and exact counting definitions.",
+    "Explain cached origin/main divergence (4 ahead / 660 behind) and cached SHA 7464d6693d8ba084a475ff007a7f2834cba71e29. No fetch or live remote verification occurred.",
+    "Summarize all 285 registered worktrees and 285 path checks, with 285 present and 0 absent. Link the full JSON inventory; presence, unlocked status and cached metadata never establish clean, idle or safe-to-delete state.",
+    "Prioritize preservation of owner changes, a freshly verified isolated task worktree for future work, and the CRM AGENTS/GOVERNANCE guidance. Treat the dated hub context as historical. Do not start the CRM application, access its database, edit source or touch Phone Farm.",
+    "Give the next engineer a concise useful Markdown handoff and separate future remote-Git, paired SMCrm/SMCrm-Jobs deployment, health and authenticated business checks. The independent reviewer must check important numbers, exact revision and scope boundaries against the same evidence."
+  ]
+}

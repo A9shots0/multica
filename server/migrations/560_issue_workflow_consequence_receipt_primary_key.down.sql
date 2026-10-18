@@ -1,0 +1,1 @@
+ALTER TABLE issue_workflow_consequence_receipt DROP CONSTRAINT IF EXISTS issue_workflow_consequence_receipt_pkey;

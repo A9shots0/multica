@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY issue_workflow_regression_rejected_pkey_idx ON issue_workflow_regression_rejected_attempt (id);

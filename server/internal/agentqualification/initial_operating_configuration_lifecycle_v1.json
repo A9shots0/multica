@@ -1,0 +1,21 @@
+{
+  "schema_version": "silver-mediums.initial-operating-configuration-lifecycle.v1",
+  "registry_id": "silver-mediums-controller-owned-initial-operating-registry-20260916",
+  "controller_id": "00000000-0000-4000-8000-000000001501",
+  "generation": 1,
+  "activation": {
+    "authorized_by": "owner",
+    "authorization_reference": "owner instruction, 2026-09-16: controlled operational adoption of the accepted automatic workflow",
+    "activated_at": "2026-09-16T02:30:00Z",
+    "scope": "one bounded internal engineering issue at a time, owner-started, on this repository and host"
+  },
+  "active": {
+    "configuration_id": "silver-mediums-initial-operating-configuration-20260916",
+    "configuration_sha256": "dadf6a215f9ed8fb6d4ed5b957a6be143e3226dab080452c4c9d63454aaffa6d",
+    "status": "active",
+    "valid_from": "2026-09-16T00:00:00Z",
+    "valid_until": "2026-09-30T00:00:00Z"
+  },
+  "retired": [],
+  "revoked": []
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "silver-mediums.agent-screening-batch.v1",
+  "batch_id": "screen-blast-radius-t12-codex-v4",
+  "status": "planned_not_launched",
+  "suite_version": "silver-mediums.architecture-cases.v1",
+  "execution_mode": "isolated_capability",
+  "candidate_transport": "comment_trigger_inline_v1",
+  "execution_order_policy": "seeded_permutation_v1",
+  "execution_order_seed": "screen-blast-radius-t12-codex-v4:2026-09-11",
+  "grader_blind_to_candidate": true,
+  "grader_configuration_id": "deterministic-t12.v1",
+  "cases": [
+    {
+      "case_id": "T12",
+      "case_version": "v1",
+      "candidate_packet_sha256": "9ad3c4a7f6bc1d775ab26ddd886a324384644581d8855474645c9b5b9ef172d0",
+      "grader_packet_sha256": "6c5ccee9cdd7f6e0577f1dac181b3d63c99f2932a752b626882721dcba5af5d9"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "screen.generalist.luna.medium.v4",
+      "role_id": "shared_windows_executor",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "medium",
+      "instruction_version": "shadow-candidate.v3",
+      "instruction_sha256": "3f1d682d879997b5ec44b8e3779c4c423de8f42c792a84f6a230493059643a86",
+      "skill_versions": {"silver_mediums_context": "item14.v2"},
+      "skill_content_sha256": {"silver_mediums_context": "abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},
+      "permission_version": "isolated-readonly.v1",
+      "runtime_provider": "codex"
+    },
+    {
+      "id": "screen.generalist.terra.medium.v4",
+      "role_id": "shared_windows_executor",
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "medium",
+      "instruction_version": "shadow-candidate.v3",
+      "instruction_sha256": "3f1d682d879997b5ec44b8e3779c4c423de8f42c792a84f6a230493059643a86",
+      "skill_versions": {"silver_mediums_context": "item14.v2"},
+      "skill_content_sha256": {"silver_mediums_context": "abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},
+      "permission_version": "isolated-readonly.v1",
+      "runtime_provider": "codex"
+    }
+  ],
+  "repeats": 1,
+  "token_ceiling": 30000,
+  "per_launch_token_reservation": 15000,
+  "capacity_budgets": [
+    {
+      "provider": "codex",
+      "limit_id": "codex",
+      "account_lane": "primary_subscription",
+      "max_used_increase_basis_points": 200,
+      "max_snapshot_age_seconds": 120,
+      "require_fresh_authoritative_read": true
+    }
+  ],
+  "max_owner_interventions": 0,
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "natural_language_intake_run": false,
+  "excluded_capabilities": ["phonefarm_operation", "production_release", "external_messaging"],
+  "stop_rules": [
+    "stop_on_any_automatic_disqualifier",
+    "stop_candidate_on_invalid_observation",
+    "stop_before_launch_when_token_reservation_does_not_fit",
+    "stop_before_launch_when_subscription_capacity_read_is_missing_or_stale",
+    "stop_when_subscription_usage_increase_reaches_200_basis_points",
+    "do_not_escalate_effort_inside_this_batch"
+  ]
+}

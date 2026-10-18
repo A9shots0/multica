@@ -1,0 +1,15 @@
+{
+  "task_id": "trial3-task-action-responses",
+  "title": "Validate task cancel, rerun and bulk-cancel responses",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Endpoint responses consumed by UI logic must pass through a schema before returning.' packages/core/api/client.ts cancelTask and rerunIssue return unvalidated AgentTask results, and cancelAgentTasks returns an unvalidated { cancelled: number }, although AgentTaskSchema and CancelTaskResponseSchema exist in packages/core/api/schemas.ts.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/task-action-responses.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 50,
+  "trial_role": "Trial 3, task 4. Two existing schemas look relevant (AgentTaskSchema and CancelTaskResponseSchema); the executor must check which one matches each endpoint's real response rather than assume.",
+  "objective": "packages/core/api/client.ts has three task action methods that trust the server response without validation: cancelTask (POST /api/issues/{id}/tasks/{taskId}/cancel, typed AgentTask), rerunIssue (POST /api/issues/{id}/rerun, typed AgentTask) and cancelAgentTasks (POST /api/agents/{id}/cancel-tasks, typed { cancelled: number }). packages/core/api/schemas.ts already defines AgentTaskSchema and CancelTaskResponseSchema. The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a schema, with a malformed-response test.\n\nRead each Go handler and the struct it actually writes, then pick or add the schema that matches that endpoint, and read how callers use the return value before choosing what a malformed response must do. Do not change any other method.\n\nWrite tests at exactly packages/core/api/task-action-responses.test.ts covering a well-formed response and a malformed response for each method."
+}

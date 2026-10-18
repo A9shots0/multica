@@ -1,0 +1,15 @@
+{
+  "task_id": "trial2-task-usage-message-schemas",
+  "title": "Validate issue usage and task message responses with schemas",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Endpoint responses consumed by UI logic must pass through a schema before returning' and 'include a malformed-response test'. packages/core/api/client.ts getIssueUsage and listTaskMessages return unvalidated this.fetch(...) results.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/task-usage-message-schemas.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 50,
+  "trial_role": "Trial 2, task 5. Same rule on two differently shaped responses: a numeric summary object and a list of message payloads whose content varies by message type, where an over-strict schema would drop legitimate messages.",
+  "objective": "packages/core/api/client.ts has two methods that trust the server response without validation: getIssueUsage (IssueUsageSummary) and listTaskMessages (TaskMessagePayload[]). The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a zod schema via parseWithFallback, with a malformed-response test.\n\nStudy the existing parseWithFallback usages, packages/core/api/schemas.ts and the IssueUsageSummary and TaskMessagePayload types, then bring both methods under the same pattern. Task messages vary by type, so keep the schema lenient enough that a message type the client does not know still parses. Do not change any other method.\n\nWrite tests at exactly packages/core/api/task-usage-message-schemas.test.ts that show each method returns the parsed value for a well-formed response, that an unknown message type is not dropped, and that a malformed response is not passed through to the caller."
+}

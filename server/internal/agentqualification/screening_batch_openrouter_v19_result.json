@@ -1,0 +1,41 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-capability-current-lightweight-openrouter-v19",
+  "status":"complete_with_one_survivor",
+  "test_validity":"valid",
+  "planned_observations":10,
+  "provider_calls":6,
+  "policy_skipped_assignments":4,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "authoritative_usage_reference_before_batch_usd":110.069712,
+  "authoritative_usage_after_batch_usd":110.105536811,
+  "reference_account_delta_usd":0.035824811,
+  "receipt_cost_usd":0.035828,
+  "provider_export_total_tokens":22335,
+  "normalized_component_sum_tokens":22335,
+  "total_provider_event_time_seconds":26.013,
+  "results":[
+    {"model":"openrouter/openai/gpt-5.6-luna","candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v19","effort":"medium","serving_provider":"openai","cases_run":["T11","T08","T16","T04","T09"],"result":"PASS_5_OF_5","failure_reason":"","input_tokens":10593,"cached_input_tokens":0,"output_tokens":691,"reasoning_tokens":654,"total_tokens":11938,"cost_usd":0.004264,"provider_event_time_seconds":4.641,"advances_to_reliability_screen":true},
+    {"model":"openrouter/google/gemini-3.8-flash","candidate_id":"screen.generalist.gemini38flash.default.openrouter.v19","effort":"screening_default","serving_provider":"google-ai-studio","cases_run":["T11"],"result":"FAIL","failure_reason":"T11: invalid_response_format","input_tokens":2475,"cached_input_tokens":0,"output_tokens":244,"reasoning_tokens":7678,"total_tokens":10397,"cost_usd":0.031564,"provider_event_time_seconds":21.372,"advances_to_reliability_screen":false}
+  ],
+  "observations":[
+    {"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v19","case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2260,"cached_input_tokens":0,"output_tokens":165,"reasoning_tokens":209,"total_tokens":2634,"cost_usd":0.001014,"time_seconds":1.231,"receipt_dir":"d21c0856c485cce5ecb84b9383fac8d88703eca27f3d37bb9a42063af5e4a5f5"},
+    {"candidate_id":"screen.generalist.gemini38flash.default.openrouter.v19","case_id":"T11","result":"FAIL","failure_reason":"invalid_response_format","input_tokens":2475,"cached_input_tokens":0,"output_tokens":244,"reasoning_tokens":7678,"total_tokens":10397,"cost_usd":0.031564,"time_seconds":21.372,"receipt_dir":"2feaedb607621e803315dbd1e70c3b99f7369ae4671dca9c2b0d30066c51eb30"},
+    {"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v19","case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2036,"cached_input_tokens":0,"output_tokens":117,"reasoning_tokens":61,"total_tokens":2214,"cost_usd":0.000723,"time_seconds":0.897,"receipt_dir":"4e55865f58a9b2b9bac231b2e93bba9aa6df374eb5bac6d06d3a6d0b69420788"},
+    {"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v19","case_id":"T16","result":"PASS","failure_reason":"","input_tokens":2073,"cached_input_tokens":0,"output_tokens":138,"reasoning_tokens":155,"total_tokens":2366,"cost_usd":0.000870,"time_seconds":0.755,"receipt_dir":"8aa5fca3afcc5eb0f5e7c8fbdf94877c3d67a6873b45345fca4127d01d1648aa"},
+    {"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v19","case_id":"T04","result":"PASS","failure_reason":"","input_tokens":2136,"cached_input_tokens":0,"output_tokens":138,"reasoning_tokens":100,"total_tokens":2374,"cost_usd":0.000820,"time_seconds":0.867,"receipt_dir":"322b24108d6290b63ef01e5dc1ab3179c56dbd9193b68045f77087539cda1686"},
+    {"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v19","case_id":"T09","result":"PASS","failure_reason":"","input_tokens":2088,"cached_input_tokens":0,"output_tokens":133,"reasoning_tokens":129,"total_tokens":2350,"cost_usd":0.000837,"time_seconds":0.891,"receipt_dir":"65ccd3f62e7d4443db72ee14c66ab885aee737f3a9547bdea1bc722280adb65f"}
+  ],
+  "advancement":"GPT-5.6 Luna Medium advances only to a separately frozen reliability screen after passing all five static cases once. Gemini 3.8 Flash is eliminated from this batch by a valid response-contract failure. No model, role, squad, topology, or production configuration is selected.",
+  "evidence_root":".qualification-evidence/openrouter-v19",
+  "post_batch_correction_list":["Diagnose the separate GPT-5.4 High zero-token transport incompatibility without altering or retrying its frozen observations."],
+  "notes":[
+    "The frozen five-case group and deterministic graders were reused without modification.",
+    "Both exact routes were resolved before provider calls; serving providers matched the pins and fallbacks were disabled.",
+    "Six provider calls plus four policy skips account for all ten planned assignments after Gemini's candidate-specific elimination.",
+    "The $0.000003189 difference between the reference account delta and isolated receipts is preserved rather than forced to match.",
+    "No tools, production, Browser, outbound messaging, repository access, Codex or Claude subscription capacity, or Phone Farm operation occurred."
+  ]
+}

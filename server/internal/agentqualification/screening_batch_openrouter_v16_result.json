@@ -1,0 +1,30 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-capability-strong-anchor-openrouter-v16",
+  "status":"complete",
+  "test_validity":"valid",
+  "planned_observations":5,
+  "provider_calls":5,
+  "policy_skipped_assignments":0,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "authoritative_usage_before_batch_usd":102.118113172,
+  "authoritative_usage_after_batch_usd":102.175688022,
+  "observed_account_delta_usd":0.057574850,
+  "rounded_receipt_cost_usd":0.056772,
+  "provider_export_total_tokens":18890,
+  "normalized_component_sum_tokens":18890,
+  "total_provider_event_time_seconds":7.840,
+  "result":{"model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic","cases_run":["T11","T08","T16","T04","T09"],"outcome":"PASS_5_OF_5","advances":false},
+  "observations":[
+    {"case_id":"T11","result":"PASS","failure_reason":"","input_tokens":3749,"cached_input_tokens":0,"output_tokens":297,"reasoning_tokens":0,"total_tokens":4046,"cost_usd":0.012342,"time_seconds":1.795,"receipt_dir":"36a74cc1f3c7c49f41b657ad03ed87e026c723f370fd8cbc7ef8cb0f820d2acd"},
+    {"case_id":"T08","result":"PASS","failure_reason":"","input_tokens":3364,"cached_input_tokens":0,"output_tokens":207,"reasoning_tokens":0,"total_tokens":3571,"cost_usd":0.010480,"time_seconds":1.288,"receipt_dir":"b620cbf5befb264dcd1b419181ca7234bc23b432e04d471b9f3ca7f164fde165"},
+    {"case_id":"T16","result":"PASS","failure_reason":"","input_tokens":3460,"cached_input_tokens":0,"output_tokens":253,"reasoning_tokens":0,"total_tokens":3713,"cost_usd":0.011180,"time_seconds":1.570,"receipt_dir":"690c7d732fd82416eee24336541a638e006d4ee4d83ec3d7a1a64927b4933525"},
+    {"case_id":"T04","result":"PASS","failure_reason":"","input_tokens":3578,"cached_input_tokens":0,"output_tokens":263,"reasoning_tokens":0,"total_tokens":3841,"cost_usd":0.011575,"time_seconds":1.626,"receipt_dir":"5fa6d37154ffccb4b79a4ea3f23401b9154026766c99cc64da02f33f1194148f"},
+    {"case_id":"T09","result":"PASS","failure_reason":"","input_tokens":3466,"cached_input_tokens":0,"output_tokens":253,"reasoning_tokens":0,"total_tokens":3719,"cost_usd":0.011195,"time_seconds":1.561,"receipt_dir":"d3bbf12268106aa7cb0ec133a3dd5c4b8799a24e567dafea5ca2544633952c5a"}
+  ],
+  "advancement":"The strong anchor proves all five frozen cases are jointly solvable. It is not promoted, repeated, or assigned a production role.",
+  "evidence_root":".qualification-evidence/openrouter-v16",
+  "notes":["The immediate account delta and rounded receipt sum differ; both are retained without forced reconciliation.","No retry, tool, production action, Browser use, external message, repository access, or Phone Farm operation occurred."]
+}

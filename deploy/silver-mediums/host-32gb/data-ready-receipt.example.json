@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "accepted": false,
+  "source_revision": "de2e901a748010ac9093586c16238465db918a8d",
+  "source_backup_sha256": "replace-after-verified-restore",
+  "database_restore_verified": false,
+  "uploads_restore_verified": false,
+  "schema_migration_count": 622,
+  "verified_at": null
+}

@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_issue_workflow_action_reconciliation_due ON issue_workflow_action_receipt (not_before, lease_expires_at, created_at, id) WHERE action_type = 'review_correction' AND state IN ('admitted', 'retry_wait', 'reconciling', 'leased');

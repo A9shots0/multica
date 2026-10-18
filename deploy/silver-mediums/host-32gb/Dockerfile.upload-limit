@@ -1,0 +1,6 @@
+FROM multica-frontend-upload-base:20261006
+USER root
+COPY align-standalone-upload-limit.cjs /tmp/align-standalone-upload-limit.cjs
+RUN node /tmp/align-standalone-upload-limit.cjs /app/apps/web/server.js \
+    && rm /tmp/align-standalone-upload-limit.cjs
+USER nextjs

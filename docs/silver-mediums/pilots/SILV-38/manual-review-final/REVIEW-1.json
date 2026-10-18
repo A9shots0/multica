@@ -1,0 +1,11 @@
+{
+  "candidate": "CRM-ENGINEERING-HANDOFF-v2.md",
+  "candidate_sha256": "2df9d83d52cf882f7b399b4b823d6d0cc975d41be6856b8838b276d6f494541c",
+  "completion_mode": "operator_assisted",
+  "native_handoff_automation_verified": false,
+  "result": {
+    "summary": "All material numeric and factual claims in v2 match the captured evidence exactly: HEAD SHA ba1447ac, 6 tracked changes, 110 untracked files (--untracked-files=all), cached origin/main b58807, 4 ahead / 674 behind, 285 worktrees all present, 0 locked, 0 prunable, 6 detached. Historical CONTEXT.md figure (350 behind) is correctly distinguished from the current cached count (674 behind). Occupancy is not asserted. Owner work preservation, snapshot boundary, and next-action guidance are all properly scoped and evidence-supported.",
+    "verdict": "pass"
+  },
+  "reviewed_at": "2026-09-15T19:04:26.8913397Z"
+}

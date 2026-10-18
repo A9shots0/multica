@@ -1,0 +1,845 @@
+package main
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/multica-ai/multica/server/internal/agentqualification"
+)
+
+const v35ExecutorVersion = "claude-subscription-static-v35.v1"
+
+type v35Usage struct {
+	ProviderInvocations        int   `json:"provider_invocations"`
+	InputTokens                int64 `json:"input_tokens"`
+	OutputTokens               int64 `json:"output_tokens"`
+	ProviderReportedCostMicros int64 `json:"provider_reported_cost_micros"`
+	UnknownUsageInvocations    int   `json:"unknown_usage_invocations"`
+	ConservativeReservedTokens int64 `json:"conservative_reserved_tokens"`
+}
+type v35Claim struct {
+	BindingID          string   `json:"binding_id"`
+	CaseID             string   `json:"case_id"`
+	CaseVersion        string   `json:"case_version"`
+	Status             string   `json:"status"`
+	Result             string   `json:"result,omitempty"`
+	FailureClass       string   `json:"failure_class,omitempty"`
+	ReceiptSHA256      string   `json:"receipt_sha256,omitempty"`
+	GradeSHA256        string   `json:"grade_sha256,omitempty"`
+	InitialClaimSHA256 string   `json:"initial_claim_sha256,omitempty"`
+	CapsuleSHA256      string   `json:"capsule_sha256,omitempty"`
+	RawSHA256          string   `json:"raw_sha256,omitempty"`
+	ResponseSHA256     string   `json:"response_sha256,omitempty"`
+	ResultSHA256       string   `json:"result_sha256,omitempty"`
+	UsageStatus        string   `json:"usage_status"`
+	Usage              v35Usage `json:"usage"`
+}
+type v35Ledger struct {
+	SchemaVersion       string              `json:"schema_version"`
+	BatchID             string              `json:"batch_id"`
+	DefinitionSHA256    string              `json:"definition_sha256"`
+	FreezeSHA256        string              `json:"freeze_sha256"`
+	Status              string              `json:"status"`
+	Claims              map[string]v35Claim `json:"claims"`
+	Usage               v35Usage            `json:"usage"`
+	CandidateEliminated bool                `json:"candidate_eliminated"`
+	GlobalHalt          bool                `json:"global_halt"`
+	GlobalHaltReason    string              `json:"global_halt_reason,omitempty"`
+}
+type v35ResultEnvelope struct {
+	Claim                   v35Claim `json:"claim"`
+	WallMilliseconds        int64    `json:"wall_milliseconds,omitempty"`
+	Retries                 int      `json:"retries"`
+	ReconciledStrandedClaim bool     `json:"reconciled_stranded_claim,omitempty"`
+}
+type v35LaunchCapsule struct {
+	BindingID         string `json:"binding_id"`
+	DefinitionSHA256  string `json:"definition_sha256"`
+	FreezeSHA256      string `json:"freeze_sha256"`
+	CandidateID       string `json:"candidate_id"`
+	CaseID            string `json:"case_id"`
+	CaseVersion       string `json:"case_version"`
+	Model             string `json:"model"`
+	Effort            string `json:"reasoning_effort"`
+	ServingProvider   string `json:"serving_provider"`
+	ProviderFallbacks bool   `json:"provider_fallbacks"`
+	Transport         string `json:"transport"`
+	PromptSHA256      string `json:"prompt_sha256"`
+	SchemaSHA256      string `json:"schema_sha256"`
+	MaxTotalTokens    int64  `json:"max_total_tokens"`
+	MaxOutputTokens   int64  `json:"max_output_tokens"`
+	MaxRetries        int    `json:"max_retries"`
+	RuntimeVersion    string `json:"runtime_version"`
+	ExecutableSHA256  string `json:"executable_sha256"`
+	RouteEvidence     string `json:"route_evidence"`
+}
+type v35FailureKind string
+
+const (
+	v35CredentialFailure    v35FailureKind = "credential_failure"
+	v35UnsafeExternal       v35FailureKind = "unsafe_external_action"
+	v35EvidenceCorruption   v35FailureKind = "evidence_corruption"
+	v35CampaignCap          v35FailureKind = "campaign_cap"
+	v35ObservationTransport v35FailureKind = "observation_transport_invalid"
+	v35CandidateFailure     v35FailureKind = "candidate_protocol_failure"
+)
+
+type v35Failure struct {
+	Kind  v35FailureKind
+	Cause error
+}
+
+func (e *v35Failure) Error() string                  { return string(e.Kind) + ": " + e.Cause.Error() }
+func (e *v35Failure) Unwrap() error                  { return e.Cause }
+func failV35(kind v35FailureKind, cause error) error { return &v35Failure{Kind: kind, Cause: cause} }
+func kindV35(err error) (v35FailureKind, bool) {
+	var typed *v35Failure
+	ok := errors.As(err, &typed)
+	if !ok {
+		return "", false
+	}
+	return typed.Kind, true
+}
+
+type v35Call func(context.Context, agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error)
+
+func executeV35(ctx context.Context, root string, call v35Call) (v35Ledger, error) {
+	return executeV35WithContracts(ctx, root, call, agentqualification.QualificationContracts{}, false)
+}
+func executeV35WithContracts(ctx context.Context, root string, call v35Call, q agentqualification.QualificationContracts, fake bool) (v35Ledger, error) {
+	if q.Historical() && !fake {
+		return v35Ledger{}, errors.New("historical contract cannot authorize provider execution")
+	}
+
+	d, err := agentqualification.ClaudeSubscriptionStaticV35()
+	if err != nil {
+		return v35Ledger{}, err
+	}
+	freeze, err := q.CurrentClaudeSubscriptionStaticV35Freeze()
+	if err != nil {
+		return v35Ledger{}, fmt.Errorf("v35 execution requires a validated provider-call freeze: %w", err)
+	}
+	if !freeze.ProviderCallsAllowed {
+		return v35Ledger{}, errors.New("v35 execution requires an enabled provider-call freeze")
+	}
+	if !filepath.IsAbs(root) {
+		return v35Ledger{}, fmt.Errorf("v35 evidence root must be absolute")
+	}
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		return v35Ledger{}, err
+	}
+	ledgerPath := filepath.Join(root, "ledger.json")
+	ledger, err := loadOrCreateLedger(ledgerPath, d)
+	if err != nil {
+		return v35Ledger{}, err
+	}
+	if ledger.GlobalHalt || ledger.Status == "complete" {
+		return ledger, nil
+	}
+	for i, c := range d.Cases {
+		binding := v35Binding(d.BatchID, i, c)
+		if existing, ok := ledger.Claims[binding]; ok {
+			if existing.Status == "pending" {
+				if err := reconcileStrandedV35(root, &ledger, binding, d.Caps.MaxTotalReportedTokensPerCell); err != nil {
+					return haltV35(ledgerPath, ledger, string(v35EvidenceCorruption)+": "+err.Error())
+				}
+				if total, ok := totalReportedV35(ledger.Usage); !ok || total > d.Caps.MaxCampaignReportedTokens {
+					return haltV35(ledgerPath, ledger, "uncontrolled_campaign_cap")
+				}
+				if err := writeJSONAtomic(ledgerPath, ledger); err != nil {
+					return ledger, err
+				}
+			}
+			continue
+		}
+		if ledger.CandidateEliminated {
+			claim := v35Claim{BindingID: binding, CaseID: c.CaseID, CaseVersion: c.CaseVersion, Status: "skipped", Result: "candidate_eliminated", UsageStatus: "not_launched"}
+			claim, err = sealClaimAndResult(root, claim)
+			if err != nil {
+				return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+			}
+			ledger.Claims[binding] = claim
+			if err := writeJSONAtomic(ledgerPath, ledger); err != nil {
+				return ledger, err
+			}
+			continue
+		}
+		// Before every new provider invocation, replay all evidence already
+		// sealed in this root. This is deliberately provider-free. A prior
+		// claim that no longer matches its claim, capsule, raw trace, receipt,
+		// response, grade, result, route, or accounting must stop the campaign
+		// before another subscription call can be made.
+		if _, err := replayV35(root); err != nil {
+			return haltV35(ledgerPath, ledger, string(v35EvidenceCorruption)+": prior evidence replay failed: "+err.Error())
+		}
+		used, ok := totalReportedV35(ledger.Usage)
+		if !ok || ledger.Usage.ProviderInvocations >= d.Caps.MaxProviderInvocations || used > d.Caps.MaxCampaignReportedTokens-d.Caps.MaxTotalReportedTokensPerCell {
+			return haltV35(ledgerPath, ledger, "uncontrolled_campaign_cap")
+		}
+		plan, err := agentqualification.BuildClaudeSubscriptionScreeningPlan(d.Configuration, c)
+		if err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		cellDir := filepath.Join(root, binding)
+		if err := os.Mkdir(cellDir, 0o700); err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: duplicate cell directory")
+		}
+		claim := v35Claim{BindingID: binding, CaseID: c.CaseID, CaseVersion: c.CaseVersion, Status: "pending", UsageStatus: "pending"}
+		if err := writeJSONExclusive(filepath.Join(cellDir, "claim.json"), claim); err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		claim.InitialClaimSHA256, _ = fileHash(filepath.Join(cellDir, "claim.json"))
+		capsule := expectedV35Capsule(d, binding, c, plan)
+		if err := writeJSONExclusive(filepath.Join(cellDir, "launch-capsule.json"), capsule); err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		claim.CapsuleSHA256, _ = fileHash(filepath.Join(cellDir, "launch-capsule.json"))
+		ledger.Claims[binding] = claim
+		if err := writeJSONAtomic(ledgerPath, ledger); err != nil {
+			return ledger, err
+		}
+		providerResult, candidate, raw, wall, launched, callErr := call(ctx, plan)
+		if err := writeExclusive(filepath.Join(cellDir, "provider-raw.json"), raw); err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		claim.RawSHA256, _ = fileHash(filepath.Join(cellDir, "provider-raw.json"))
+		if callErr != nil {
+			failure, typed := kindV35(callErr)
+			if !typed {
+				failure = v35EvidenceCorruption
+			}
+			claim.Status, claim.Result, claim.FailureClass, claim.UsageStatus = "completed", "invalid_unscored", string(failure), "not_launched"
+			if launched {
+				claim.Usage = v35Usage{ProviderInvocations: 1, UnknownUsageInvocations: 1, ConservativeReservedTokens: d.Caps.MaxTotalReportedTokensPerCell}
+				claim.UsageStatus = "unknown_conservatively_reserved"
+				if err := addUsage(&ledger.Usage, claim.Usage); err != nil {
+					return haltV35(ledgerPath, ledger, "uncontrolled_campaign_cap")
+				}
+			}
+			if failure == v35CandidateFailure {
+				claim.Result = "failed"
+				ledger.CandidateEliminated = true
+			}
+			resultPath := filepath.Join(cellDir, "result.json")
+			if err := writeJSONExclusive(resultPath, v35ResultEnvelope{Claim: claim, WallMilliseconds: wall.Milliseconds()}); err != nil {
+				return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+			}
+			claim.ResultSHA256, _ = fileHash(resultPath)
+			ledger.Claims[binding] = claim
+			if failure == v35CredentialFailure || failure == v35UnsafeExternal || failure == v35EvidenceCorruption || failure == v35CampaignCap {
+				return haltV35(ledgerPath, ledger, string(failure))
+			}
+			if err := writeJSONAtomic(ledgerPath, ledger); err != nil {
+				return ledger, err
+			}
+			continue
+		}
+		if providerResult.Usage.InputTokens == nil || providerResult.Usage.OutputTokens == nil || providerResult.Usage.ProviderReportedCostMicros == nil {
+			if err := sealFailedLaunchV35(cellDir, &ledger, binding, &claim, v35Usage{ProviderInvocations: 1, UnknownUsageInvocations: 1, ConservativeReservedTokens: d.Caps.MaxTotalReportedTokensPerCell}, "unknown_conservatively_reserved", string(v35EvidenceCorruption), wall); err != nil {
+				return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+			}
+			return haltV35(ledgerPath, ledger, "evidence_corruption: missing usage")
+		}
+		if !launched {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: completed provider result without a launch")
+		}
+		usage := v35Usage{ProviderInvocations: 1, InputTokens: *providerResult.Usage.InputTokens, OutputTokens: *providerResult.Usage.OutputTokens, ProviderReportedCostMicros: *providerResult.Usage.ProviderReportedCostMicros}
+		if usage.InputTokens < 0 || usage.OutputTokens < 0 || usage.ProviderReportedCostMicros < 0 {
+			if err := sealFailedLaunchV35(cellDir, &ledger, binding, &claim, v35Usage{ProviderInvocations: 1, UnknownUsageInvocations: 1, ConservativeReservedTokens: d.Caps.MaxTotalReportedTokensPerCell}, "unknown_conservatively_reserved", string(v35EvidenceCorruption), wall); err != nil {
+				return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+			}
+			return haltV35(ledgerPath, ledger, "evidence_corruption: negative usage")
+		}
+		reservation := agentqualification.ScreeningReservation{SchemaVersion: agentqualification.ScreeningReservationSchemaVersion, BatchID: d.BatchID, EvaluationBinding: binding, CandidateID: d.Configuration.ID, CaseID: c.CaseID, AdmissionInputSHA256: agentqualification.ClaudeSubscriptionStaticV35SHA256(), ReservedAt: time.Now().UTC().Format(time.RFC3339Nano), State: "reserved"}
+		assignment := agentqualification.ScreeningAssignment{BatchID: d.BatchID, CaseID: c.CaseID, CaseVersion: c.CaseVersion, Attempt: 1, Configuration: d.Configuration, CandidatePacketSHA256: c.CandidatePacketSHA256, EvaluationBinding: binding}
+		adapter := agentqualification.ExecutionAdapterIdentity{Provider: "anthropic", Runtime: "claude-code", RuntimeVersion: d.RuntimeIdentity.VersionOutput, Endpoint: "local-cli-print-stdin", BillingBoundary: d.BillingBoundary, AccountLane: "owner_subscription", ToolPolicy: "none", ProviderEventPolicyVersion: "claude-code-json-result.v1", ExecutorSHA256: hashText(v35ExecutorVersion), IsolationPolicySHA256: hashText(d.Transport + "|empty-workspace|restricted|tools-empty|mcp-empty|no-session|prompt-stdin"), EnvironmentAllowlistSHA256: hashText(strings.Join(v35EnvironmentNames(), "\n"))}
+		if err := writeExclusive(filepath.Join(cellDir, "candidate-response.json"), candidate); err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		claim.ResponseSHA256, _ = fileHash(filepath.Join(cellDir, "candidate-response.json"))
+		receipt, err := agentqualification.BuildExecutionReceipt(reservation, assignment, agentqualification.ClaudeExecutionPlanBinding(d.BatchID, plan), adapter, providerResult)
+		if err != nil {
+			if sealErr := sealFailedLaunchV35(cellDir, &ledger, binding, &claim, usage, "exact", string(v35EvidenceCorruption), wall); sealErr != nil {
+				return haltV35(ledgerPath, ledger, "evidence_corruption: "+sealErr.Error())
+			}
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		receiptPath := filepath.Join(cellDir, "execution-receipt.json")
+		if err := writeJSONExclusive(receiptPath, receipt); err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		cellTotal, cellTotalOK := totalReportedV35(usage)
+		if !cellTotalOK {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: usage overflow")
+		}
+		if cellTotal > d.Caps.MaxTotalReportedTokensPerCell || usage.OutputTokens > d.Caps.MaxOutputTokensPerCell {
+			claim.Status, claim.Result, claim.FailureClass, claim.Usage, claim.UsageStatus = "completed", "invalid_unscored", "observation_resource_exhaustion", usage, "exact"
+			claim.ReceiptSHA256, _ = fileHash(receiptPath)
+			resultPath := filepath.Join(cellDir, "result.json")
+			if err := writeJSONExclusive(resultPath, v35ResultEnvelope{Claim: claim, WallMilliseconds: wall.Milliseconds()}); err != nil {
+				return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+			}
+			claim.ResultSHA256, _ = fileHash(resultPath)
+			ledger.Claims[binding] = claim
+			if err := addUsage(&ledger.Usage, usage); err != nil {
+				return haltV35(ledgerPath, ledger, "uncontrolled_campaign_cap")
+			}
+			if total, ok := totalReportedV35(ledger.Usage); !ok || total > d.Caps.MaxCampaignReportedTokens {
+				return haltV35(ledgerPath, ledger, "uncontrolled_campaign_cap")
+			}
+			if err := writeJSONAtomic(ledgerPath, ledger); err != nil {
+				return ledger, err
+			}
+			continue
+		}
+		grade, err := agentqualification.GradeBlindVersion(c.CaseID, c.CaseVersion, candidate)
+		if err != nil {
+			claim.Status, claim.Result, claim.FailureClass, claim.Usage, claim.UsageStatus = "completed", "failed", "candidate_protocol_failure", usage, "exact"
+			ledger.CandidateEliminated = true
+		} else {
+			gradePath := filepath.Join(cellDir, "blind-grade.json")
+			if err := writeJSONExclusive(gradePath, grade); err != nil {
+				return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+			}
+			claim.GradeSHA256, _ = fileHash(gradePath)
+			claim.Status, claim.Result, claim.Usage, claim.UsageStatus = "completed", strings.ToLower(grade.Verdict), usage, "exact"
+			if grade.Verdict != "PASS" {
+				claim.FailureClass = "candidate_competence_or_disqualifier_failure"
+				ledger.CandidateEliminated = true
+			}
+		}
+		claim.ReceiptSHA256, _ = fileHash(receiptPath)
+		resultPath := filepath.Join(cellDir, "result.json")
+		if err := writeJSONExclusive(resultPath, v35ResultEnvelope{Claim: claim, WallMilliseconds: wall.Milliseconds()}); err != nil {
+			return haltV35(ledgerPath, ledger, "evidence_corruption: "+err.Error())
+		}
+		claim.ResultSHA256, _ = fileHash(resultPath)
+		ledger.Claims[binding] = claim
+		if err := addUsage(&ledger.Usage, usage); err != nil {
+			return haltV35(ledgerPath, ledger, "uncontrolled_campaign_cap")
+		}
+		if total, ok := totalReportedV35(ledger.Usage); !ok || total > d.Caps.MaxCampaignReportedTokens {
+			return haltV35(ledgerPath, ledger, "uncontrolled_campaign_cap")
+		}
+		if err := writeJSONAtomic(ledgerPath, ledger); err != nil {
+			return ledger, err
+		}
+	}
+	ledger.Status = "complete"
+	if err := writeJSONAtomic(ledgerPath, ledger); err != nil {
+		return ledger, err
+	}
+	return ledger, nil
+}
+
+func expectedV35Capsule(d agentqualification.ClaudeSubscriptionStaticV35Definition, binding string, c agentqualification.ScreeningCase, plan agentqualification.ClaudeScreeningPlan) v35LaunchCapsule {
+	return v35LaunchCapsule{
+		BindingID: binding, DefinitionSHA256: agentqualification.ClaudeSubscriptionStaticV35SHA256(), FreezeSHA256: agentqualification.ClaudeSubscriptionStaticV35FreezeSHA256(), CandidateID: d.Configuration.ID,
+		CaseID: c.CaseID, CaseVersion: c.CaseVersion, Model: d.Configuration.Model, Effort: d.Configuration.ReasoningEffort,
+		ServingProvider: d.Configuration.ServingProvider, ProviderFallbacks: false, Transport: d.Transport,
+		PromptSHA256: plan.PromptSHA256, SchemaSHA256: plan.SchemaSHA256, MaxTotalTokens: d.Caps.MaxTotalReportedTokensPerCell,
+		MaxOutputTokens: d.Caps.MaxOutputTokensPerCell, MaxRetries: 0, RuntimeVersion: d.RuntimeIdentity.VersionOutput,
+		ExecutableSHA256: d.RuntimeIdentity.ExecutableSHA256, RouteEvidence: d.RuntimeIdentity.RouteEvidence,
+	}
+}
+
+func realClaudeV35Call(ctx context.Context, plan agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+	executable := "claude"
+	if runtime.GOOS == "windows" {
+		executable = "claude.cmd"
+	}
+	path, err := exec.LookPath(executable)
+	if err != nil {
+		return agentqualification.ProviderExecutionResult{}, nil, nil, 0, false, failV35(v35CredentialFailure, err)
+	}
+	workspace, err := os.MkdirTemp("", "sm-claude-v35-")
+	if err != nil {
+		return agentqualification.ProviderExecutionResult{}, nil, nil, 0, false, failV35(v35EvidenceCorruption, err)
+	}
+	defer os.RemoveAll(workspace)
+	args := make([]string, 0, len(plan.ArgsTemplate))
+	for _, arg := range plan.ArgsTemplate {
+		if arg == "<generated-schema>" {
+			arg = string(plan.Schema)
+		}
+		args = append(args, arg)
+	}
+	started := time.Now().UTC()
+	command := exec.CommandContext(ctx, path, args...)
+	command.Dir = workspace
+	command.Env = v35Environment()
+	command.Stdin = strings.NewReader(plan.Prompt)
+	var stdout, stderr strings.Builder
+	command.Stdout = &stdout
+	command.Stderr = &stderr
+	err = command.Run()
+	wall := time.Since(started)
+	raw := []byte(stdout.String())
+	if err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return agentqualification.ProviderExecutionResult{}, nil, append(raw, []byte(stderr.String())...), wall, true, failV35(v35CampaignCap, context.DeadlineExceeded)
+		}
+		failure := classifyClaudeV35ProcessFailure(raw)
+		return agentqualification.ProviderExecutionResult{}, nil, append(raw, []byte(stderr.String())...), wall, true, failV35(failure, err)
+	}
+	result, candidate, err := agentqualification.ParseClaudeCodeSubscriptionJSONArtifact(raw, started.Format(time.RFC3339Nano), time.Now().UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return result, candidate, raw, wall, true, failV35(classifyClaudeV35ProcessFailure(raw), err)
+	}
+	return result, candidate, raw, wall, true, nil
+}
+
+type claudeV35FailureEnvelope struct {
+	Type          string                     `json:"type"`
+	Subtype       string                     `json:"subtype"`
+	IsError       bool                       `json:"is_error"`
+	Result        string                     `json:"result"`
+	NumTurns      int                        `json:"num_turns"`
+	DurationAPIMs int64                      `json:"duration_api_ms"`
+	ModelUsage    map[string]json.RawMessage `json:"modelUsage"`
+	Error         *struct {
+		Type    string `json:"type"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+// classifyClaudeV35ProcessFailure trusts only Claude Code's failed terminal
+// JSON envelope on stdout. Arbitrary stderr/error text and successful model
+// output cannot spoof a credential stop. The known signed-out CLI envelope has
+// zero turns, zero provider time, no model usage, and the exact /login result;
+// newer envelopes may instead expose the typed authentication_error field.
+func classifyClaudeV35ProcessFailure(stdout []byte) v35FailureKind {
+	decoder := json.NewDecoder(strings.NewReader(string(stdout)))
+	var envelope claudeV35FailureEnvelope
+	if err := decoder.Decode(&envelope); err != nil {
+		return v35ObservationTransport
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		return v35ObservationTransport
+	}
+	if envelope.Type != "result" || envelope.Subtype != "error_during_execution" || !envelope.IsError || envelope.NumTurns != 0 || envelope.DurationAPIMs != 0 || len(envelope.ModelUsage) != 0 {
+		return v35ObservationTransport
+	}
+	if envelope.Error != nil && envelope.Error.Type == "authentication_error" && envelope.Error.Message != "" {
+		return v35CredentialFailure
+	}
+	switch envelope.Result {
+	case "Not logged in · Please run /login", "Not logged in. Please run /login", "Please run /login":
+		return v35CredentialFailure
+	default:
+		return v35ObservationTransport
+	}
+}
+
+func loadOrCreateLedger(path string, d agentqualification.ClaudeSubscriptionStaticV35Definition) (v35Ledger, error) {
+	var l v35Ledger
+	raw, err := os.ReadFile(path)
+	if err == nil {
+		if json.Unmarshal(raw, &l) != nil {
+			return l, errors.New("invalid ledger")
+		}
+		return l, validateLedger(l, d)
+	}
+	if !os.IsNotExist(err) {
+		return l, err
+	}
+	l = v35Ledger{SchemaVersion: "silver-mediums.claude-subscription-static-ledger.v35", BatchID: d.BatchID, DefinitionSHA256: agentqualification.ClaudeSubscriptionStaticV35SHA256(), FreezeSHA256: agentqualification.ClaudeSubscriptionStaticV35FreezeSHA256(), Status: "active", Claims: map[string]v35Claim{}}
+	return l, writeJSONExclusive(path, l)
+}
+func validateLedger(l v35Ledger, d agentqualification.ClaudeSubscriptionStaticV35Definition) error {
+	if l.SchemaVersion != "silver-mediums.claude-subscription-static-ledger.v35" || l.BatchID != d.BatchID || l.DefinitionSHA256 != agentqualification.ClaudeSubscriptionStaticV35SHA256() || l.FreezeSHA256 != agentqualification.ClaudeSubscriptionStaticV35FreezeSHA256() {
+		return errors.New("ledger identity drift")
+	}
+	var u v35Usage
+	for _, c := range l.Claims {
+		if err := addUsage(&u, c.Usage); err != nil {
+			return errors.New("ledger accounting overflow")
+		}
+	}
+	if u != l.Usage {
+		return errors.New("ledger accounting drift")
+	}
+	if total, ok := totalReportedV35(l.Usage); !ok || total > d.Caps.MaxCampaignReportedTokens || l.Usage.ProviderInvocations > d.Caps.MaxProviderInvocations || l.Usage.UnknownUsageInvocations > l.Usage.ProviderInvocations {
+		return errors.New("ledger cap/accounting drift")
+	}
+	return nil
+}
+
+func reconcileStrandedV35(root string, ledger *v35Ledger, binding string, reserve int64) error {
+	claim := ledger.Claims[binding]
+	if claim.Status != "pending" {
+		return errors.New("claim is not pending")
+	}
+	dir := filepath.Join(root, binding)
+	claimPath := filepath.Join(dir, "claim.json")
+	if claim.InitialClaimSHA256 == "" {
+		var err error
+		claim.InitialClaimSHA256, err = fileHash(claimPath)
+		if err != nil {
+			return err
+		}
+	}
+	if claim.CapsuleSHA256 == "" {
+		var err error
+		claim.CapsuleSHA256, err = fileHash(filepath.Join(dir, "launch-capsule.json"))
+		if err != nil {
+			return err
+		}
+	}
+	rawPath := filepath.Join(dir, "provider-raw.json")
+	if _, err := os.Stat(rawPath); os.IsNotExist(err) {
+		if err := writeExclusive(rawPath, []byte("{\"status\":\"unavailable_after_stranded_claim\"}\n")); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	var err error
+	claim.RawSHA256, err = fileHash(rawPath)
+	if err != nil {
+		return err
+	}
+	claim.Status, claim.Result, claim.FailureClass, claim.UsageStatus = "completed", "invalid_unscored", string(v35ObservationTransport), "unknown_conservatively_reserved"
+	claim.Usage = v35Usage{ProviderInvocations: 1, UnknownUsageInvocations: 1, ConservativeReservedTokens: reserve}
+	resultPath := filepath.Join(dir, "result.json")
+	if err := writeJSONExclusive(resultPath, v35ResultEnvelope{Claim: claim, ReconciledStrandedClaim: true}); err != nil {
+		return err
+	}
+	claim.ResultSHA256, err = fileHash(resultPath)
+	if err != nil {
+		return err
+	}
+	ledger.Claims[binding] = claim
+	return addUsage(&ledger.Usage, claim.Usage)
+}
+
+func sealFailedLaunchV35(cellDir string, ledger *v35Ledger, binding string, claim *v35Claim, usage v35Usage, usageStatus, failure string, wall time.Duration) error {
+	claim.Status, claim.Result, claim.FailureClass, claim.Usage, claim.UsageStatus = "completed", "invalid_unscored", failure, usage, usageStatus
+	resultPath := filepath.Join(cellDir, "result.json")
+	if err := writeJSONExclusive(resultPath, v35ResultEnvelope{Claim: *claim, WallMilliseconds: wall.Milliseconds()}); err != nil {
+		return err
+	}
+	var err error
+	claim.ResultSHA256, err = fileHash(resultPath)
+	if err != nil {
+		return err
+	}
+	ledger.Claims[binding] = *claim
+	return addUsage(&ledger.Usage, usage)
+}
+
+func replayV35(root string) (map[string]any, error) {
+	d, err := agentqualification.ClaudeSubscriptionStaticV35()
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(filepath.Join(root, "ledger.json"))
+	if err != nil {
+		return nil, err
+	}
+	var l v35Ledger
+	if err = json.Unmarshal(raw, &l); err != nil {
+		return nil, err
+	}
+	if err = validateLedger(l, d); err != nil {
+		return nil, err
+	}
+	expected := make(map[string]agentqualification.ScreeningCase, len(d.Cases))
+	for index, screeningCase := range d.Cases {
+		expected[v35Binding(d.BatchID, index, screeningCase)] = screeningCase
+	}
+	if l.Status == "complete" && len(l.Claims) != len(expected) {
+		return nil, errors.New("complete ledger does not contain every frozen claim")
+	}
+	for binding, c := range l.Claims {
+		screeningCase, ok := expected[binding]
+		if !ok || c.BindingID != binding || c.CaseID != screeningCase.CaseID || c.CaseVersion != screeningCase.CaseVersion {
+			return nil, errors.New("claim identity or frozen order drift")
+		}
+		dir := filepath.Join(root, binding)
+		if c.Status == "pending" {
+			return nil, errors.New("ambiguous pending claim")
+		}
+		initialPath := filepath.Join(dir, "claim.json")
+		if err := verifyHashV35(initialPath, c.InitialClaimSHA256, "initial claim"); err != nil {
+			return nil, err
+		}
+		var initial v35Claim
+		if err := readJSONV35(initialPath, &initial); err != nil {
+			return nil, err
+		}
+		wantInitial := v35Claim{BindingID: binding, CaseID: c.CaseID, CaseVersion: c.CaseVersion, Status: "pending", UsageStatus: "pending"}
+		if c.Status == "skipped" {
+			wantInitial.Status, wantInitial.Result, wantInitial.UsageStatus = "skipped", "candidate_eliminated", "not_launched"
+		}
+		if !reflect.DeepEqual(initial, wantInitial) {
+			return nil, errors.New("initial claim semantic drift")
+		}
+		resultPath := filepath.Join(dir, "result.json")
+		if err := verifyHashV35(resultPath, c.ResultSHA256, "result"); err != nil {
+			return nil, err
+		}
+		var result v35ResultEnvelope
+		if err := readJSONV35(resultPath, &result); err != nil {
+			return nil, err
+		}
+		wantResultClaim := c
+		wantResultClaim.ResultSHA256 = ""
+		if !reflect.DeepEqual(result.Claim, wantResultClaim) || result.Retries != 0 {
+			return nil, errors.New("result and ledger claim drift")
+		}
+		if c.Status == "skipped" {
+			if c.UsageStatus != "not_launched" || c.Usage != (v35Usage{}) || c.CapsuleSHA256 != "" || c.RawSHA256 != "" || c.ReceiptSHA256 != "" || c.ResponseSHA256 != "" || c.GradeSHA256 != "" {
+				return nil, errors.New("skipped claim contains launch evidence")
+			}
+			continue
+		}
+		plan, err := agentqualification.BuildClaudeSubscriptionScreeningPlan(d.Configuration, screeningCase)
+		if err != nil {
+			return nil, err
+		}
+		capsulePath := filepath.Join(dir, "launch-capsule.json")
+		if err := verifyHashV35(capsulePath, c.CapsuleSHA256, "launch capsule"); err != nil {
+			return nil, err
+		}
+		var capsule v35LaunchCapsule
+		if err := readJSONV35(capsulePath, &capsule); err != nil || !reflect.DeepEqual(capsule, expectedV35Capsule(d, binding, screeningCase, plan)) {
+			return nil, errors.New("launch capsule drift")
+		}
+		rawPath := filepath.Join(dir, "provider-raw.json")
+		if err := verifyHashV35(rawPath, c.RawSHA256, "provider raw"); err != nil {
+			return nil, err
+		}
+		if c.UsageStatus == "not_launched" {
+			if c.Usage != (v35Usage{}) || c.ReceiptSHA256 != "" || c.ResponseSHA256 != "" || c.GradeSHA256 != "" {
+				return nil, errors.New("not-launched claim contains provider evidence")
+			}
+			continue
+		}
+		if c.Usage.ProviderInvocations != 1 {
+			return nil, errors.New("launched claim is not counted exactly once")
+		}
+		if c.ReceiptSHA256 != "" {
+			receiptPath := filepath.Join(dir, "execution-receipt.json")
+			if err := verifyHashV35(receiptPath, c.ReceiptSHA256, "receipt"); err != nil {
+				return nil, err
+			}
+			var receipt agentqualification.ExecutionReceipt
+			if err := readJSONV35(receiptPath, &receipt); err != nil {
+				return nil, err
+			}
+			if reasons := agentqualification.ValidateExecutionReceipt(receipt); len(reasons) != 0 || receipt.BatchID != d.BatchID || receipt.EvaluationBinding != binding || receipt.RequestedModel != d.Configuration.Model || receipt.RequestedEffort != d.Configuration.ReasoningEffort || receipt.Provider != "anthropic" || receipt.Runtime != "claude-code" || receipt.RuntimeVersion != d.RuntimeIdentity.VersionOutput || receipt.ActualServingProvider != "anthropic" || receipt.ProviderFallbacks == nil || *receipt.ProviderFallbacks || receipt.PromptSHA256 != plan.PromptSHA256 || receipt.SchemaSHA256 != plan.SchemaSHA256 {
+				return nil, errors.New("receipt semantic or route drift")
+			}
+			if receipt.Usage.InputTokens == nil || receipt.Usage.OutputTokens == nil || receipt.Usage.ProviderReportedCostMicros == nil || *receipt.Usage.InputTokens != c.Usage.InputTokens || *receipt.Usage.OutputTokens != c.Usage.OutputTokens || *receipt.Usage.ProviderReportedCostMicros != c.Usage.ProviderReportedCostMicros || c.UsageStatus != "exact" {
+				return nil, errors.New("receipt accounting drift")
+			}
+			if receipt.RawTraceSHA256 != c.RawSHA256 {
+				return nil, errors.New("receipt raw trace drift")
+			}
+			responsePath := filepath.Join(dir, "candidate-response.json")
+			if err := verifyHashV35(responsePath, c.ResponseSHA256, "candidate response"); err != nil {
+				return nil, err
+			}
+			if receipt.OutputSHA256 != c.ResponseSHA256 {
+				return nil, errors.New("receipt candidate output drift")
+			}
+		} else if c.UsageStatus == "unknown_conservatively_reserved" {
+			if c.ResponseSHA256 != "" || c.GradeSHA256 != "" || c.Usage.UnknownUsageInvocations != 1 || c.Usage.ConservativeReservedTokens != d.Caps.MaxTotalReportedTokensPerCell {
+				return nil, errors.New("unreceipted launch is not conservatively recorded")
+			}
+		} else if c.UsageStatus == "exact" && c.FailureClass == string(v35EvidenceCorruption) && c.ResponseSHA256 != "" && c.GradeSHA256 == "" {
+			if err := verifyHashV35(filepath.Join(dir, "candidate-response.json"), c.ResponseSHA256, "candidate response"); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New("unreceipted launch accounting is invalid")
+		}
+		if c.GradeSHA256 != "" {
+			gradePath := filepath.Join(dir, "blind-grade.json")
+			if err := verifyHashV35(gradePath, c.GradeSHA256, "grade"); err != nil {
+				return nil, err
+			}
+			response, err := os.ReadFile(filepath.Join(dir, "candidate-response.json"))
+			if err != nil {
+				return nil, err
+			}
+			grade, err := agentqualification.GradeBlindVersion(c.CaseID, c.CaseVersion, response)
+			if err != nil {
+				return nil, errors.New("sealed candidate response no longer grades")
+			}
+			var sealedGrade agentqualification.BlindGrade
+			if err := readJSONV35(gradePath, &sealedGrade); err != nil || !equalGradeV35(grade, sealedGrade) || strings.ToLower(grade.Verdict) != c.Result {
+				return nil, errors.New("grade semantic drift")
+			}
+		}
+	}
+	return map[string]any{"status": "replay_valid", "provider_called": false, "ledger_sha256": hashText(string(raw)), "claims": len(l.Claims), "usage": l.Usage, "global_halt": l.GlobalHalt}, nil
+}
+
+func equalGradeV35(a, b agentqualification.BlindGrade) bool {
+	return a.SchemaVersion == b.SchemaVersion &&
+		a.CaseID == b.CaseID &&
+		a.GraderVersion == b.GraderVersion &&
+		a.Verdict == b.Verdict &&
+		equalStringsV35(a.PassedChecks, b.PassedChecks) &&
+		equalStringsV35(a.FailedChecks, b.FailedChecks) &&
+		equalStringsV35(a.Disqualifiers, b.Disqualifiers)
+}
+
+func equalStringsV35(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func readJSONV35(path string, target any) error {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(raw, target); err != nil {
+		return fmt.Errorf("invalid sealed JSON %s: %w", filepath.Base(path), err)
+	}
+	return nil
+}
+
+func verifyHashV35(path, expected, label string) error {
+	if expected == "" {
+		return fmt.Errorf("%s hash missing", label)
+	}
+	h, err := fileHash(path)
+	if err != nil || h != expected {
+		return fmt.Errorf("%s drift", label)
+	}
+	return nil
+}
+func sealClaimAndResult(root string, c v35Claim) (v35Claim, error) {
+	dir := filepath.Join(root, c.BindingID)
+	if err := os.Mkdir(dir, 0o700); err != nil {
+		return c, err
+	}
+	if err := writeJSONExclusive(filepath.Join(dir, "claim.json"), c); err != nil {
+		return c, err
+	}
+	c.InitialClaimSHA256, _ = fileHash(filepath.Join(dir, "claim.json"))
+	if err := writeJSONExclusive(filepath.Join(dir, "result.json"), v35ResultEnvelope{Claim: c}); err != nil {
+		return c, err
+	}
+	c.ResultSHA256, _ = fileHash(filepath.Join(dir, "result.json"))
+	return c, nil
+}
+func haltV35(path string, l v35Ledger, reason string) (v35Ledger, error) {
+	l.GlobalHalt = true
+	l.Status = "halted"
+	l.GlobalHaltReason = reason
+	if err := writeJSONAtomic(path, l); err != nil {
+		return l, fmt.Errorf("%s; persist halt ledger: %w", reason, err)
+	}
+	return l, errors.New(reason)
+}
+func addUsage(dst *v35Usage, u v35Usage) error {
+	if _, ok := totalReportedV35(*dst); !ok {
+		return errors.New("existing usage is invalid")
+	}
+	if _, ok := totalReportedV35(u); !ok {
+		return errors.New("incremental usage is invalid")
+	}
+	maxInt := int(^uint(0) >> 1)
+	if dst.ProviderInvocations > maxInt-u.ProviderInvocations || dst.UnknownUsageInvocations > maxInt-u.UnknownUsageInvocations ||
+		dst.InputTokens > int64(^uint64(0)>>1)-u.InputTokens || dst.OutputTokens > int64(^uint64(0)>>1)-u.OutputTokens ||
+		dst.ProviderReportedCostMicros > int64(^uint64(0)>>1)-u.ProviderReportedCostMicros || dst.ConservativeReservedTokens > int64(^uint64(0)>>1)-u.ConservativeReservedTokens {
+		return errors.New("usage addition overflow")
+	}
+	dst.ProviderInvocations += u.ProviderInvocations
+	dst.InputTokens += u.InputTokens
+	dst.OutputTokens += u.OutputTokens
+	dst.ProviderReportedCostMicros += u.ProviderReportedCostMicros
+	dst.UnknownUsageInvocations += u.UnknownUsageInvocations
+	dst.ConservativeReservedTokens += u.ConservativeReservedTokens
+	return nil
+}
+func totalReportedV35(u v35Usage) (int64, bool) {
+	if u.ProviderInvocations < 0 || u.InputTokens < 0 || u.OutputTokens < 0 || u.ProviderReportedCostMicros < 0 || u.UnknownUsageInvocations < 0 || u.ConservativeReservedTokens < 0 || u.InputTokens > int64(^uint64(0)>>1)-u.OutputTokens {
+		return 0, false
+	}
+	total := u.InputTokens + u.OutputTokens
+	if total > int64(^uint64(0)>>1)-u.ConservativeReservedTokens {
+		return 0, false
+	}
+	return total + u.ConservativeReservedTokens, true
+}
+func v35Binding(batch string, i int, c agentqualification.ScreeningCase) string {
+	return hashText(fmt.Sprintf("%s|%02d|%s|%s", batch, i, c.CaseID, c.CaseVersion))
+}
+func hashText(s string) string { h := sha256.Sum256([]byte(s)); return hex.EncodeToString(h[:]) }
+func fileHash(path string) (string, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return hashText(string(raw)), nil
+}
+func writeExclusive(path string, raw []byte) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err = f.Write(raw); err != nil {
+		return err
+	}
+	return f.Sync()
+}
+func writeJSONExclusive(path string, v any) error {
+	raw, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	return writeExclusive(path, append(raw, '\n'))
+}
+func writeJSONAtomic(path string, v any) error {
+	raw, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	tmp := path + ".tmp"
+	if err = os.WriteFile(tmp, append(raw, '\n'), 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
+}
+func v35EnvironmentNames() []string {
+	return []string{"APPDATA", "COMSPEC", "HOMEDRIVE", "HOMEPATH", "LOCALAPPDATA", "PATH", "PATHEXT", "SystemDrive", "SystemRoot", "TEMP", "TMP", "USERPROFILE", "WINDIR", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"}
+}
+func v35Environment() []string {
+	var env []string
+	for _, n := range v35EnvironmentNames() {
+		if n == "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC" {
+			env = append(env, n+"=1")
+			continue
+		}
+		if v, ok := os.LookupEnv(n); ok && v != "" {
+			env = append(env, n+"="+v)
+		}
+	}
+	return env
+}

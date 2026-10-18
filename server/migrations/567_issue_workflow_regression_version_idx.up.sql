@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY issue_workflow_regression_version_idx ON issue_workflow_regression_change_record (workspace_id, registry_version);

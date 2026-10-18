@@ -1,0 +1,1 @@
+ALTER TABLE qualified_runtime_binding_revocation DROP CONSTRAINT IF EXISTS qualified_runtime_binding_revocation_pkey;

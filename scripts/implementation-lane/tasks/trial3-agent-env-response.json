@@ -1,0 +1,15 @@
+{
+  "task_id": "trial3-agent-env-response",
+  "title": "Validate agent environment responses without leaking their values",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Do not cast network JSON to T.' packages/core/api/client.ts getAgentEnv and updateAgentEnv return this.fetch(...) cast to AgentEnvResponse ({ agent_id, custom_env: Record<string, string> }) with no validation. The standard helper parseWithFallback logs the full received payload on failure, and custom_env holds an agent's environment variables.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/agent-env-response.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 60,
+  "trial_role": "Trial 3, task 5, the judgment task. No test covers these methods. Applying the house helper as written would log environment values on a malformed response, so the executor must notice the side effect and decide how to validate safely.",
+  "objective": "packages/core/api/client.ts getAgentEnv and updateAgentEnv return the server response cast to AgentEnvResponse without validation. The repository rule in CLAUDE.md (API Compatibility) says to parse API JSON with parseWithFallback and a zod schema.\n\nBefore implementing, read packages/core/api/schema.ts to see exactly what parseWithFallback does on failure, read the Go handlers for GET and PUT /api/agents/{id}/env to see what they return (including whether values are masked), and read how the UI uses the result. The custom_env map can contain secret values. Decide how these two methods should validate their responses, what they must return or do when the response is malformed, and how to avoid putting environment values into logs or warnings. Make the smallest change in packages/core/api that implements that decision, and state the reasoning in your summary.\n\nWrite tests at exactly packages/core/api/agent-env-response.test.ts that encode the behaviour you chose for a well-formed response and for malformed responses, including a test that a malformed response does not log environment values. The tests must fail against the current code."
+}

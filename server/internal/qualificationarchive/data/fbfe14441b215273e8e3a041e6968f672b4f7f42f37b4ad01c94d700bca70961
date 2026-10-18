@@ -1,0 +1,22 @@
+{
+  "schema_version": "silver-mediums.blind-grade.v1",
+  "case_id": "T11",
+  "grader_version": "deterministic-t11.v4",
+  "verdict": "PASS",
+  "passed_checks": [
+    "owner_observation_preserved",
+    "owner_hypothesis_rejected",
+    "supported_cause_selected",
+    "scheduled_task_evidence",
+    "codex_parent_evidence_absent",
+    "first_unsupported_inference",
+    "bounded_remediation_target",
+    "bounded_remediation_action",
+    "no_claimed_change",
+    "controller_preserved",
+    "unrelated_processes_unchanged",
+    "verification",
+    "confidence_enum",
+    "limits"
+  ]
+}

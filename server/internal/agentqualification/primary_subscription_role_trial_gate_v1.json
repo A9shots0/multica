@@ -1,0 +1,74 @@
+{
+  "schema_version": "silver-mediums.primary-subscription-role-trial-gate.v1",
+  "gate_id": "item-14-primary-subscription-role-trial-owner-gate-20260914",
+  "status": "owner_authority_required_not_executed",
+  "provider_calls_allowed": false,
+  "credential_reads_allowed": false,
+  "tool_execution_allowed": false,
+  "fixture_repository_access_allowed": false,
+  "production_actions_allowed": false,
+  "permanent_model_or_seat_selection_allowed": false,
+  "source_hashes": {
+    "role_squad_operating_contract": "b3f88549e6a92df5708c7a89c53cb31b0b034cfbf7639f52c96e76659ae8fe09",
+    "role_squad_rehearsal_result": "d0fef123bab7d08ff591eef7f5633dc9e04f481018190b19a31da9cd25e96a81",
+    "realistic_fixture_manifest": "e182e08f9946384cbbb8b43316c52932af5c71b19c22ec9df372120f9b474c9d",
+    "role_qualification_case_group": "169d7cb3870d4cbabfefc46f638db73294110cf652c9ef9ffdc5c12bee2a2b1f",
+    "codex_subscription_boundary": "de00340714977c7060b8ae46a6ca779b16ba5cb25aa547c2a42f4313997915c3",
+    "transport_catalog": "8a98dcbfdfaa5fe16ec814473a656a46067740d82940270e0eaea1ab8cbca348",
+    "claude_exact_model_limitation": "5effece488f08a13a14cc22d6b61de6bb5e399658dcde18a8379b4f37949dc94",
+    "guarded_child_execution": "36aa20239d05801a062adeab29b455ef806704eea86c328b3375afe0f8a31f56",
+    "realistic_fixture_controller": "d35178228384d00de969b26def92502d31769f9595944a966c3c3580dd89f21d"
+  },
+  "proposed_trial": {
+    "purpose": "first bounded comparison of shared executor plus exact skills versus separately invoked conditional participants",
+    "workflow_fixtures": ["R01", "R02"],
+    "structural_arms": ["shared_executor_with_exact_skill_packet", "conditional_specialist_then_shared_executor"],
+    "subscription_lanes": ["claude_code_subscription", "codex_subscription"],
+    "maximum_cli_sessions": 12,
+    "retries": 0,
+    "fallbacks": false,
+    "redirects": false,
+    "fresh_disposable_fixture_per_arm": true,
+    "temporary_primary_model_binding_required": true,
+    "provider_native_tools_allowed": false,
+    "controller_mediated_actions_only": true,
+    "independent_quality_verdict_required": true,
+    "independent_quality_verdict_mode": "provider_free_hidden_verifier",
+    "automatic_correction_replays": 0,
+    "post_batch_provider_free_corrections_maximum": 1,
+    "allowed_executor_actions_after_authority": ["read_fixture", "edit_fixture", "run_allowlisted_fixture_tests", "request_local_r02_browser_evidence"],
+    "allowed_contributor_actions_after_authority": ["read_fixture", "return_named_boundary_or_product_evidence"],
+    "r02_browser_boundary": "controller_owned_in_app_browser_local_loopback_only",
+    "session_accounting_rule": "one fresh CLI process per named participant invocation; no relaunch; record requested and observed model identities plus aggregate usage by model",
+    "claude_exclusion_rule": "if owner excludes Claude skip all four claude observations and cap execution at the six Codex participant sessions",
+    "invocation_plan": [
+      {"observation_id":"claude-r01-inline","lane":"claude_code_subscription","case_id":"R01","arm":"shared_executor_with_exact_skill_packet","participants":["shared_windows_executor"],"inline_skill_packets":["architecture_assurance"],"provider_free_verdict":true},
+      {"observation_id":"claude-r01-separate","lane":"claude_code_subscription","case_id":"R01","arm":"conditional_specialist_then_shared_executor","participants":["architecture_assurance","shared_windows_executor"],"inline_skill_packets":[],"provider_free_verdict":true},
+      {"observation_id":"claude-r02-inline","lane":"claude_code_subscription","case_id":"R02","arm":"shared_executor_with_exact_skill_packet","participants":["shared_windows_executor"],"inline_skill_packets":["product_ui"],"provider_free_verdict":true},
+      {"observation_id":"claude-r02-separate","lane":"claude_code_subscription","case_id":"R02","arm":"conditional_specialist_then_shared_executor","participants":["product_ui","shared_windows_executor"],"inline_skill_packets":[],"provider_free_verdict":true},
+      {"observation_id":"codex-r01-inline","lane":"codex_subscription","case_id":"R01","arm":"shared_executor_with_exact_skill_packet","participants":["shared_windows_executor"],"inline_skill_packets":["architecture_assurance"],"provider_free_verdict":true},
+      {"observation_id":"codex-r01-separate","lane":"codex_subscription","case_id":"R01","arm":"conditional_specialist_then_shared_executor","participants":["architecture_assurance","shared_windows_executor"],"inline_skill_packets":[],"provider_free_verdict":true},
+      {"observation_id":"codex-r02-inline","lane":"codex_subscription","case_id":"R02","arm":"shared_executor_with_exact_skill_packet","participants":["shared_windows_executor"],"inline_skill_packets":["product_ui"],"provider_free_verdict":true},
+      {"observation_id":"codex-r02-separate","lane":"codex_subscription","case_id":"R02","arm":"conditional_specialist_then_shared_executor","participants":["product_ui","shared_windows_executor"],"inline_skill_packets":[],"provider_free_verdict":true}
+    ],
+    "always_forbidden": ["real_repository_access", "provider_native_tool_execution", "production_access", "business_system_access", "non_subscription_credentials", "non_provider_network", "outbound_business_action", "phone_farm_access", "browser_except_controller_owned_in_app_local_r02", "deployment", "automatic_replay", "permanent_role_or_model_selection"]
+  },
+  "known_transport_constraints": [
+    {
+      "lane": "claude_code_subscription",
+      "fact": "requested Sonnet session can report background Haiku activity",
+      "consequence": "cannot claim an exact-one-model session; owner must explicitly accept exact requested-primary plus disclosed background-Haiku attribution or exclude the lane"
+    },
+    {
+      "lane": "codex_subscription",
+      "fact": "Codex CLI 0.153.2 exposes additional_tools even when the model-only host is disabled",
+      "consequence": "trial may use only the disabled native-tool host plus controller-mediated fixture action protocol; any native tool execution invalidates the observation"
+    }
+  ],
+  "owner_decisions_required": [
+    "authorize_controller_mediated_disposable_fixture_subscription_trial",
+    "accept_claude_code_dual_model_attribution_or_exclude_claude_lane"
+  ],
+  "advancement_rule": "a passing first slice permits repeated configuration trials but cannot select a permanent seat or model",
+  "rejection_rule": "without both owner decisions no provider session subscription access fixture copy browser evidence or controller-mediated action may start"
+}

@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS brain_task_link_key;

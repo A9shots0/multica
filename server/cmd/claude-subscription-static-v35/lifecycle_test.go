@@ -1,0 +1,356 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/multica-ai/multica/server/internal/agentqualification"
+)
+
+func TestV35PlanLockedProviderFreeAndExact(t *testing.T) {
+	p, err := planV35WithContracts(offlineContractsV35(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p["provider_called"] != false || p["provider_calls_allowed"] != true || p["definition_provider_calls_allowed"] != false || p["status"] != "prepared_for_independent_review" || p["freeze_status"] != "frozen_reviewed" {
+		t.Fatalf("plan=%+v", p)
+	}
+}
+
+func TestV35HistoricalExecutionRejectsBeforeProviderCallback(t *testing.T) {
+	called := false
+	_, err := executeV35WithContracts(context.Background(), t.TempDir(), func(context.Context, agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		called = true
+		return agentqualification.ProviderExecutionResult{}, nil, nil, 0, false, nil
+	}, offlineContractsV35(t), false)
+	if err == nil || called {
+		t.Fatalf("historical real execution: err=%v called=%v", err, called)
+	}
+}
+
+func TestV35RuntimeIdentityWithExplicitDependencies(t *testing.T) {
+	d, err := agentqualification.ClaudeSubscriptionStaticV35()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "provider-fixture")
+	d.RuntimeIdentity.ExecutablePath = path
+	for _, mutation := range []string{"", "path", "hash", "version", "missing"} {
+		t.Run(mutation, func(t *testing.T) {
+			calls := 0
+			look := func(string) (string, error) {
+				if mutation == "missing" {
+					return "", errors.New("missing fixture")
+				}
+				if mutation == "path" {
+					return path + "-other", nil
+				}
+				return path, nil
+			}
+			hash := func(string) (string, error) {
+				if mutation == "hash" {
+					return "wrong", nil
+				}
+				return d.RuntimeIdentity.ExecutableSHA256, nil
+			}
+			version := func(context.Context, string) ([]byte, error) {
+				calls++
+				if mutation == "version" {
+					return []byte("wrong"), nil
+				}
+				return []byte(d.RuntimeIdentity.VersionOutput), nil
+			}
+			err := verifyClaudeV35RuntimeIdentityWithDependencies(d, look, hash, version)
+			if (err == nil) != (mutation == "") {
+				t.Fatalf("mutation=%s err=%v", mutation, err)
+			}
+			if mutation != "" && mutation != "version" && calls != 0 {
+				t.Fatal("identity drift reached version invocation")
+			}
+		})
+	}
+}
+
+func TestV35CandidateFailureSkipsRemainingAndReplayDoesNotCall(t *testing.T) {
+	root := t.TempDir()
+	calls := 0
+	fake := func(_ context.Context, p agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		calls++
+		candidate := []byte(`{}`)
+		raw := []byte(`{"result":"{}"}`)
+		in, out, cost := int64(10), int64(10), int64(1)
+		r := agentqualification.ProviderExecutionResult{ObservationID: "obs", ReportedModel: p.Model, ReportedModelVersion: p.Model, ReportedModelVersionStatus: "reported", ReportedServingProvider: "anthropic", ProviderResponseID: "resp", StartedAt: "2026-09-13T12:00:00Z", CompletedAt: "2026-09-13T12:00:01Z", TerminalState: "completed", ObservedProviderEventTypes: []string{"result"}, RawTraceSHA256: hashText(string(raw)), OutputSHA256: hashText(string(candidate)), Usage: agentqualification.ExecutionReceiptUsage{InputTokens: &in, CachedInputTokens: new(int64), OutputTokens: &out, ReasoningTokensStatus: "provider_unavailable", ProviderReportedCostMicros: &cost}}
+		return r, candidate, raw, time.Second, true, nil
+	}
+	l, err := executeV35Offline(context.Background(), root, fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 || !l.CandidateEliminated || len(l.Claims) != 6 {
+		t.Fatalf("calls=%d ledger=%+v", calls, l)
+	}
+	before, _ := fileHash(filepath.Join(root, "ledger.json"))
+	r, err := replayV35(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	after, _ := fileHash(filepath.Join(root, "ledger.json"))
+	if before != after || r["provider_called"] != false || calls != 1 {
+		t.Fatalf("replay changed evidence/calls")
+	}
+}
+
+func TestV35ObservationInvalidContinuesAndStrandedClaimClosesWithoutRetry(t *testing.T) {
+	root := t.TempDir()
+	calls := 0
+	fake := func(_ context.Context, _ agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		calls++
+		return agentqualification.ProviderExecutionResult{}, nil, []byte(`{"aborted":true}`), time.Millisecond, true, failV35(v35ObservationTransport, errors.New("timeout"))
+	}
+	l, err := executeV35Offline(context.Background(), root, fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 6 || l.GlobalHalt || l.Status != "complete" {
+		t.Fatalf("calls=%d ledger=%+v", calls, l)
+	}
+	if l.Usage.ProviderInvocations != 6 || l.Usage.UnknownUsageInvocations != 6 || l.Usage.ConservativeReservedTokens != 90_000 {
+		t.Fatalf("failed launches were not truthfully reserved: %+v", l.Usage)
+	}
+	root2 := t.TempDir()
+	d, _ := agentqualification.ClaudeSubscriptionStaticV35()
+	l2, _ := loadOrCreateLedger(filepath.Join(root2, "ledger.json"), d)
+	b := v35Binding(d.BatchID, 0, d.Cases[0])
+	dir := filepath.Join(root2, b)
+	if err := os.Mkdir(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	stranded := v35Claim{BindingID: b, CaseID: "T12", CaseVersion: "v4", Status: "pending", UsageStatus: "pending"}
+	if err := writeJSONExclusive(filepath.Join(dir, "claim.json"), stranded); err != nil {
+		t.Fatal(err)
+	}
+	plan, err := agentqualification.BuildClaudeSubscriptionScreeningPlan(d.Configuration, d.Cases[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writeJSONExclusive(filepath.Join(dir, "launch-capsule.json"), expectedV35Capsule(d, b, d.Cases[0], plan)); err != nil {
+		t.Fatal(err)
+	}
+	l2.Claims[b] = stranded
+	if err := writeJSONAtomic(filepath.Join(root2, "ledger.json"), l2); err != nil {
+		t.Fatal(err)
+	}
+	l2, err = executeV35Offline(context.Background(), root2, fake)
+	if err != nil || calls != 11 || l2.Claims[b].FailureClass != string(v35ObservationTransport) || l2.Claims[b].Usage.UnknownUsageInvocations != 1 {
+		t.Fatalf("stranded claim was retried or not conservatively closed: calls=%d ledger=%+v err=%v", calls, l2, err)
+	}
+}
+
+func TestV35TypedStopsCannotBeSpoofedByErrorText(t *testing.T) {
+	if kind, ok := kindV35(errors.New("authentication credential unsafe budget")); ok || kind != "" {
+		t.Fatal("untyped error text was classified")
+	}
+	if kind, ok := kindV35(failV35(v35ObservationTransport, errors.New("authentication words are irrelevant"))); !ok || kind != v35ObservationTransport {
+		t.Fatal("typed local transport failure was changed by its text")
+	}
+}
+
+func TestV35ClaudeRealShapeSignedOutEnvelopeIsCredentialFailure(t *testing.T) {
+	raw := []byte(`{"type":"result","subtype":"error_during_execution","is_error":true,"duration_ms":12,"duration_api_ms":0,"num_turns":0,"result":"Not logged in · Please run /login","session_id":"","total_cost_usd":0,"usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0},"modelUsage":{}}`)
+	if got := classifyClaudeV35ProcessFailure(raw); got != v35CredentialFailure {
+		t.Fatalf("real Claude signed-out envelope classified as %s", got)
+	}
+	typed := []byte(`{"type":"result","subtype":"error_during_execution","is_error":true,"duration_api_ms":0,"num_turns":0,"result":"Authentication failed","modelUsage":{},"error":{"type":"authentication_error","message":"OAuth session expired"}}`)
+	if got := classifyClaudeV35ProcessFailure(typed); got != v35CredentialFailure {
+		t.Fatalf("typed Claude auth envelope classified as %s", got)
+	}
+}
+
+func TestV35ClaudeCredentialWordsCannotSpoofStructuredClassification(t *testing.T) {
+	fixtures := [][]byte{
+		[]byte(`authentication failed; please run /login`),
+		[]byte(`{"type":"result","subtype":"success","is_error":false,"duration_api_ms":0,"num_turns":0,"result":"Not logged in · Please run /login","modelUsage":{}}`),
+		[]byte(`{"type":"result","subtype":"error_during_execution","is_error":true,"duration_api_ms":1,"num_turns":1,"result":"Not logged in · Please run /login","modelUsage":{"claude-sonnet-4-6":{}}}`),
+	}
+	for _, raw := range fixtures {
+		if got := classifyClaudeV35ProcessFailure(raw); got != v35ObservationTransport {
+			t.Fatalf("untrusted auth-like text produced %s: %s", got, raw)
+		}
+	}
+}
+
+func TestV35PriorEvidenceDriftStopsBeforeAnotherCall(t *testing.T) {
+	root := t.TempDir()
+	transportCalls := 0
+	transportFailure := func(_ context.Context, _ agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		transportCalls++
+		return agentqualification.ProviderExecutionResult{}, nil, []byte(`{"type":"result","subtype":"error_during_execution","is_error":true,"result":"fixture"}`), time.Millisecond, true, failV35(v35ObservationTransport, errors.New("fixture transport failure"))
+	}
+	completed, err := executeV35Offline(context.Background(), root, transportFailure)
+	if err != nil || transportCalls != 6 || completed.Status != "complete" {
+		t.Fatalf("fixture batch failed: calls=%d ledger=%+v err=%v", transportCalls, completed, err)
+	}
+	d, err := agentqualification.ClaudeSubscriptionStaticV35()
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstBinding := v35Binding(d.BatchID, 0, d.Cases[0])
+	first := completed.Claims[firstBinding]
+	for index := 1; index < len(d.Cases); index++ {
+		binding := v35Binding(d.BatchID, index, d.Cases[index])
+		delete(completed.Claims, binding)
+		if err := os.RemoveAll(filepath.Join(root, binding)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	completed.Status = "active"
+	completed.Usage = first.Usage
+	if err := writeJSONAtomic(filepath.Join(root, "ledger.json"), completed); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, firstBinding, "provider-raw.json"), []byte(`{"tampered":true}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	newCalls := 0
+	ledger, err := executeV35Offline(context.Background(), root, func(context.Context, agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		newCalls++
+		return agentqualification.ProviderExecutionResult{}, nil, nil, 0, false, nil
+	})
+	if err == nil || newCalls != 0 || !ledger.GlobalHalt || !strings.Contains(ledger.GlobalHaltReason, "prior evidence replay failed") {
+		t.Fatalf("prior evidence drift did not stop before next call: calls=%d ledger=%+v err=%v", newCalls, ledger, err)
+	}
+}
+
+func TestV35CredentialAndCampaignCapAreGlobal(t *testing.T) {
+	if kind, ok := kindV35(failV35(v35CredentialFailure, errors.New("denied"))); !ok || kind != v35CredentialFailure {
+		t.Fatal("typed credential failure not preserved")
+	}
+	d, _ := agentqualification.ClaudeSubscriptionStaticV35()
+	l := v35Ledger{SchemaVersion: "silver-mediums.claude-subscription-static-ledger.v35", BatchID: d.BatchID, DefinitionSHA256: agentqualification.ClaudeSubscriptionStaticV35SHA256(), FreezeSHA256: agentqualification.ClaudeSubscriptionStaticV35FreezeSHA256(), Status: "active", Claims: map[string]v35Claim{}, Usage: v35Usage{InputTokens: 89999}}
+	root := t.TempDir()
+	if err := writeJSONExclusive(filepath.Join(root, "ledger.json"), l); err != nil {
+		t.Fatal(err)
+	}
+	called := false
+	_, err := executeV35Offline(context.Background(), root, func(context.Context, agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		called = true
+		return agentqualification.ProviderExecutionResult{}, nil, nil, 0, false, nil
+	})
+	if err == nil || called {
+		t.Fatal("campaign admission overshot")
+	}
+}
+
+func TestV35TypedGlobalFailureStopsAfterOneAndAccountsLaunch(t *testing.T) {
+	for _, kind := range []v35FailureKind{v35CredentialFailure, v35UnsafeExternal, v35EvidenceCorruption, v35CampaignCap} {
+		t.Run(string(kind), func(t *testing.T) {
+			calls := 0
+			ledger, err := executeV35Offline(context.Background(), t.TempDir(), func(context.Context, agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+				calls++
+				return agentqualification.ProviderExecutionResult{}, nil, []byte(`{"terminal":"failed"}`), time.Second, true, failV35(kind, errors.New("fixture"))
+			})
+			if err == nil || calls != 1 || !ledger.GlobalHalt || ledger.Usage.ProviderInvocations != 1 || ledger.Usage.UnknownUsageInvocations != 1 || ledger.Usage.ConservativeReservedTokens != 15_000 {
+				t.Fatalf("typed global stop/accounting drift: calls=%d ledger=%+v err=%v", calls, ledger, err)
+			}
+		})
+	}
+}
+
+func TestV35UnexpectedReportedTokenOvershootHaltsCampaign(t *testing.T) {
+	root := t.TempDir()
+	calls := 0
+	_, err := executeV35Offline(context.Background(), root, func(_ context.Context, p agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		calls++
+		in, out, cost := int64(90_000), int64(2_001), int64(1)
+		return agentqualification.ProviderExecutionResult{ObservationID: "obs", ReportedModel: p.Model, ReportedModelVersion: p.Model, ReportedModelVersionStatus: "reported", ProviderResponseID: "resp", StartedAt: "2026-09-13T12:00:00Z", CompletedAt: "2026-09-13T12:00:01Z", TerminalState: "completed", ObservedProviderEventTypes: []string{"result"}, RawTraceSHA256: hashText("raw"), OutputSHA256: hashText("{}"), Usage: agentqualification.ExecutionReceiptUsage{InputTokens: &in, CachedInputTokens: new(int64), OutputTokens: &out, ReasoningTokensStatus: "provider_unavailable", ProviderReportedCostMicros: &cost}}, []byte(`{}`), []byte(`{"result":"{}"}`), time.Second, true, nil
+	})
+	if err == nil || !strings.Contains(err.Error(), "uncontrolled_campaign_cap") || calls != 1 {
+		t.Fatalf("err=%v calls=%d", err, calls)
+	}
+}
+
+func TestV35ReplayRejectsAnyManifestArtifactDrift(t *testing.T) {
+	root := t.TempDir()
+	fake := func(_ context.Context, p agentqualification.ClaudeScreeningPlan) (agentqualification.ProviderExecutionResult, []byte, []byte, time.Duration, bool, error) {
+		candidate := []byte(`{}`)
+		raw := []byte(`{"result":"{}"}`)
+		in, out, cost := int64(10), int64(10), int64(1)
+		result := agentqualification.ProviderExecutionResult{ObservationID: "obs", ReportedModel: p.Model, ReportedModelVersion: p.Model, ReportedModelVersionStatus: "reported", ReportedServingProvider: "anthropic", ProviderResponseID: "resp", StartedAt: "2026-09-13T12:00:00Z", CompletedAt: "2026-09-13T12:00:01Z", TerminalState: "completed", ObservedProviderEventTypes: []string{"result"}, RawTraceSHA256: hashText(string(raw)), OutputSHA256: hashText(string(candidate)), Usage: agentqualification.ExecutionReceiptUsage{InputTokens: &in, CachedInputTokens: new(int64), OutputTokens: &out, ReasoningTokensStatus: "provider_unavailable", ProviderReportedCostMicros: &cost}}
+		return result, candidate, raw, time.Second, true, nil
+	}
+	ledger, err := executeV35Offline(context.Background(), root, fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, claim := range ledger.Claims {
+		if claim.CapsuleSHA256 == "" {
+			continue
+		}
+		capsulePath := filepath.Join(root, claim.BindingID, "launch-capsule.json")
+		if err := os.WriteFile(capsulePath, []byte("{}\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := replayV35(root); err == nil || !strings.Contains(err.Error(), "launch capsule drift") {
+			t.Fatalf("replay accepted manifest drift: %v", err)
+		}
+		return
+	}
+	t.Fatal("no launched claim found")
+}
+
+func TestV35UsageOverflowIsRejected(t *testing.T) {
+	dst := v35Usage{InputTokens: int64(^uint64(0) >> 1)}
+	if err := addUsage(&dst, v35Usage{InputTokens: 1}); err == nil {
+		t.Fatal("usage overflow accepted")
+	}
+}
+
+func TestV35RawAndResultsAreWriteOnce(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "x")
+	if err := writeExclusive(p, []byte("one")); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeExclusive(p, []byte("two")); err == nil {
+		t.Fatal("write-once artifact overwritten")
+	}
+	raw, _ := os.ReadFile(p)
+	if string(raw) != "one" {
+		t.Fatal("artifact changed")
+	}
+}
+
+func TestV35SemanticGradeEqualityTreatsNilAndEmptyAsEquivalent(t *testing.T) {
+	a := agentqualification.BlindGrade{SchemaVersion: "v", CaseID: "T04", GraderVersion: "g", Verdict: "PASS", PassedChecks: []string{"x"}, FailedChecks: []string{}, Disqualifiers: []string{}}
+	b := a
+	b.FailedChecks = nil
+	b.Disqualifiers = nil
+	if !equalGradeV35(a, b) {
+		t.Fatal("nil and empty grade slices must be semantically equivalent")
+	}
+	b.PassedChecks = []string{"different"}
+	if equalGradeV35(a, b) {
+		t.Fatal("different grade checks must not compare equal")
+	}
+}
+
+func executeV35Offline(ctx context.Context, root string, call v35Call) (v35Ledger, error) {
+	q, err := agentqualification.HistoricalQualificationContracts()
+	if err != nil {
+		return v35Ledger{}, err
+	}
+	return executeV35WithContracts(ctx, root, call, q, true)
+}
+
+func offlineContractsV35(t *testing.T) agentqualification.QualificationContracts {
+	t.Helper()
+	q, err := agentqualification.HistoricalQualificationContracts()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return q
+}

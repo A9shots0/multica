@@ -1,0 +1,54 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+**/.next
+dist
+server/bin
+server/tmp
+
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+e2e/test-results
+coverage
+
+# Docs
+/docs/
+*.md
+
+# Only the web workspace is used by Dockerfile.web. Default-exclude future
+# app workspaces so they do not silently enter the build context.
+/apps/*
+!/apps/web/
+# The allow rule above re-includes the web tree, so repeat generated-directory
+# exclusions afterwards; otherwise a local Next build can add >1 GiB to every
+# image build context.
+/apps/web/.next/
+/apps/web/node_modules/
+/apps/web/.turbo/
+
+# Repository-only tooling
+/.github/
+/.qualification-evidence/
+/deploy/
+/scripts/

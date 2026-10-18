@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY guarded_task_capability_revocation_pkey_idx ON guarded_task_capability_revocation (workspace_id, grant_id);

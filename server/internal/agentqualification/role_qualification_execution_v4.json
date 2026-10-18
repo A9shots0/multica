@@ -1,0 +1,14 @@
+{
+  "schema_version": "silver-mediums.role-qualification-execution.v4",
+  "execution_id": "role-qualification-provider-batches-v4",
+  "status": "frozen_preflight_required_not_executed",
+  "v3_freeze_sha256": "cd2f01e9ff7beaf2bbb0f4c4bfa06a4c6ebc11060a8a62fb15ef4c616cb7a0f3",
+  "max_cells_per_invocation": 12,
+  "fresh_preflight_seconds": 600,
+  "provider_calls_allowed_after_exact_gate": true,
+  "retries": 0,
+  "fallbacks": false,
+  "implicit_all_models": false,
+  "external_side_effects_allowed": false,
+  "provider_gate": "exact_v3_and_v4_freezes_plus_fresh_class_preflight"
+}

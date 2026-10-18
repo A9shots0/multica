@@ -1,0 +1,24 @@
+{
+  "schema_version": "silver-mediums.realistic-next-run-matrix.v1",
+  "matrix_id": "realistic-continuity-and-rollout-screen-v1",
+  "status": "frozen_reviewed",
+  "execution_order": ["R05", "R06"],
+  "candidates": [
+    {"configuration_id":"realistic-next.claudesonnet5.medium.anchor.v1","model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic"},
+    {"configuration_id":"realistic-next.gpt54.medium.anchor.v1","model":"openrouter/openai/gpt-5.4","effort":"medium","serving_provider":"openai"}
+  ],
+  "selection_reason": "compare_the_two_existing_strong_realistic_anchors_on_the_two_deliberately_uncovered_capabilities_without_expanding_the_model_pool_or_selecting_roles",
+  "stage_policy": "all_candidates_run_R05_once_then_only_valid_passes_continue_R06",
+  "max_incremental_spend_micros": 3000000,
+  "max_total_tokens": 300000,
+  "per_observation_total_token_reservation": 75000,
+  "per_observation_generated_token_ceiling": 20000,
+  "retries": 0,
+  "owner_interventions": 0,
+  "provider_fallbacks": false,
+  "global_halt_reasons": ["credential_failure", "unsafe_execution", "budget_breach", "uncontrolled_spending", "evidence_or_transport_corruption_making_further_results_unusable"],
+  "candidate_elimination_reasons": ["competence_failure", "hard_disqualifier", "response_or_tool_protocol_failure"],
+  "observation_local_invalid_policy": "preserve_mark_invalid_log_for_post_batch_correction_and_continue_unaffected_bindings",
+  "shared_failure_policy": "same_case_failure_by_two_unrelated_candidates_triggers_post_batch_test_audit_without_changing_the_frozen_batch_or_halting_unaffected_evidence",
+  "advancement_policy": "testing_evidence_only_no_role_assignment_no_production_promotion"
+}

@@ -1,0 +1,15 @@
+{
+  "task_id": "trial2-cli-token-response",
+  "title": "Decide how a malformed CLI token response must be handled",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Do not cast network JSON to T.' packages/core/api/client.ts issueCliToken returns this.fetch('/api/cli-token', { method: 'POST' }) cast to { token: string } with no validation. packages/views/auth/login-page.tsx uses res.token to complete CLI authorization.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/cli-token-response.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 50,
+  "trial_role": "Trial 2, task 4, the judgment task. No test covers this method's response handling. The house pattern degrades to a fallback, but a fallback credential is wrong, so the executor must decide when the general rule does not apply as written.",
+  "objective": "packages/core/api/client.ts issueCliToken returns the server response cast to { token: string } without validation. packages/views/auth/login-page.tsx uses the returned token to complete CLI authorization. The repository rule in CLAUDE.md (API Compatibility) says to parse API JSON with parseWithFallback and a zod schema, which returns a fallback value on malformed data.\n\nBefore implementing, read how login-page.tsx uses the token and how the existing client methods handle critical responses. Look for methods that fail closed instead of falling back. Decide what issueCliToken must do when the response is malformed: for example a missing token, a non-string token or an empty token. Make the smallest change in packages/core/api that implements that decision, and state the reasoning in your summary.\n\nWrite tests at exactly packages/core/api/cli-token-response.test.ts that encode the behaviour you chose for a well-formed response and for each malformed case. The tests must fail against the current code."
+}

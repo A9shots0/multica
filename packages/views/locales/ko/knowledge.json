@@ -1,0 +1,48 @@
+{
+  "page": {
+    "title": "지식",
+    "tab_hub": "회사 지식",
+    "tab_intelligence": "데이터 및 지표"
+  },
+  "hub": {
+    "not_configured": "지식 허브가 이 배포에 연결되어 있지 않습니다.",
+    "no_files": "문서를 찾을 수 없습니다.",
+    "select_prompt": "문서를 선택하면 내용이 표시됩니다.",
+    "loading": "불러오는 중…",
+    "load_failed": "이 문서를 불러오지 못했습니다.",
+    "untitled": "제목 없음",
+    "projects_loading": "프로젝트를 불러오는 중…",
+    "no_projects": "등록된 프로젝트가 아직 없습니다.",
+    "no_summary": "아직 요약이 없습니다 — 열어서 확인하세요.",
+    "browse_all_files": "모든 파일 보기",
+    "back_to_projects": "전체 프로젝트",
+    "tab_overview": "개요",
+    "tab_changelog": "최근 활동",
+    "tab_technical": "기술 문서",
+    "no_changelog": "이 프로젝트의 변경 이력이 없습니다.",
+    "recent_activity": "최근 활동",
+    "view_all_activity": "전체 보기"
+  },
+  "intelligence": {
+    "not_configured": "Silver Mediums Intelligence가 이 배포에 연결되어 있지 않습니다.",
+    "unavailable": "지금은 Intelligence 데이터베이스에 연결할 수 없습니다.",
+    "no_events": "아직 기록된 이벤트가 없습니다.",
+    "total_events": "총 이벤트 수",
+    "table_producer": "소스",
+    "table_event_type": "이벤트 유형",
+    "event_type_count": "개 이벤트 유형",
+    "total_followers": "총 팔로워 수",
+    "across_accounts": "추적 중인 {count}개 계정 합계",
+    "active_clients": "활성 클라이언트",
+    "active_accounts": "활성 소셜 계정",
+    "new_subscribers_7d": "신규 구독자(최근 7일)",
+    "sync_health": "데이터 동기화 상태",
+    "raw_ledger": "원본 이벤트 원장",
+    "table_count": "개수",
+    "table_latest": "마지막 동기화",
+    "table_earliest": "최초 발견"
+  },
+  "operational_copy": {
+    "accepted": "수락됨"
+  }
+}

@@ -1,0 +1,112 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/multica-ai/multica/server/internal/agentqualification"
+)
+
+func main() {
+	var execute, replay bool
+	var root string
+	flag.BoolVar(&execute, "execute", false, "execute the frozen batch only after an independent review unlocks it")
+	flag.BoolVar(&replay, "replay", false, "validate existing evidence without a provider call")
+	flag.StringVar(&root, "artifact-root", "", "absolute durable evidence root")
+	flag.Parse()
+	if execute && replay {
+		fatal(fmt.Errorf("choose execute or replay"))
+	}
+	if !execute && !replay {
+		p, err := planV35()
+		fatal(err)
+		printJSON(p)
+		return
+	}
+	if root == "" {
+		fatal(fmt.Errorf("artifact-root is required"))
+	}
+	abs, err := filepath.Abs(root)
+	fatal(err)
+	if replay {
+		r, err := replayV35(abs)
+		fatal(err)
+		printJSON(r)
+		return
+	}
+	d, err := agentqualification.ClaudeSubscriptionStaticV35()
+	fatal(err)
+	freeze, err := agentqualification.CurrentClaudeSubscriptionStaticV35Freeze()
+	fatal(err)
+	if d.Status != "prepared_for_independent_review" || d.ProviderCallsAllowed || freeze.Status != "frozen_reviewed" || !freeze.ProviderCallsAllowed {
+		fatal(fmt.Errorf("v35 provider calls require the validated freeze receipt"))
+	}
+	fatal(verifyClaudeV35RuntimeIdentity(d))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(d.Caps.MaxWallSeconds)*time.Second)
+	defer cancel()
+	r, err := executeV35(ctx, abs, realClaudeV35Call)
+	fatal(err)
+	printJSON(r)
+}
+
+func planV35() (map[string]any, error) {
+	d, err := agentqualification.ClaudeSubscriptionStaticV35()
+	if err != nil {
+		return nil, err
+	}
+	freeze, err := agentqualification.CurrentClaudeSubscriptionStaticV35Freeze()
+	if err != nil {
+		return nil, err
+	}
+	cases := make([]string, 0, len(d.Cases))
+	for _, c := range d.Cases {
+		cases = append(cases, c.CaseID+":"+c.CaseVersion)
+	}
+	return map[string]any{"status": d.Status, "freeze_status": freeze.Status, "provider_called": false, "definition_provider_calls_allowed": d.ProviderCallsAllowed, "provider_calls_allowed": freeze.ProviderCallsAllowed, "batch_id": d.BatchID, "candidate_id": d.Configuration.ID, "model": d.Configuration.Model, "effort": d.Configuration.ReasoningEffort, "runtime": d.RuntimeIdentity.VersionOutput, "runtime_identity": d.RuntimeIdentity, "transport": d.Transport, "execution_order": cases, "caps": d.Caps, "prepared_review_binding_sha256": agentqualification.ClaudeSubscriptionStaticV35ReviewBindingSHA256(), "freeze_sha256": agentqualification.ClaudeSubscriptionStaticV35FreezeSHA256(), "retries": 0, "role_selection": false}, nil
+}
+
+func verifyClaudeV35RuntimeIdentity(d agentqualification.ClaudeSubscriptionStaticV35Definition) error {
+	executable := "claude"
+	if runtime.GOOS == "windows" {
+		executable = "claude.cmd"
+	}
+	path, err := exec.LookPath(executable)
+	if err != nil {
+		return failV35(v35ObservationTransport, err)
+	}
+	abs, err := filepath.Abs(path)
+	if err != nil || !strings.EqualFold(filepath.Clean(abs), filepath.Clean(d.RuntimeIdentity.ExecutablePath)) {
+		return failV35(v35EvidenceCorruption, fmt.Errorf("Claude executable path drift"))
+	}
+	h, err := fileHash(abs)
+	if err != nil || h != d.RuntimeIdentity.ExecutableSHA256 {
+		return failV35(v35EvidenceCorruption, fmt.Errorf("Claude executable hash drift"))
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, abs, "--version").CombinedOutput()
+	if err != nil || strings.TrimSpace(string(out)) != d.RuntimeIdentity.VersionOutput {
+		return failV35(v35EvidenceCorruption, fmt.Errorf("Claude version drift"))
+	}
+	return nil
+}
+
+func fatal(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+func printJSON(v any) {
+	raw, err := json.MarshalIndent(v, "", "  ")
+	fatal(err)
+	fmt.Println(string(raw))
+}

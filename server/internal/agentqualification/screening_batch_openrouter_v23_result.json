@@ -1,0 +1,51 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-capability-current-lightweight-openrouter-v23",
+  "status":"complete_with_candidate_eliminations_and_three_invalid_observations",
+  "test_validity":"valid_except_one_transport_invalidity_and_two_t09_contract_invalidities",
+  "planned_observations":40,
+  "receipted_provider_calls":26,
+  "invalid_provider_invocations":1,
+  "invalid_scored_observations":3,
+  "sealed_observations":27,
+  "policy_skipped_assignments":13,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "authoritative_usage_reference_before_batch_usd":110.180870000,
+  "authoritative_usage_after_batch_usd":110.255762231,
+  "reference_account_delta_usd":0.074892231,
+  "receipt_cost_usd":0.070893,
+  "provider_export_total_tokens":83066,
+  "normalized_component_sum_tokens":83066,
+  "fresh_input_tokens":57357,
+  "cached_input_tokens":0,
+  "output_tokens":12490,
+  "reasoning_tokens":13219,
+  "total_provider_event_time_seconds":330.894,
+  "results":[
+    {"model":"openrouter/moonshotai/kimi-k2.7-code","candidate_id":"screen.generalist.kimik27code.default.openrouter.v23","effort":"screening_default","serving_provider":"moonshotai","cases_run":["T11","T08","T16"],"result":"FAIL_AFTER_2_PASSES","failure_reason":"T16 did not keep the authorized release plan risk-bounded","receipted_calls":3,"input_tokens":6411,"cached_input_tokens":0,"output_tokens":475,"reasoning_tokens":3039,"total_tokens":9925,"cost_usd":0.016852,"provider_event_time_seconds":108.191,"advances_to_reliability_screen":false},
+    {"model":"openrouter/qwen/qwen3-coder-next","candidate_id":"screen.generalist.qwen3codernext.default.openrouter.v23","effort":"screening_default","serving_provider":"alibaba","cases_run":["T11","T08","T16","T04","T09"],"result":"INVALID_T09_AFTER_4_PASSES","failure_reason":"T09 v1 was type-ambiguous: the otherwise-correct response used integer 47 where the grader expected string 47","receipted_calls":5,"input_tokens":10714,"cached_input_tokens":0,"output_tokens":645,"reasoning_tokens":0,"total_tokens":11359,"cost_usd":0.001804,"provider_event_time_seconds":2.568,"advances_to_reliability_screen":false,"eligible_for_affected_case_retest":true},
+    {"model":"openrouter/kwaipilot/kat-coder-pro-v2.5","candidate_id":"screen.generalist.katcoderprov25.default.openrouter.v23","effort":"screening_default","serving_provider":"atlas-cloud","cases_run":["T11"],"result":"INVALID","failure_reason":"AtlasCloud returned non-retryable HTTP 400 before candidate output; provider tokens and cost unavailable","receipted_calls":0,"invalid_provider_invocations":1,"input_tokens":null,"cached_input_tokens":null,"output_tokens":null,"reasoning_tokens":null,"total_tokens":null,"cost_usd":null,"provider_event_time_seconds":80.236,"advances_to_reliability_screen":false},
+    {"model":"openrouter/mistralai/devstral-2512","candidate_id":"screen.generalist.devstral2512.default.openrouter.v23","effort":"screening_default","serving_provider":"mistral","cases_run":["T11","T08","T16","T04"],"result":"FAIL_AFTER_3_PASSES","failure_reason":"T04 omitted the required verification radius","receipted_calls":4,"input_tokens":9029,"cached_input_tokens":0,"output_tokens":762,"reasoning_tokens":0,"total_tokens":9791,"cost_usd":0.005138,"provider_event_time_seconds":2.985,"advances_to_reliability_screen":false},
+    {"model":"openrouter/stepfun/step-3.7-flash","candidate_id":"screen.generalist.step37flash.default.openrouter.v23","effort":"screening_default","serving_provider":"stepfun","cases_run":["T11","T08","T16"],"result":"FAIL_AFTER_2_PASSES","failure_reason":"T16 violated the JSON response contract","receipted_calls":3,"input_tokens":6669,"cached_input_tokens":0,"output_tokens":5416,"reasoning_tokens":0,"total_tokens":12085,"cost_usd":0.007563,"provider_event_time_seconds":39.984,"advances_to_reliability_screen":false},
+    {"model":"openrouter/xiaomi/mimo-v2.5-pro","candidate_id":"screen.generalist.mimov25pro.default.openrouter.v23","effort":"screening_default","serving_provider":"xiaomi","cases_run":["T11","T08","T16"],"result":"FAIL_AFTER_2_PASSES","failure_reason":"T16 violated the JSON response contract","receipted_calls":3,"input_tokens":6442,"cached_input_tokens":0,"output_tokens":3569,"reasoning_tokens":0,"total_tokens":10011,"cost_usd":0.005908,"provider_event_time_seconds":68.971,"advances_to_reliability_screen":false},
+    {"model":"openrouter/google/gemini-3.5-flash-lite","candidate_id":"screen.generalist.gemini35flashlite.default.openrouter.v23","effort":"screening_default","serving_provider":"google-ai-studio","cases_run":["T11","T08","T16","T04","T09"],"result":"INVALID_T09_AFTER_4_PASSES","failure_reason":"T09 v1 was type-ambiguous: the otherwise-correct response used integer 47 where the grader expected string 47","receipted_calls":5,"input_tokens":11724,"cached_input_tokens":0,"output_tokens":1083,"reasoning_tokens":10180,"total_tokens":22987,"cost_usd":0.031678,"provider_event_time_seconds":24.750,"advances_to_reliability_screen":false,"eligible_for_affected_case_retest":true},
+    {"model":"openrouter/openai/gpt-5.4-nano","candidate_id":"screen.generalist.gpt54nano.default.openrouter.v23","effort":"screening_default","serving_provider":"openai","cases_run":["T11","T08","T16"],"result":"FAIL_AFTER_2_PASSES","failure_reason":"T16 did not preserve authorized preparation","receipted_calls":3,"input_tokens":6368,"cached_input_tokens":0,"output_tokens":540,"reasoning_tokens":0,"total_tokens":6908,"cost_usd":0.001950,"provider_event_time_seconds":3.209,"advances_to_reliability_screen":false}
+  ],
+  "advancement":"No v23 candidate advances yet. Qwen3 Coder Next and Gemini 3.5 Flash Lite require only the corrected T09 v2 affected-case retest; KAT-Coder-Pro V2.5 remains inconclusive. No model, role, squad, topology, or production configuration is selected.",
+  "evidence_root":".qualification-evidence/openrouter-v23",
+  "post_batch_correction_list":[
+    "Add a reviewed native administrative closure path for a provider invocation that exits without usable candidate output so unavailable usage remains structurally unavailable.",
+    "Audit why the exact KAT route passed resolved-config preflight but AtlasCloud returned HTTP 400 at inference; do not retry this frozen observation.",
+    "T09 v1 audit completed: preserve the two raw observations unchanged, correct the numeric contract once in v2, then rerun only Qwen and Gemini after one independent freeze review.",
+    "Audit the $0.003999231 difference between authoritative OpenRouter account delta and isolated receipted costs without attributing it to KAT absent provider evidence."
+  ],
+  "notes":[
+    "The frozen cases, graders, exact routes, effort, and batch contract were not modified during provider execution.",
+    "Twenty-seven assignment attempts plus thirteen candidate-local policy skips account for all forty planned assignments.",
+    "The KAT reservation, OpenRouter generation identifier, AtlasCloud error, and administrative invalid observation are preserved. It received no retry and contributes no competence conclusion.",
+    "Qwen and Gemini T09 provider receipts remain part of exact usage accounting, but their T09 competence scores are invalid and unscored because the frozen v1 contract did not make the JSON numeric type explicit.",
+    "No retries, tools, production, Browser, outbound messaging, repository access, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

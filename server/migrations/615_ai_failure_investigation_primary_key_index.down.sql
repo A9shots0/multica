@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS idx_ai_failure_investigation_pkey;

@@ -1,0 +1,7 @@
+services:
+  backend:
+    image: multica-backend:control-plane-recovery-20260919-inbox
+    pull_policy: never
+  frontend:
+    image: multica-frontend:control-plane-recovery-20260919-status-fallback-ui
+    pull_policy: never

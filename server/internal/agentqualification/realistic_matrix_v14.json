@@ -1,0 +1,24 @@
+{
+  "schema_version": "silver-mediums.realistic-run-matrix.v1",
+  "matrix_id": "realistic-foundation-screen-v14",
+  "status": "frozen_reviewed",
+  "execution_order": ["R03"],
+  "deferred_cases": ["R01", "R02", "R04"],
+  "candidates": [
+    {"configuration_id":"realistic.claudesonnet5.medium.anchor.r03.parser-corrected.v14","model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic"}
+  ],
+  "selection_reason": "affected-only replacement observation for the invalid Claude Sonnet 5 Medium R03 reliability repeat after the declaration parser correction; R01 and R04 already have two valid passes",
+  "stage_policy": "sole_existing_survivor_repeats_only_the_invalidated_R03_observation_once",
+  "reliability_policy": "affected_observation_replacement_only_no_retries",
+  "max_incremental_spend_micros": 500000,
+  "max_total_tokens": 75000,
+  "per_observation_generated_token_ceiling": 20000,
+  "per_observation_total_token_reservation": 75000,
+  "retries": 0,
+  "owner_interventions": 0,
+  "provider_fallbacks": false,
+  "global_halt_reasons": ["credential_failure", "evidence_integrity_failure", "unsafe_execution", "budget_breach", "uncontrolled_spending"],
+  "candidate_elimination_reasons": ["competence_failure", "hard_disqualifier", "response_or_tool_protocol_failure"],
+  "shared_failure_policy": "single_affected_reliability_observation_is_recorded_without_retesting_or_changing_the_frozen_case",
+  "advancement_policy": "testing_evidence_only_no_role_assignment_no_production_promotion"
+}

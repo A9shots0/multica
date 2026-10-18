@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY issue_workflow_regression_rejected_sequence_idx ON issue_workflow_regression_rejected_attempt (workspace_id, sequence);

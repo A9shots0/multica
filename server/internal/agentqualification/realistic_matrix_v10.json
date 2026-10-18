@@ -1,0 +1,24 @@
+{
+  "schema_version": "silver-mediums.realistic-run-matrix.v1",
+  "matrix_id": "realistic-foundation-screen-v10",
+  "status": "frozen_reviewed",
+  "execution_order": ["R01", "R03", "R04"],
+  "deferred_cases": ["R02"],
+  "candidates": [
+    {"configuration_id":"realistic.claudesonnet5.medium.anchor.repeat1.v10","model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic"}
+  ],
+  "selection_reason": "first exact reliability repeat of the sole valid R01-R04 survivor using the unchanged frozen cases, grader, tools, provider, model, effort, instructions, and permissions",
+  "stage_policy": "sole_survivor_repeats_R01_R03_R04_once_then_R02_only_if_all_pass",
+  "reliability_policy": "no_repeat_until_one_valid_paid_group_pass_then_repeat_same_frozen_paid_group",
+  "max_incremental_spend_micros": 5000000,
+  "max_total_tokens": 225000,
+  "per_observation_generated_token_ceiling": 20000,
+  "per_observation_total_token_reservation": 75000,
+  "retries": 0,
+  "owner_interventions": 0,
+  "provider_fallbacks": false,
+  "global_halt_reasons": ["test_invalidity", "evidence_integrity_failure", "unsafe_execution", "provider_transport_failure", "budget_breach"],
+  "candidate_elimination_reasons": ["competence_failure", "hard_disqualifier", "response_or_tool_protocol_failure"],
+  "shared_failure_policy": "single_candidate_repeat_failure_is_recorded_without_retesting_or_changing_the_frozen_case",
+  "advancement_policy": "testing_evidence_only_no_role_assignment_no_production_promotion"
+}

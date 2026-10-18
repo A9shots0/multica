@@ -1,0 +1,106 @@
+{
+  "schema_version": "silver-mediums.role-artifact-bindings.v2",
+  "binding_scope": "candidate_artifacts_only",
+  "role_artifact_set_schema": "silver-mediums.role-artifact-set.v2",
+  "role_artifact_set_sha256": "32800312f6425ef661c7175d88b6c319f67600d1e861acfe6b215069b34db2bb",
+  "bindings": [
+    {
+      "binding_id": "silver-mediums.role-artifact.v2.architecture_assurance",
+      "role_id": "architecture_assurance",
+      "instruction": {
+        "version": "v2",
+        "path": "role_artifacts/v2/architecture_assurance.instructions.md",
+        "sha256": "568b3491b462047a9d2a98f1cf2ce55c5fc98abd9625b1d52c70b799d79f35e0"
+      },
+      "skill": {
+        "version": "v2",
+        "path": "role_artifacts/v2/architecture_assurance.skill.md",
+        "sha256": "ff5cd7f03324097071cdf886dc8d6c4a0f9dc5f58c6380074effca38b34e7d7c"
+      }
+    },
+    {
+      "binding_id": "silver-mediums.role-artifact.v2.company_auditor",
+      "role_id": "company_auditor",
+      "instruction": {
+        "version": "v2",
+        "path": "role_artifacts/v2/company_auditor.instructions.md",
+        "sha256": "97faa613b3ab13cabfed66d27a56bf6b2e542f5f1a71ae046a595ef09d49addc"
+      },
+      "skill": {
+        "version": "v2",
+        "path": "role_artifacts/v2/company_auditor.skill.md",
+        "sha256": "c394037856a48dd6a78e5ddd1be77f1e27bd6cc7986a6f630dc552d7a568d363"
+      }
+    },
+    {
+      "binding_id": "silver-mediums.role-artifact.v2.data_sync_integrity",
+      "role_id": "data_sync_integrity",
+      "instruction": {
+        "version": "v2",
+        "path": "role_artifacts/v2/data_sync_integrity.instructions.md",
+        "sha256": "9fdc3a684f00bf1df92abdba822d2fb3cbb71f45a65eeed5989f3573b481d425"
+      },
+      "skill": {
+        "version": "v2",
+        "path": "role_artifacts/v2/data_sync_integrity.skill.md",
+        "sha256": "a92a635b947dbef6034693dd4a32dff468212d5a4a6e5a79cfbf6d5e4f24ab5b"
+      }
+    },
+    {
+      "binding_id": "silver-mediums.role-artifact.v2.phone_fleet_reliability",
+      "role_id": "phone_fleet_reliability",
+      "instruction": {
+        "version": "v2",
+        "path": "role_artifacts/v2/phone_fleet_reliability.instructions.md",
+        "sha256": "5ab3b70af1059dc5ac7c56de33e3285749055d9d72a0dd2e88efdf88602ba01e"
+      },
+      "skill": {
+        "version": "v2",
+        "path": "role_artifacts/v2/phone_fleet_reliability.skill.md",
+        "sha256": "6b3e613b23d3c7426f11ec86ddf57b8a2ad15585df543c68330eb9728d9957c4"
+      }
+    },
+    {
+      "binding_id": "silver-mediums.role-artifact.v2.phonefarm_application_specialist",
+      "role_id": "phonefarm_application_specialist",
+      "instruction": {
+        "version": "v2",
+        "path": "role_artifacts/v2/phonefarm_application_specialist.instructions.md",
+        "sha256": "346ba198a2cabdcba1d2b951856310a0bcee680382bfea93409eb06dd4faa81a"
+      },
+      "skill": {
+        "version": "v2",
+        "path": "role_artifacts/v2/phonefarm_application_specialist.skill.md",
+        "sha256": "ece6de95c112625249c4b01fd9b9d3aaea5be5d88fc9c0c3af11c55a0992ace9"
+      }
+    },
+    {
+      "binding_id": "silver-mediums.role-artifact.v2.release_runtime_assurance",
+      "role_id": "release_runtime_assurance",
+      "instruction": {
+        "version": "v2",
+        "path": "role_artifacts/v2/release_runtime_assurance.instructions.md",
+        "sha256": "d78a905b65bf4c4bcb2de8326eb05b965694720ed5ef941aaf1f3b0590a17fde"
+      },
+      "skill": {
+        "version": "v2",
+        "path": "role_artifacts/v2/release_runtime_assurance.skill.md",
+        "sha256": "b2611a54d4619c62288030bab14e4079ae7967c85a29d41594691115a2f204f5"
+      }
+    },
+    {
+      "binding_id": "silver-mediums.role-artifact.v2.security_privacy_review",
+      "role_id": "security_privacy_review",
+      "instruction": {
+        "version": "v2",
+        "path": "role_artifacts/v2/security_privacy_review.instructions.md",
+        "sha256": "460a556038230984192520df1225e7163b87e897d250c26129e41575aada8c8a"
+      },
+      "skill": {
+        "version": "v2",
+        "path": "role_artifacts/v2/security_privacy_review.skill.md",
+        "sha256": "531c1aed0152dbbb47306c8dd93991db1131f4bacadc920d174d329c19790423"
+      }
+    }
+  ]
+}

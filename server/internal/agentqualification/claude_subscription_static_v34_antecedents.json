@@ -1,0 +1,31 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-static-antecedents.v34",
+  "candidate_id": "screen.generalist.claude46.medium.subscription.calibration.v29",
+  "original_invalid_v29": {
+    "root": ".qualification-evidence/claude-subscription-v29/f0bcf5256786d96aa08c676b98ea86c61b593fc623feb02d8494e1716b1bfa1a",
+    "calibration-result.json": "880cf27d8e72f69e112d935ea1ab2ad62dfe4ad12db847879d296396b751ae6b",
+    "candidate-prompt.txt": "adb513276a075823e5b8833716c87399ac3354f1a9d02bd46e34244e8f6aaaab",
+    "launch-capsule.json": "8d0b34501ce54b28040e36a74311e76b6c71085c5ae354aa09ae73f0fbba212a",
+    "output-schema.json": "533c1df5d67ea756b4db54c0d7e3406988628052eaa3bbd1f959e80a11c2a103",
+    "provider-call-grant.json": "3c1638f01eef8cbbdc4d1970cfe1453deabc994001475e5608d052aa4ef9c6f7",
+    "provider-call-started.json": "5bb7ff887cfb532249bea8407e4bdebcca635c9dc2b311763c9ebfe293c3eb77",
+    "provider-stderr.txt": "712f89f4976302078a5046faca78c00b32aaf1aa6c5f6455945d776ff60eafb5",
+    "provider-stdout.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reservation.json": "6a7c9c0ed68dd0b24c864474276f301c4415201b3820d5847eb4776adb1c431f"
+  },
+  "corrected_stdin_pass_v29": {
+    "root": ".qualification-evidence/claude-subscription-v29-stdin-01/f0bcf5256786d96aa08c676b98ea86c61b593fc623feb02d8494e1716b1bfa1a",
+    "blind-grade.json": "fbfe14441b215273e8e3a041e6968f672b4f7f42f37b4ad01c94d700bca70961",
+    "calibration-result.json": "70a8ecc4b6e0197ae2ef7793d527dc524a226aee7b16da84746bce5482024ec6",
+    "candidate-prompt.txt": "adb513276a075823e5b8833716c87399ac3354f1a9d02bd46e34244e8f6aaaab",
+    "candidate-response.json": "e7777d36df33c390f68daa8a8b1a6281d559789ce0ff3b1651681be960d13d0c",
+    "execution-receipt.json": "853662b3422cfe2c12d61351b1ddcef6d375c15016a971eef1795277f99ef5b5",
+    "launch-capsule.json": "8d0b34501ce54b28040e36a74311e76b6c71085c5ae354aa09ae73f0fbba212a",
+    "output-schema.json": "533c1df5d67ea756b4db54c0d7e3406988628052eaa3bbd1f959e80a11c2a103",
+    "provider-call-grant.json": "4d7cd183bf4daa07d44de7f45cd8867ee9a31e0adbb6b088cbb2136797aa7fe9",
+    "provider-call-started.json": "46d1a5f4db8c94255020b9c2f9fd9391a7922c04016b9118b4c1af9a4a8e62b4",
+    "provider-stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "provider-stdout.json": "6b9400c70c380f14996183f973f2368e5b52a0ac800c6acb4929489c7e04b8c5",
+    "reservation.json": "5ceb7f055b440fca5d649e249b11bc1ad2109f36095fe1f14ea01a7b3c4f2327"
+  }
+}

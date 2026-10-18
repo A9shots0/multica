@@ -1,0 +1,46 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-blast-radius-t12-openrouter-v4",
+  "status": "stopped_invalid_harness",
+  "grader_configuration_id": "deterministic-t12.v2",
+  "capacity": {
+    "provider": "openrouter",
+    "account_lane": "opencode_local_openrouter",
+    "baseline_usage_micros": 102074312,
+    "final_usage_micros": 102074312,
+    "provider_exact_delta_micros": 0
+  },
+  "observations": [
+    {
+      "candidate_id": "screen.generalist.qwen37flash.high.openrouter.v4",
+      "model": "openrouter/qwen/qwen3.7-flash",
+      "reasoning_effort": "high",
+      "started_at": "2026-09-12T01:20:33.9749285Z",
+      "completed_at": "2026-09-12T01:21:52.107Z",
+      "provider_session_id": "ses_f6ccc48c5ffeSR47rwRfwqlaiT",
+      "run_sha256": "9306a914e20ce9041a278d6c67fdd2e666e4925e8aa9ce7892d9cf91ac1711d1",
+      "export_sha256": "b8705b2de0fd83c94f4afa890c64144407cf5fe52bbbe83b2b47c974b5fa93d4",
+      "verdict": "INVALID",
+      "failure_class": "infrastructure",
+      "failed_checks": [
+        "provider_rejected_before_generation",
+        "output_ceiling_below_qwen_high_thinking_budget"
+      ],
+      "input_tokens": 0,
+      "cached_input_tokens": 0,
+      "reasoning_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "provider_reported_cost_micros": 0,
+      "retries": 0,
+      "owner_interventions": 0,
+      "tool_calls": 0,
+      "model_competence_scored": false
+    }
+  ],
+  "stop_reason": "preventive_output_cap_conflicted_with_pinned_reasoning_budget",
+  "planned_observations": 2,
+  "executed_observations": 1,
+  "automatic_retry_performed": false,
+  "second_candidate_launched": false
+}

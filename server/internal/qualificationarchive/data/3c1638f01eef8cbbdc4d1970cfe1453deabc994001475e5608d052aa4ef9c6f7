@@ -1,0 +1,11 @@
+{
+  "calibration_id": "claude-subscription-transport-v29",
+  "capacity_evidence": "owner_reported_usage_reset_not_authoritative_telemetry",
+  "evaluation_binding": "f0bcf5256786d96aa08c676b98ea86c61b593fc623feb02d8494e1716b1bfa1a",
+  "granted_at": "2026-09-13T07:33:36.0969598Z",
+  "granted_by": "owner",
+  "max_provider_calls": 1,
+  "provider_call_allowed": true,
+  "schema_version": "silver-mediums.provider-call-grant.v1",
+  "scope": "one_claude_subscription_transport_calibration"
+}

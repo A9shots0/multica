@@ -1,0 +1,12 @@
+{
+  "schema_version": "silver-mediums.minimum-screening-suite.v1",
+  "suite_id": "minimum-static-capability-v1",
+  "status": "calibrated_partially_executed",
+  "progression_policy": "t12_pair_then_survivors_remaining_cases",
+  "cases": [
+    {"case_id":"T12","case_version":"v4","candidate_packet_sha256":"8f114b99b2e7cb523d40dfb8154559a0b0a642b63e12139dc19283589a7e174e","grader_packet_sha256":"fde1770b179e086a6439e6ceba0080bd37a9db08db6f59aa33878a50c7ea43bb"},
+    {"case_id":"T11","case_version":"v4","candidate_packet_sha256":"65f4351c80c3c6d3a4a9462d5e910b5ff78f225959ea2e484e2c06aeeef8621c","grader_packet_sha256":"53c63e0c5154a3334dfac716841d2686df8e8e1c95cc667e4d1bcbfc0f30a1c4"},
+    {"case_id":"T08","case_version":"v2","candidate_packet_sha256":"ec3d53543178306d8decd7170e161718b678c4924eae536c871dc91199c0eec7","grader_packet_sha256":"31fe637fd0308c48fd6400d02a7d9007fe5c027b5978b8dca7382b0d40b62455"},
+    {"case_id":"T16","case_version":"v2","candidate_packet_sha256":"f788efe3b06b18e969d2f89278164828f2cf792dc12333a92a293c03738198f0","grader_packet_sha256":"e942f14cdcc88ab2111776c3c9db4fc4fe2b1fb53af124ef75ec771519dc520d"}
+  ]
+}

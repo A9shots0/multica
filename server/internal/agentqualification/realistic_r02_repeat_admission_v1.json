@@ -1,0 +1,70 @@
+{
+  "schema_version": "silver-mediums.realistic-r02-repeat-admission.v1",
+  "admission_id": "realistic-r02-reliability-repeat-v1",
+  "status": "frozen_reviewed",
+  "provider_calls_allowed": true,
+  "matrix_id": "realistic-foundation-screen-v11",
+  "matrix_path": "server/internal/agentqualification/realistic_matrix_v11.json",
+  "matrix_sha256": "c0a449e76527212d051510201368b4be4b92797a8c827490fd2319aa3658a5f2",
+  "configuration_id": "realistic.claudesonnet5.medium.anchor.r02.repeat1.v11",
+  "model": "openrouter/anthropic/claude-sonnet-5",
+  "effort": "medium",
+  "serving_provider": "anthropic",
+  "case_id": "R02",
+  "max_actions": 18,
+  "max_total_tokens": 75000,
+  "max_generated_tokens": 20000,
+  "max_spend_micros": 350000,
+  "retries": 0,
+  "provider_fallbacks": false,
+  "owner_interventions": 0,
+  "global_halt_reasons": ["credential_failure", "uncontrolled_spending", "unsafe_external_action", "evidence_corruption"],
+  "observation_local_invalid_reasons": ["non_safety_harness_imperfection", "provider_transport_imperfection"],
+  "candidate_local_failure_reasons": ["competence_failure", "hard_disqualifier", "response_or_tool_protocol_failure"],
+  "accepted_evidence": [
+    {
+      "label": "accepted_r01",
+      "case_id": "R01",
+      "configuration_id": "realistic.claudesonnet5.medium.anchor.r01v2.v4",
+      "observation_path": ".qualification-evidence/realistic-v14/observations/realistic.claudesonnet5.medium.anchor.r01v2.v4/r01/evidence/observation.json",
+      "observation_sha256": "0782653d3f90c0f1ce9d335699358f58da629faf89281182ef3cd87c2f076d27",
+      "execution_receipt_path": ".qualification-evidence/realistic-v14/observations/realistic.claudesonnet5.medium.anchor.r01v2.v4/r01/evidence/execution-receipt.json",
+      "execution_receipt_sha256": "81226dce3a4aa70a49ecc1fe7f92532850e90f6f1a21c31412f057208e644cc5",
+      "grade_path": ".qualification-evidence/realistic-v14/observations/realistic.claudesonnet5.medium.anchor.r01v2.v4/r01/evidence/grade.json",
+      "grade_sha256": "63b73b5cc0d45f4485e1b92ecad189f2208b43f6ff28849d5be5fd467143ac52"
+    },
+    {
+      "label": "accepted_r03",
+      "case_id": "R03",
+      "configuration_id": "realistic.claudesonnet5.medium.anchor.r03v2.v7",
+      "observation_path": ".qualification-evidence/realistic-v17/observations/realistic.claudesonnet5.medium.anchor.r03v2.v7/r03/evidence/observation.json",
+      "observation_sha256": "8f292f1fc3ef8eee268ea74ccd7edfe1b4b9251a64c15277047b0f196ffc4d2a",
+      "execution_receipt_path": ".qualification-evidence/realistic-v17/observations/realistic.claudesonnet5.medium.anchor.r03v2.v7/r03/evidence/execution-receipt.json",
+      "execution_receipt_sha256": "0a22aad660344f567208cd96e0c56ab6955980d4b8f7d78bf0dd935e98851c1e",
+      "grade_path": ".qualification-evidence/realistic-v17/observations/realistic.claudesonnet5.medium.anchor.r03v2.v7/r03/evidence/grade.json",
+      "grade_sha256": "9a4decfa7f9119b761f2012f82e6b431e7a4d8b7374149664c3831eed3e85c49"
+    },
+    {
+      "label": "accepted_r04",
+      "case_id": "R04",
+      "configuration_id": "realistic.claudesonnet5.medium.anchor.r04.v8",
+      "observation_path": ".qualification-evidence/realistic-v18/observations/realistic.claudesonnet5.medium.anchor.r04.v8/r04/evidence/observation.json",
+      "observation_sha256": "5e86700d0aabdd2972150e52c2d10551a67b269ca2b5f79900917f57ef226ffc",
+      "execution_receipt_path": ".qualification-evidence/realistic-v18/observations/realistic.claudesonnet5.medium.anchor.r04.v8/r04/evidence/execution-receipt.json",
+      "execution_receipt_sha256": "743f3089ccbc8a70d7be691aeb540aeac3dbb82661a9a38445c48c8aef607c28",
+      "grade_path": ".qualification-evidence/realistic-v18/observations/realistic.claudesonnet5.medium.anchor.r04.v8/r04/evidence/grade.json",
+      "grade_sha256": "97f9bd641a7504a51ac536b6404015ac869d2832f4994c4c22fe173ca6558845"
+    },
+    {
+      "label": "accepted_browser_r02",
+      "case_id": "R02",
+      "configuration_id": "realistic.claudesonnet5.medium.anchor.r02.v9",
+      "observation_path": ".qualification-evidence/realistic-v23/observations/realistic.claudesonnet5.medium.anchor.r02.v9/r02/evidence/observation.json",
+      "observation_sha256": "d9c734990f59f69dd53836fd3003dab813c97b51124b443609c8e55b24b647e8",
+      "execution_receipt_path": ".qualification-evidence/realistic-v23/observations/realistic.claudesonnet5.medium.anchor.r02.v9/r02/evidence/execution-receipt.json",
+      "execution_receipt_sha256": "a77cc89ba4b490b4212cfaa837de2c949199a81601e6cd08b19c147bdca522d1",
+      "grade_path": ".qualification-evidence/realistic-v23/observations/realistic.claudesonnet5.medium.anchor.r02.v9/r02/evidence/grade.json",
+      "grade_sha256": "f8686db411eeda6b699e49cc37642908bd6410287fa2b93dc90f616d17367a0e"
+    }
+  ]
+}

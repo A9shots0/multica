@@ -1,0 +1,28 @@
+{
+  "version": "silver-mediums.system-stewardship.v1",
+  "source_set": "silver-mediums-knowledge-authority.v1",
+  "graph_sha256": "ff4119b1d70ced0a943f8dd056a1f3851e24c975ebacfad37dfc76d9aa75d1fa",
+  "role_catalog_sha256": "c89c5f619c5f1a724e255b9014bfc882295a2c00504191bfc48569a5bbcc63e2",
+  "sources": [
+    {"id":"hub-agent-instructions","path":"AGENTS.md","sha256":"b223358e361a6d20f7f632b60fc7936a0f03a1b36f9b2f2e9e6ddd1f77d0be23","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"hub-changelog","path":"CHANGELOG.md","sha256":"cb9d41e9e2ca6c8abc2ec5c714e8c69b2725a0094718af8f5d6acf7ecd0528bf","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-14T18:49:19Z","review_after":"2026-09-21T18:49:19Z"},
+    {"id":"hub-current-state","path":"CURRENT_STATE.md","sha256":"c696f740aabedd78a8e52244d0ed0427b99d306f9a6df08158c6f96333336a37","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-14T16:14:53Z","review_after":"2026-09-21T16:14:53Z"},
+    {"id":"hub-governance","path":"GOVERNANCE.md","sha256":"3d7bfd310f564bd2554a21eec94f092b21469ae986beb0d71a6bf4d1be2cba8d","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-14T15:13:08Z","review_after":"2026-09-21T15:13:08Z"},
+    {"id":"hub-start-here","path":"START_HERE.md","sha256":"ad93b9df298cb74838a9a25484161f0be22941714b5597277f6da028b7fd3dea","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"hub-project-registry","path":"projects/registry.json","sha256":"d5b02a9801ca8d4857ef60e298a6ef9324eb586211c55600a4f9128fd4a109ca","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"canopy-backend-changelog","path":"projects/canopy-backend/CHANGELOG.md","sha256":"ee456426864b899a0e9cf05143039b49a5134b3cba8230313010a81529d1184d","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-14T18:49:19Z","review_after":"2026-09-21T18:49:19Z"},
+    {"id":"canopy-backend-context","path":"projects/canopy-backend/CONTEXT.md","sha256":"b8b30bc62900ae3b9dcd6814ede89b3e0dc11a80a12a31748d0d36a4bec3540b","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"canopy-desktop-changelog","path":"projects/canopy-desktop/CHANGELOG.md","sha256":"94622b4951fc2c41636acc6d9ba036e00a394b8969dfffc65de49df550b6bf3f","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-14T18:49:19Z","review_after":"2026-09-21T18:49:19Z"},
+    {"id":"canopy-desktop-context","path":"projects/canopy-desktop/CONTEXT.md","sha256":"db09eb4fdcf908c8a3e84ec9bea5c28d67a474edde5c5211ab3893af89a582a8","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"crm-changelog","path":"projects/crm/CHANGELOG.md","sha256":"6bb740bcfab107ec926b4f0fd2e4dcabf6bdaabc8a7a42407e50592ab963dd09","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-14T18:49:19Z","review_after":"2026-09-21T18:49:19Z"},
+    {"id":"crm-context","path":"projects/crm/CONTEXT.md","sha256":"6a26cbcf68c883ec6f8365dabbd3cf2947a38aeae348e6c88c462324bffcbe9c","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"linkhub-changelog","path":"projects/linkhub/CHANGELOG.md","sha256":"73970fc0abbe4721e4105bee3b831b00d09ecb8e84d819adefbfec95e8312fa4","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"linkhub-context","path":"projects/linkhub/CONTEXT.md","sha256":"b4ac6fc00aed2bf58aea96ca96e41abdfab39e2f499ac90f148c7f2e1efcbaed","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"phone-farm-changelog","path":"projects/phone-farm/CHANGELOG.md","sha256":"35ec47af21d9529b0fdd135fb63ec77495f1c212979caffec8adb81a0b9ba092","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"phone-farm-context","path":"projects/phone-farm/CONTEXT.md","sha256":"21555ac27218165cab18039c54ca77aff330abde944dbec9c845d91e37e2b9d3","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"photobot-changelog","path":"projects/photobot/CHANGELOG.md","sha256":"b9e044ddc8c7e181576128ac93dc639803a3871925f057148ef13f9ef3afe3d1","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"photobot-context","path":"projects/photobot/CONTEXT.md","sha256":"84e1b187068c46ef369308443b0445f910ff3694e0e83876759e7f0c0c5a01fd","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"},
+    {"id":"viral-queue-changelog","path":"projects/viral-queue/CHANGELOG.md","sha256":"360f448ecb09b9f9471d2a6e8e71871514a91f3d7324aa4e2916c00ce9b3114b","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-14T15:44:49Z","review_after":"2026-09-21T15:44:49Z"},
+    {"id":"viral-queue-context","path":"projects/viral-queue/CONTEXT.md","sha256":"b812420dc370392b5abfe95fceb38b02da6a47ad1d0d4f972af14ebe89aa7de7","truth_owner":"silver-mediums-knowledge","observed_at":"2026-09-13T19:55:26Z","review_after":"2026-09-20T19:55:26Z"}
+  ]
+}

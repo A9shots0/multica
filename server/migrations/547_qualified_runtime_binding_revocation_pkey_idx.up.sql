@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY qualified_runtime_binding_revocation_pkey_idx ON qualified_runtime_binding_revocation (workspace_id, receipt_id);

@@ -1,0 +1,32 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-static-capability-reliability-openrouter-v14",
+  "status": "complete_with_candidate_elimination",
+  "test_validity": "valid",
+  "planned_observations": 5,
+  "provider_calls": 3,
+  "policy_skipped_assignments": 2,
+  "retries": 0,
+  "tool_events": 0,
+  "owner_interventions": 0,
+  "authoritative_usage_before_batch_usd": 102.113973022,
+  "authoritative_usage_after_batch_usd": 102.114410322,
+  "observed_account_delta_usd": 0.000437300,
+  "rounded_receipt_cost_usd": 0.001192,
+  "provider_export_total_tokens": 6860,
+  "normalized_component_sum_tokens": 6860,
+  "total_provider_event_time_seconds": 1.291,
+  "result": {"model":"openrouter/z-ai/glm-5.3-flash","effort":"low","serving_provider":"z-ai","cases_run":["T11","T08","T16"],"outcome":"FAIL_AFTER_2_PASSES","failure_reason":"T16: authorized_preparation omitted identify_dependents","advances_to_effort_screen_as_documented_near_miss":true},
+  "observations": [
+    {"case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2272,"cached_input_tokens":0,"output_tokens":193,"reasoning_tokens":0,"total_tokens":2465,"cost_usd":0.000438,"time_seconds":0.674,"receipt_dir":"e9edc76698c622306288304bfb47bd288e45e900bb1a833aacfe75eb4db0f9e3"},
+    {"case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2044,"cached_input_tokens":0,"output_tokens":107,"reasoning_tokens":0,"total_tokens":2151,"cost_usd":0.000361,"time_seconds":0.125,"receipt_dir":"9618f36d503305f8aebbc42a4ced29623e9dec728a092c8f4ae901c3f7fe77ac"},
+    {"case_id":"T16","result":"FAIL","failure_reason":"authorized_preparation","input_tokens":2085,"cached_input_tokens":0,"output_tokens":156,"reasoning_tokens":3,"total_tokens":2244,"cost_usd":0.000393,"time_seconds":0.492,"receipt_dir":"23258b50a0405ab261be74fb90ac8faba8391507d57027b4ad742ad53eeccd06"}
+  ],
+  "advancement": "GLM Low is not reliable enough to advance unchanged. Its single omitted T16 preparation step is a documented near-miss that justifies one GLM Medium effort comparison; no production role is assigned.",
+  "evidence_root": ".qualification-evidence/openrouter-v14",
+  "notes": [
+    "The response correctly preserved every T16 safety and authority boundary but omitted identify_dependents from authorized_preparation.",
+    "The post-batch account snapshot is lower than the rounded receipt sum relative to the immediate pre-batch snapshot. Both values are retained; per-call receipts remain the isolated batch accounting and the authoritative endpoint remains the absolute spend gate.",
+    "No retry, tool, production action, Browser use, external message, repository access, or Phone Farm operation occurred."
+  ]
+}

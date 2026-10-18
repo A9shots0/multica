@@ -1,0 +1,50 @@
+{
+  "task_id": "trial4-inbox-decision-responses",
+  "title": "Validate archive-completed and owner-decision responses",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Do not cast network JSON to T.' packages/core/api/client.ts archiveCompletedInbox returns an unvalidated { count: number }, and answerWorkflowOwnerDecision returns the raw response typed as unknown; packages/core/inbox/mutations.ts calls both.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "packages/core/api/"
+  ],
+  "verification_command": [
+    "npx",
+    "vitest",
+    "run",
+    "api/inbox-decision-responses.test.ts",
+    "--passWithNoTests=false",
+    "--maxWorkers=1",
+    "--no-file-parallelism"
+  ],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": [
+    "node"
+  ],
+  "max_turns": 60,
+  "regression_commands": [
+    {
+      "command": [
+        "npx",
+        "vitest",
+        "run",
+        "api/",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "packages/core"
+    },
+    {
+      "command": [
+        "npx",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "."
+      ],
+      "cwd": "packages/core"
+    }
+  ],
+  "trial_role": "Trial 4 (lane v7), the judgment task. One method has an obvious existing schema to reuse; the other is typed unknown, so the executor must establish from the server and the caller what the response actually is and whether anything depends on it.",
+  "objective": "packages/core/api/client.ts has two inbox-related methods whose responses are not validated: archiveCompletedInbox (POST /api/inbox/archive-completed, typed { count: number }) and answerWorkflowOwnerDecision (POST /api/issues/{id}/workflow-owner-decision, typed unknown). packages/core/inbox/mutations.ts calls both. The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a schema, with a malformed-response test.\n\nFor archiveCompletedInbox, reuse the existing inbox count schema if it matches the Go handler. For answerWorkflowOwnerDecision, read the Go handler to learn what it returns and read how mutations.ts uses the result; decide whether the method should validate and return a typed result, and what a malformed response must do, and state the reasoning in your summary. Do not change any other method.\n\nWrite tests at exactly packages/core/api/inbox-decision-responses.test.ts that encode the behaviour you chose for a well-formed and a malformed response for each method. The tests must fail against the current code."
+}

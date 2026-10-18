@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "release": "recovery-lead-20260919",
+  "scope": "backend-only controller recovery",
+  "source_revision": "8dc8226d181a463949a590387b4c3c43bee0b515",
+  "candidate_backend_image": "sha256:cafcc75a96c53ddc7ead672d14bb6d9f85f463ab92f6406d56065078c61df188",
+  "rollback_backend_image": "sha256:9abf7361c75cbcf2061dee395db165363abe7b33486d5b83601627b26ef788ac",
+  "unchanged_frontend_image": "sha256:d232d2b31f8a47e001ecee90828c8ea1552f6e36db4286344541bb4307d4be73",
+  "unchanged_postgres_image": "sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f",
+  "database_migrations": "none",
+  "business_acceptance": "pending",
+  "critical_journeys": [
+    "existing authenticated sessions remain valid",
+    "agents can still claim and start ordinary tasks",
+    "a genuinely exhausted workflow becomes an owner-visible technical stop",
+    "a concurrent final-slot winner is not incorrectly blocked",
+    "an automatic plan with no active carrier is rediscovered exactly once",
+    "a completed recovery run without a structured result becomes a technical stop",
+    "board, Inbox, and Chat remain available"
+  ]
+}

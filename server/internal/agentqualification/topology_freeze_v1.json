@@ -1,0 +1,13 @@
+{
+  "schema_version": "silver-mediums.topology-freeze.v1",
+  "bundle_id": "realistic-topology-comparison-v1",
+  "status": "frozen_reviewed",
+  "experiment_sha256": "99617e0294ae584114748375707a8029d63dfe99d509e710b1bdd662b150c125",
+  "runner_sha256": "7a286500a68c80e707edbd33b100df15d920b2ce6f5e8c6b25469c2efa1c19ca",
+  "review_sha256": "0062bdce0f678ecbd271ad79793ef482d50c1412e54ccbb81c7368ec212e8885",
+  "campaign_sha256": "e7a47a938b6601aff8457acf79fb4042dcb62af3e8f7743e3033a2aa1187f0a5",
+  "campaign_executor_sha256": "409dee6cf0f32e2f6e2668bc2813a0f42623f36ce0d3fe4810a4312becfd3b9a",
+  "main_sha256": "261a21647838a7b6254c134ff527a0366a123b438c6abc314563d8320f50c23b",
+  "validation_matrix": ["strong_pass","semantic_paraphrase","subtle_failure","opaque_evidence","missing_required_evidence","fabricated_evidence","scope_expansion","owner_relay","unbounded_correction","pair_hash_mismatch","stage_budget_overrun","crash_stranded_claim","candidate_local_failure_continues"],
+  "provider_calls_allowed": true
+}

@@ -1,0 +1,1 @@
+ALTER TABLE guarded_task_capability_revocation ADD CONSTRAINT guarded_task_capability_revocation_pkey PRIMARY KEY USING INDEX guarded_task_capability_revocation_pkey_idx;

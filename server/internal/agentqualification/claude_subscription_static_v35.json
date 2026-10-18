@@ -1,0 +1,56 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-static.v35",
+  "batch_id": "claude-subscription-static-reliability-repeat-v35",
+  "status": "prepared_for_independent_review",
+  "provider_calls_allowed": false,
+  "transport": "claude_code_print_restricted_tool_free_v2",
+  "repeat_of_batch_id": "claude-subscription-static-breadth-reliability-v34",
+  "repeat_index": 1,
+  "configuration": {
+    "id": "screen.generalist.claude46.medium.subscription.calibration.v29",
+    "role_id": "screening_generalist",
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "instruction_version": "shadow-candidate.v5",
+    "instruction_sha256": "b77e91b1734a72c15080fe9a1092d89b79e040e318056db4d9719364a4709745",
+    "skill_versions": {"silver_mediums_context": "item14.v2-inline"},
+    "skill_content_sha256": {"silver_mediums_context": "abc31ad2b3bbd5260859a863965bf77535cbd05c6ed9e5c3ef22489879d2003f"},
+    "permission_version": "isolated-no-tools.v2",
+    "runtime_provider": "claude_code_subscription",
+    "serving_provider": "anthropic",
+    "provider_fallbacks": false
+  },
+  "cases": [
+    {"case_id":"T12","case_version":"v4","candidate_packet_sha256":"8f114b99b2e7cb523d40dfb8154559a0b0a642b63e12139dc19283589a7e174e","grader_packet_sha256":"fde1770b179e086a6439e6ceba0080bd37a9db08db6f59aa33878a50c7ea43bb"},
+    {"case_id":"T11","case_version":"v4","candidate_packet_sha256":"65f4351c80c3c6d3a4a9462d5e910b5ff78f225959ea2e484e2c06aeeef8621c","grader_packet_sha256":"53c63e0c5154a3334dfac716841d2686df8e8e1c95cc667e4d1bcbfc0f30a1c4"},
+    {"case_id":"T08","case_version":"v3","candidate_packet_sha256":"0a40a9cda42f3ef297034b585dbf36a3f268a38d63e76a8617f2bb6d5d4d7672","grader_packet_sha256":"bb261cc153e2f9cebd93c4c1d64923be4f68f8ad041023c220900fe771ba3700"},
+    {"case_id":"T16","case_version":"v3","candidate_packet_sha256":"e75b4e7b897e5c533ee218c2afb0120f41b479155a8569c111127929dcc27ada","grader_packet_sha256":"55255e60f8e794922f4b6a54369b686356b3fff9edd50f5f97341312142acb48"},
+    {"case_id":"T04","case_version":"v1","candidate_packet_sha256":"66e53379186a9a2445f8d64731d93b88f40db801ea662386181f2b929db1a23d","grader_packet_sha256":"96b390962bd3beb55017d4cb965252f5ebfa59ffb8dbbdc148a96ee3d90e5d6e"},
+    {"case_id":"T09","case_version":"v2","candidate_packet_sha256":"c159de02d59adb35a04a4cef32dea4767a22798342086b868fe59714538b86e1","grader_packet_sha256":"be52eabb7c38d76bba7fdd1d9ba6bcdb049885f98017654e1417225f8ce7984f"}
+  ],
+  "caps": {
+    "max_provider_invocations": 6,
+    "max_total_reported_tokens_per_cell": 15000,
+    "max_output_tokens_per_cell": 2000,
+    "max_campaign_reported_tokens": 90000,
+    "max_wall_seconds": 900,
+    "max_retries": 0
+  },
+  "billing_boundary": "anthropic_subscription",
+  "runtime_identity": {
+    "version_output": "2.1.270 (Claude Code)",
+    "executable_path": "C:\\Users\\a9sho\\AppData\\Roaming\\npm\\claude.cmd",
+    "executable_sha256": "7999fba95dbffe167d9e0a043f29057979a0518ebe89b60c4fcfc6401ea8c424",
+    "route_evidence": "signed_in_claude_code_subscription_via_proven_non_bare_stdin_transport; requested_model_claude-sonnet-4-6; direct_anthropic_subscription_boundary; no_api_key_or_credential_material_recorded"
+  },
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "advancement_allowed": false,
+  "stop_rules": [
+    "candidate_competence_protocol_or_disqualifier_failure_eliminates_candidate_and_skips_later_cells",
+    "observation_local_invalidity_preserves_only_that_cell_and_continues_unaffected_cells",
+    "global_halt_only_for_credential_unsafe_external_evidence_corruption_or_uncontrolled_campaign_cap",
+    "zero_retries",
+    "write_once_claim_receipt_result_and_replay_without_duplicate_provider_invocation"
+  ]
+}

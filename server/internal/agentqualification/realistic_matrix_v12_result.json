@@ -1,0 +1,44 @@
+{
+  "schema_version": "silver-mediums.realistic-screening-result.v1",
+  "matrix_id": "realistic-foundation-screen-v12",
+  "matrix_sha256": "5c04c0aaad9e5f1e3e0d60dfab64595e7cfaa81ddaf84bad3a1d017f8c0f890e",
+  "status": "complete_no_survivor",
+  "test_validity": "valid",
+  "planned_cases": ["R01", "R03", "R04"],
+  "attempted_cases": ["R01"],
+  "policy_skipped_cases": ["R03", "R04"],
+  "provider_calls": 8,
+  "retries": 0,
+  "owner_interventions": 0,
+  "input_tokens": 74691,
+  "output_tokens": 1273,
+  "reasoning_tokens": 2525,
+  "total_tokens": 78489,
+  "receipt_cost_usd": 0.014371,
+  "authoritative_usage_reference_before_batch_usd": 110.171667,
+  "authoritative_usage_after_batch_usd": 110.180870,
+  "reference_account_delta_usd": 0.009203,
+  "receipt_delta_difference_usd": 0.005168,
+  "measured_command_wall_time_seconds_approx": 79.6,
+  "result": {
+    "model": "openrouter/openai/gpt-5.6-luna-pro",
+    "candidate_id": "realistic.gpt56lunapro.medium.openrouter.r01r03r04.v12",
+    "effort": "medium",
+    "serving_provider": "openai",
+    "case": "R01",
+    "outcome": "candidate_fail",
+    "failure_class": "response_or_tool_protocol_failure",
+    "failure_reason": "After correctly identifying and repairing the faulty consumer, passing the bounded checks, and writing EVIDENCE.md, the candidate failed to emit a valid next action or finish receipt on call eight; no final summary was produced.",
+    "advances": false
+  },
+  "evidence_root": ".qualification-evidence/realistic-v24",
+  "post_batch_correction_list": [
+    "Audit why the per-observation 75,000-token reservation did not prevent a final recorded total of 78,489 tokens; preserve this observation and do not retry it.",
+    "Audit the $0.005168 difference between isolated receipted cost and the authoritative OpenRouter account delta without rewriting either source."
+  ],
+  "notes": [
+    "The one independent prelaunch review passed with no correction and no second review cycle.",
+    "R03 and R04 received no calls because the sole candidate validly failed R01.",
+    "No retry, browser action, production action, outbound message, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

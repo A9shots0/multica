@@ -1,0 +1,73 @@
+{
+  "schema_version": "silver-mediums.primary-subscription-role-trial.v1",
+  "trial_id": "item-14-primary-subscription-role-trial-20260914",
+  "status": "frozen_owner_authorized_not_executed",
+  "gate_sha256": "d21f6b459bdf83757f6c7d27ac103309d659f5eb2a0dc8f13e0272439ed4e405",
+  "owner_authorization": "Authorize the frozen 12-session controller-mediated disposable-fixture trial, and accept Claude as exact requested Sonnet primary plus disclosed background Haiku for this trial only.",
+  "purpose": "temporary scientific comparison of inline skill packets versus separately invoked conditional participants",
+  "maximum_cli_sessions": 12,
+  "maximum_sessions_per_invocation": 1,
+  "maximum_actions_per_executor": 10,
+  "maximum_total_reported_tokens_per_session": 75000,
+  "maximum_generated_tokens_per_session": 20000,
+  "retries": 0,
+  "fallbacks": false,
+  "redirects": false,
+  "relaunches": 0,
+  "automatic_correction_replays": 0,
+  "provider_native_tools_allowed": false,
+  "controller_mediated_actions_only": true,
+  "fresh_disposable_fixture_per_observation": true,
+  "fresh_disposable_provider_workdir_per_session": true,
+  "fixture_cleanup_required": true,
+  "provider_workdir_cleanup_required": true,
+  "independent_verdict": "provider_free_hidden_verifier",
+  "r02_browser_boundary": "controller_owned_chatgpt_in_app_browser_on_127_0_0_1_only",
+  "permanent_role_or_model_selection_allowed": false,
+  "lanes": [
+    {
+      "lane": "claude_code_subscription",
+      "requested_model": "claude-sonnet-4-6",
+      "effort": "medium",
+      "transport": "claude_code_restricted_json_subscription",
+      "accepted_model_attribution": "exact_requested_sonnet_primary_plus_disclosed_background_haiku_only",
+      "allowed_observed_models": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6"]
+    },
+    {
+      "lane": "codex_subscription",
+      "requested_model": "gpt-5.6-luna",
+      "effort": "medium",
+      "transport": "codex_exec_ephemeral_json_subscription",
+      "accepted_model_attribution": "requested_model_pinned_cli_receipt_identity_may_be_unavailable_truthful",
+      "allowed_observed_models": ["gpt-5.6-luna"]
+    }
+  ],
+  "invocations": [
+    {"ordinal":1,"observation_id":"claude-r01-inline","lane":"claude_code_subscription","case_id":"R01","arm":"shared_executor_with_exact_skill_packet","participant":"shared_windows_executor","participant_kind":"executor","inline_skill_packet":"architecture_assurance"},
+    {"ordinal":2,"observation_id":"claude-r01-separate","lane":"claude_code_subscription","case_id":"R01","arm":"conditional_specialist_then_shared_executor","participant":"architecture_assurance","participant_kind":"specialist"},
+    {"ordinal":3,"observation_id":"claude-r01-separate","lane":"claude_code_subscription","case_id":"R01","arm":"conditional_specialist_then_shared_executor","participant":"shared_windows_executor","participant_kind":"executor"},
+    {"ordinal":4,"observation_id":"claude-r02-inline","lane":"claude_code_subscription","case_id":"R02","arm":"shared_executor_with_exact_skill_packet","participant":"shared_windows_executor","participant_kind":"executor","inline_skill_packet":"product_ui"},
+    {"ordinal":5,"observation_id":"claude-r02-separate","lane":"claude_code_subscription","case_id":"R02","arm":"conditional_specialist_then_shared_executor","participant":"product_ui","participant_kind":"specialist"},
+    {"ordinal":6,"observation_id":"claude-r02-separate","lane":"claude_code_subscription","case_id":"R02","arm":"conditional_specialist_then_shared_executor","participant":"shared_windows_executor","participant_kind":"executor"},
+    {"ordinal":7,"observation_id":"codex-r01-inline","lane":"codex_subscription","case_id":"R01","arm":"shared_executor_with_exact_skill_packet","participant":"shared_windows_executor","participant_kind":"executor","inline_skill_packet":"architecture_assurance"},
+    {"ordinal":8,"observation_id":"codex-r01-separate","lane":"codex_subscription","case_id":"R01","arm":"conditional_specialist_then_shared_executor","participant":"architecture_assurance","participant_kind":"specialist"},
+    {"ordinal":9,"observation_id":"codex-r01-separate","lane":"codex_subscription","case_id":"R01","arm":"conditional_specialist_then_shared_executor","participant":"shared_windows_executor","participant_kind":"executor"},
+    {"ordinal":10,"observation_id":"codex-r02-inline","lane":"codex_subscription","case_id":"R02","arm":"shared_executor_with_exact_skill_packet","participant":"shared_windows_executor","participant_kind":"executor","inline_skill_packet":"product_ui"},
+    {"ordinal":11,"observation_id":"codex-r02-separate","lane":"codex_subscription","case_id":"R02","arm":"conditional_specialist_then_shared_executor","participant":"product_ui","participant_kind":"specialist"},
+    {"ordinal":12,"observation_id":"codex-r02-separate","lane":"codex_subscription","case_id":"R02","arm":"conditional_specialist_then_shared_executor","participant":"shared_windows_executor","participant_kind":"executor"}
+  ],
+  "always_forbidden": [
+    "real_repository_access_by_participant",
+    "provider_native_tool_execution",
+    "production_access",
+    "business_system_access",
+    "non_subscription_credentials",
+    "non_provider_network",
+    "outbound_business_action",
+    "phone_farm_access",
+    "browser_except_controller_owned_in_app_local_r02",
+    "deployment",
+    "automatic_replay",
+    "permanent_role_or_model_selection"
+  ]
+}

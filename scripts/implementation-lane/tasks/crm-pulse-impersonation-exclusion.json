@@ -1,0 +1,56 @@
+{
+  "task_id": "crm-pulse-impersonation-exclusion",
+  "title": "Do not record CRM Pulse activity while an admin is impersonating",
+  "repository": "C:/Users/a9sho/.claude/jobs/79575380/tmp/crm-pulse/crm",
+  "recorded_defect": "Owner decision 2026-09-17: activity while an admin is impersonating someone must not be recorded, the same as employee preview (b9b780d). Today templates/base.html turns the collector on for every authenticated app shell except employee preview (data-crm-telemetry is 'on' when app_shell_visible and not employee_preview), and blueprints/crm_pulse.py ingest_event stores events for current_user, which during impersonation is the impersonated user (blueprints/auth.py logs in the target and sets session['impersonator_id']). So an admin's clicks, visits and active time are credited to the person being impersonated.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "blueprints/crm_pulse.py",
+    "templates/base.html",
+    "tests/test_crm_pulse_impersonation.py"
+  ],
+  "verification_command": [
+    "C:/Dev/CRM/.venv/Scripts/python.exe",
+    "-m",
+    "pytest",
+    "tests/test_crm_pulse_impersonation.py",
+    "-q",
+    "-p",
+    "no:cacheprovider"
+  ],
+  "verification_cwd": ".",
+  "dependencies": "none",
+  "max_turns": 50,
+  "objective": "CRM Pulse must not record any activity while an admin is impersonating another user, exactly as it already records nothing during employee preview. A session is impersonating when session.get('impersonator_id') is not None (see blueprints/auth.py and the existing checks in blueprints/api.py).\n\nMake two changes, and nothing else:\n1. templates/base.html: the body attribute data-crm-telemetry must be 'off' while impersonating, in addition to the existing employee-preview condition. Keep every other attribute and the existing literal text data-crm-telemetry-endpoint=\"/api/owner-pulse/events\" and data-crm-page-key=\"{{ request.endpoint or '' }}\" unchanged; tests assert them. Do not change the script tags.\n2. blueprints/crm_pulse.py ingest_event: while impersonating, store nothing and answer 202 with JSON {\"recorded\": false, \"eventCount\": 0}, without validating or reading the payload. This protects against an older cached collector that still sends events. Keep the route, methods, decorators and every other response unchanged; a normal session must behave exactly as before.\n\nDo not change services/crm_pulse.py, main.py, blueprints/auth.py, models, migrations or any other file. Do not change how users.last_activity is updated.\n\nWrite tests/test_crm_pulse_impersonation.py (pytest, using the fixtures in tests/conftest.py, as tests/test_crm_pulse.py and tests/test_gallery_sources_grant_workspace.py do; set session['_user_id'] to the impersonated user and session['impersonator_id'] to the admin through client.session_transaction). It must show:\n(a) a valid events batch posted by an impersonating session (with a same-origin Referer, e.g. http://localhost/accounts, and pageKey employees.accounts) returns 202 with recorded false and stores no CRMPulseEvent rows for either user;\n(b) the same batch posted by a normal, non-impersonating session of the same target user stores the events and returns 201;\n(c) a rendered authenticated page (for example GET /accounts or /dashboard, whichever returns 200 for that user) contains data-crm-telemetry=\"off\" while impersonating and data-crm-telemetry=\"on\" without impersonation.\nYou cannot run pytest yourself; the harness runs it.",
+  "regression_commands": [
+    {
+      "command": [
+        "C:/Dev/CRM/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "tests/test_crm_pulse.py",
+        "tests/test_crm_pulse_batch_integrity.py",
+        "tests/test_crm_pulse_telemetry_assets.py",
+        "tests/test_partial_navigation_session_identity.py",
+        "tests/test_employee_preview.py",
+        "tests/test_impersonation_view_cycle.py",
+        "tests/test_mobile_shell_accessibility.py",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "cwd": "."
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/crm_telemetry_collector.test.mjs",
+        "tests/crm_pulse_navigation_flush.test.mjs",
+        "tests/partial_navigation_lifecycle.test.mjs"
+      ],
+      "cwd": "."
+    }
+  ],
+  "verification_note": "Runs on the scratch clone's branch codex/crm-pulse-batch-integrity-20260917 (514b6f1). Launcher sets CRM_TEST_DB_PATH outside the worktree and PYTHONDONTWRITEBYTECODE=1. Known residual, out of scope by design: impersonation still refreshes the target's users.last_activity (session idle timeout depends on it), so Pulse's session-based people list can still show the target as connected."
+}

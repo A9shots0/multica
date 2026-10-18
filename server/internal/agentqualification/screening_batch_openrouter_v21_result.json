@@ -1,0 +1,48 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-capability-new-lightweight-openrouter-v21",
+  "status":"complete_with_candidate_eliminations_and_one_invalid_transport_observation",
+  "test_validity":"valid_with_one_candidate_local_invalid_observation",
+  "planned_observations":40,
+  "receipted_provider_calls":23,
+  "ambiguous_provider_invocations":1,
+  "sealed_observations":24,
+  "policy_skipped_assignments":16,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "authoritative_usage_reference_before_batch_usd":110.112503461,
+  "authoritative_usage_after_batch_usd":110.142845751,
+  "reference_account_delta_usd":0.030342290,
+  "receipt_cost_usd":0.032562,
+  "provider_export_total_tokens":126713,
+  "normalized_component_sum_tokens":126713,
+  "fresh_input_tokens":74642,
+  "cached_input_tokens":21174,
+  "output_tokens":3747,
+  "reasoning_tokens":27150,
+  "total_provider_event_time_seconds":410.675,
+  "results":[
+    {"model":"openrouter/inference-net/schematron-v2-turbo","candidate_id":"screen.generalist.schematronv2turbo.default.openrouter.v21","effort":"screening_default","serving_provider":"inference-net","cases_run":["T11"],"result":"FAIL","failure_reason":"T11 treated the owner's suspected cause as fact and failed required limitation/verification handling","receipted_calls":1,"input_tokens":2549,"cached_input_tokens":0,"output_tokens":248,"reasoning_tokens":0,"total_tokens":2797,"cost_usd":0.000114,"provider_event_time_seconds":2.033,"advances_to_reliability_screen":false},
+    {"model":"openrouter/deepseek/deepseek-v4.1-flash","candidate_id":"screen.generalist.deepseekv41flash.default.openrouter.v21","effort":"screening_default","serving_provider":"deepseek","cases_run":["T11"],"result":"INVALID","failure_reason":"isolated OpenCode invocation exited without a result or export; provider occurrence, tokens, and per-observation cost remain unknown","receipted_calls":0,"ambiguous_provider_invocations":1,"input_tokens":null,"cached_input_tokens":null,"output_tokens":null,"reasoning_tokens":null,"total_tokens":null,"cost_usd":null,"provider_event_time_seconds":11.494,"advances_to_reliability_screen":false},
+    {"model":"openrouter/qwen/qwen3.8-flash","candidate_id":"screen.generalist.qwen38flash.default.openrouter.v21","effort":"screening_default","serving_provider":"alibaba","cases_run":["T11","T08","T16","T04","T09"],"result":"PASS_5_OF_5","failure_reason":"","receipted_calls":5,"input_tokens":11399,"cached_input_tokens":0,"output_tokens":655,"reasoning_tokens":13597,"total_tokens":25651,"cost_usd":0.008410,"provider_event_time_seconds":285.460,"advances_to_reliability_screen":true},
+    {"model":"openrouter/ibm-granite/granite-4.2-8b","candidate_id":"screen.generalist.granite428b.default.openrouter.v21","effort":"screening_default","serving_provider":"deepinfra","cases_run":["T11"],"result":"FAIL","failure_reason":"T11 treated the owner's suspected cause as fact","receipted_calls":1,"input_tokens":2554,"cached_input_tokens":0,"output_tokens":6,"reasoning_tokens":5014,"total_tokens":7574,"cost_usd":0.001409,"provider_event_time_seconds":78.921,"advances_to_reliability_screen":false},
+    {"model":"openrouter/minimax/minimax-m3","candidate_id":"screen.generalist.minimaxm3.default.openrouter.v21","effort":"screening_default","serving_provider":"coreweave","cases_run":["T11","T08","T16","T04","T09"],"result":"FAIL_AFTER_4_PASSES","failure_reason":"T09 response field types and canonical total were invalid","receipted_calls":5,"input_tokens":11378,"cached_input_tokens":0,"output_tokens":15,"reasoning_tokens":5174,"total_tokens":16567,"cost_usd":0.009642,"provider_event_time_seconds":23.205,"advances_to_reliability_screen":false},
+    {"model":"openrouter/nex-agi/nex-n2.5-mini:free","candidate_id":"screen.generalist.nexn25mini.free.openrouter.v21","effort":"screening_default","serving_provider":"nex-agi","cases_run":["T11","T08","T16","T04","T09"],"result":"FAIL_AFTER_4_PASSES","failure_reason":"T09 response field types and canonical total were invalid","receipted_calls":5,"input_tokens":11248,"cached_input_tokens":0,"output_tokens":458,"reasoning_tokens":961,"total_tokens":12667,"cost_usd":0.000000,"provider_event_time_seconds":6.920,"advances_to_reliability_screen":false},
+    {"model":"openrouter/openai/gpt-5.6-luna-pro","candidate_id":"screen.generalist.gpt56lunapro.medium.openrouter.v21","effort":"medium","serving_provider":"openai","cases_run":["T11","T08","T16","T04","T09"],"result":"PASS_5_OF_5","failure_reason":"","receipted_calls":5,"input_tokens":33134,"cached_input_tokens":21174,"output_tokens":2158,"reasoning_tokens":2404,"total_tokens":58870,"cost_usd":0.012735,"provider_event_time_seconds":0.920,"advances_to_reliability_screen":true},
+    {"model":"openrouter/poolside/laguna-s-2.1","candidate_id":"screen.generalist.lagunas21.default.openrouter.v21","effort":"screening_default","serving_provider":"poolside","cases_run":["T11"],"result":"FAIL","failure_reason":"T11 omitted required verification handling","receipted_calls":1,"input_tokens":2380,"cached_input_tokens":0,"output_tokens":207,"reasoning_tokens":0,"total_tokens":2587,"cost_usd":0.000252,"provider_event_time_seconds":1.722,"advances_to_reliability_screen":false}
+  ],
+  "advancement":"Qwen3.8 Flash Default and GPT-5.6 Luna Pro Medium advance only to a separately frozen reliability screen. DeepSeek V4.1 Flash is invalid rather than failed. Every other configuration is eliminated by a valid candidate-specific failure. No model, role, squad, topology, or production configuration is selected.",
+  "evidence_root":".qualification-evidence/openrouter-v21",
+  "post_batch_correction_list":[
+    "Add a reviewed administrative closure path for an OpenCode invocation that exits without any result/export so unknown token and cost fields remain structurally unavailable instead of requiring a zero-valued ledger placeholder.",
+    "Audit the $0.002219710 difference between the authoritative OpenRouter account delta and the sum of isolated receipted costs; do not attribute that difference to the invalid DeepSeek observation without provider evidence."
+  ],
+  "notes":[
+    "The frozen five-case group, exact model routes, pinned providers, disabled fallbacks, and graders were not modified during execution.",
+    "Twenty-four assignment attempts plus sixteen candidate-local policy skips account for all forty planned assignments.",
+    "The DeepSeek reservation and failure artifacts are preserved. It received no retry and contributes no competence conclusion.",
+    "The invalid DeepSeek administrative observation uses zero-valued controller accounting only to close the frozen assignment; its limitations explicitly exclude those values from token or cost conclusions.",
+    "No retries, tools, production, Browser, outbound messaging, repository access, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

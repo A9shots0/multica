@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY guarded_task_capability_grant_pkey_idx ON guarded_task_capability_grant (id);

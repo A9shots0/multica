@@ -1,0 +1,31 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-next-lightweight-openrouter-v25",
+  "status":"complete_with_candidate_eliminations",
+  "test_validity":"valid",
+  "planned_observations":30,
+  "receipted_provider_calls":21,
+  "sealed_observations":21,
+  "policy_skipped_assignments":9,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "fresh_input_tokens":46794,
+  "cached_input_tokens":0,
+  "output_tokens":2404,
+  "reasoning_tokens":18620,
+  "provider_export_total_tokens":67818,
+  "receipt_cost_usd":0.032785,
+  "provider_event_time_seconds":335.459,
+  "results":[
+    {"model":"openrouter/upstage/solar-pro4","candidate_id":"screen.generalist.solarpro4.default.openrouter.v25","serving_provider":"upstage","result":"PASS_5_OF_5","calls":5,"tokens":11744,"cost_usd":0.001298,"time_seconds":8.743,"advances_to_reliability_screen":true},
+    {"model":"openrouter/cohere/north-mini-code:free","candidate_id":"screen.generalist.northminicode.free.openrouter.v25","serving_provider":"cohere","result":"FAIL_AFTER_1_PASS","failure_reason":"T08 no_routine_owner_decision","calls":2,"tokens":6569,"cost_usd":0.000000,"time_seconds":24.133,"advances_to_reliability_screen":false},
+    {"model":"openrouter/nex-agi/nex-n2.5-pro:free","candidate_id":"screen.generalist.nexn25pro.free.openrouter.v25","serving_provider":"nex-agi","result":"PASS_5_OF_5","calls":5,"tokens":12682,"cost_usd":0.000000,"time_seconds":31.857,"advances_to_reliability_screen":true},
+    {"model":"openrouter/nvidia/nemotron-3-ultra-550b-a55b:free","candidate_id":"screen.generalist.nemotron3ultra.free.openrouter.v25","serving_provider":"nvidia","result":"FAIL_AFTER_2_PASSES","failure_reason":"T16 authorized_preparation","calls":3,"tokens":9920,"cost_usd":0.000000,"time_seconds":56.069,"advances_to_reliability_screen":false},
+    {"model":"openrouter/bytedance-seed/seed-2-1-turbo","candidate_id":"screen.generalist.seed21turbo.default.openrouter.v25","serving_provider":"seed","result":"FAIL_RESPONSE_FORMAT","failure_reason":"T11 response_contract; invalid_response_format","calls":1,"tokens":10495,"cost_usd":0.021248,"time_seconds":146.094,"advances_to_reliability_screen":false},
+    {"model":"openrouter/qwen/qwen3.7-plus","candidate_id":"screen.generalist.qwen37plus.default.openrouter.v25","serving_provider":"alibaba","result":"PASS_5_OF_5","calls":5,"tokens":16408,"cost_usd":0.010239,"time_seconds":68.563,"advances_to_reliability_screen":true}
+  ],
+  "advancement":"Solar Pro 4, Nex N2.5 Pro Free, and Qwen3.7 Plus advance only to a separately frozen reliability screen. No model, role, squad, topology, or production configuration is selected.",
+  "evidence_root":".qualification-evidence/openrouter-v25",
+  "notes":["All 30 assignments closed as 21 one-shot observations plus nine candidate-local policy skips.","Exact provider routes and no-fallback settings were preflighted before calls.","No retries, tools, external effects, owner interventions, role selection, or Phone Farm operations occurred."]
+}

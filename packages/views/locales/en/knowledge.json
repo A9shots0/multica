@@ -1,0 +1,48 @@
+{
+  "page": {
+    "title": "Knowledge",
+    "tab_hub": "Company Knowledge",
+    "tab_intelligence": "Data & Metrics"
+  },
+  "hub": {
+    "not_configured": "The knowledge hub isn't connected to this deployment.",
+    "no_files": "No documents found.",
+    "select_prompt": "Select a document to read it.",
+    "loading": "Loading…",
+    "load_failed": "Couldn't load this document.",
+    "untitled": "Untitled",
+    "projects_loading": "Loading projects…",
+    "no_projects": "No projects registered yet.",
+    "no_summary": "No summary yet — open to read.",
+    "browse_all_files": "Browse all files",
+    "back_to_projects": "All projects",
+    "tab_overview": "Overview",
+    "tab_changelog": "Activity",
+    "tab_technical": "Technical docs",
+    "no_changelog": "No changelog for this project.",
+    "recent_activity": "Recent activity",
+    "view_all_activity": "View all"
+  },
+  "intelligence": {
+    "not_configured": "Silver Mediums Intelligence isn't connected to this deployment.",
+    "unavailable": "Couldn't reach the Intelligence database right now.",
+    "no_events": "No events recorded yet.",
+    "total_events": "Total events",
+    "table_producer": "Source",
+    "table_event_type": "Event type",
+    "event_type_count": "event types",
+    "total_followers": "Total followers",
+    "across_accounts": "across {count} tracked accounts",
+    "active_clients": "Active clients",
+    "active_accounts": "Active social accounts",
+    "new_subscribers_7d": "New subscribers (7d)",
+    "sync_health": "Data sync health",
+    "raw_ledger": "Raw event ledger",
+    "table_count": "Count",
+    "table_latest": "Last synced",
+    "table_earliest": "First seen"
+  },
+  "operational_copy": {
+    "accepted": "accepted"
+  }
+}

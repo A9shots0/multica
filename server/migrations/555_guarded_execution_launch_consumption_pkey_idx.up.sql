@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY guarded_execution_launch_consumption_pkey_idx ON guarded_execution_launch_consumption (workspace_id, capability_grant_id);

@@ -1,0 +1,7 @@
+```json
+{
+  "summary": "All material numeric claims and SHAs in the candidate document are exactly supported by the captured evidence JSON. Snapshot timestamp (2026-09-15T18:44:12Z), host (a9drew), platform (windows/amd64), HEAD SHA (ba1447ac…), tracked-change count (6), untracked-file count (110), cached origin/main SHA (b5880706…), ahead/behind counts (4/674), worktree totals (285 records, 285 present, 0 absent, 0 locked, 0 prunable, 6 detached), the historical 4/350 divergence figure, the preservation-pin branch name, and the social-data-ingestion and inbound-boundary delivery annotations all match their corresponding evidence fields verbatim. Boundary qualifications (no remote contact, no application access, cached-ref caveats, occupancy-not-proven language) are consistently carried throughout. Owner-work preservation rules match AGENTS.md. Next-action guidance is grounded in the same evidence limitations the snapshot documents.",
+  "verdict": "pass",
+  "findings": []
+}
+```

@@ -1,0 +1,701 @@
+package handler
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/multica-ai/multica/server/internal/service"
+	"github.com/multica-ai/multica/server/internal/testutil"
+	"github.com/multica-ai/multica/server/internal/workflowstate"
+	db "github.com/multica-ai/multica/server/pkg/db/generated"
+)
+
+type workflowControlFixture struct {
+	IssueID       string
+	SquadID       string
+	LeaderID      string
+	ImplementerID string
+	ReviewerID    string
+	SourceTaskID  string
+}
+
+func newWorkflowControlFixture(t *testing.T) workflowControlFixture {
+	t.Helper()
+	leaderID := createHandlerTestAgent(t, "Workflow Leader", nil)
+	implementerID := createHandlerTestAgent(t, "Workflow Implementer", nil)
+	reviewerID := createHandlerTestAgent(t, "Workflow Reviewer", nil)
+	squadID := dbfx.Squad(t, "Workflow Squad", leaderID)
+	dbfx.SquadMember(t, squadID, "agent", leaderID, testutil.Cols{"role": "leader"})
+	dbfx.SquadMember(t, squadID, "agent", implementerID, testutil.Cols{"role": "implementer"})
+	dbfx.SquadMember(t, squadID, "agent", reviewerID, testutil.Cols{"role": "reviewer"})
+	issueID := dbfx.Issue(t, "deterministic workflow", testutil.Cols{
+		"assignee_type": "squad",
+		"assignee_id":   squadID,
+	})
+	sourceTaskID := dbfx.Task(t, implementerID, testutil.Cols{
+		"runtime_id":          handlerTestRuntimeID(t),
+		"status":              "running",
+		"issue_id":            issueID,
+		"started_at":          testutil.Raw("now()"),
+		"squad_id":            squadID,
+		"originator_user_id":  testUserID,
+		"accountable_user_id": testUserID,
+	})
+	t.Cleanup(func() {
+		testPool.Exec(context.Background(), `DELETE FROM issue_workflow_event WHERE issue_id = $1`, issueID)
+		testPool.Exec(context.Background(), `DELETE FROM issue_workflow_plan WHERE issue_id = $1`, issueID)
+	})
+	return workflowControlFixture{
+		IssueID: issueID, SquadID: squadID, LeaderID: leaderID,
+		ImplementerID: implementerID, ReviewerID: reviewerID, SourceTaskID: sourceTaskID,
+	}
+}
+
+func putWorkflowPlanRequest(fx workflowControlFixture) *http.Request {
+	return withURLParam(newRequest(http.MethodPut, "/api/issues/"+fx.IssueID+"/workflow-plan", map[string]any{
+		"squad_id": fx.SquadID, "implementer_id": fx.ImplementerID, "reviewer_id": fx.ReviewerID,
+	}), "id", fx.IssueID)
+}
+
+func workflowEventRequest(fx workflowControlFixture, event workflowstate.Event) *http.Request {
+	return workflowEventRequestFor(fx, event, fx.ImplementerID, fx.SourceTaskID, nil)
+}
+
+func workflowEventRequestFor(fx workflowControlFixture, event workflowstate.Event, agentID, taskID string, correction map[string]any) *http.Request {
+	body := map[string]any{"event": event, "reason": "scenario evidence"}
+	if correction != nil {
+		body["correction"] = correction
+	}
+	req := withURLParam(newRequest(http.MethodPost, "/api/issues/"+fx.IssueID+"/workflow-events", body), "id", fx.IssueID)
+	req.Header.Set("X-Agent-ID", agentID)
+	req.Header.Set("X-Task-ID", taskID)
+	return req
+}
+
+func correctionPacket() map[string]any {
+	return map[string]any{
+		"failed_criteria":     []string{"output must equal APPROVED"},
+		"evidence":            "candidate returned DRAFT",
+		"required_correction": "change only the output to APPROVED",
+		"candidate":           "candidate-1",
+	}
+}
+
+func ownerDecisionPacket() map[string]any {
+	return map[string]any{
+		"question": "Which copy should ship?", "recommendation": "Use A because it is reversible",
+		"consequence": "A resumes this worker; B keeps the issue paused", "options": []string{"A", "B"},
+	}
+}
+
+func TestSquadWorkflowTemplateInstallsPlanBeforeDelegation(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	req := withURLParams(newRequest(http.MethodPut, "/api/squads/"+fx.SquadID+"/workflow-template", map[string]any{
+		"implementer_id":  fx.ImplementerID,
+		"reviewer_id":     fx.ReviewerID,
+		"max_corrections": 1,
+	}), "id", fx.SquadID, "workspaceId", testWorkspaceID)
+	testutil.Call(t, testHandler.PutSquadWorkflowTemplate, req).Want(http.StatusOK)
+
+	issue, err := testHandler.Queries.GetIssue(context.Background(), parseUUID(fx.IssueID))
+	if err != nil {
+		t.Fatalf("load issue: %v", err)
+	}
+	configured, err := service.EnsureSquadWorkflowPlan(context.Background(), testHandler.Queries, issue)
+	if err != nil {
+		t.Fatalf("install plan: %v", err)
+	}
+	if !configured {
+		t.Fatal("configured squad was treated as stock routing")
+	}
+	plan, err := testHandler.Queries.GetIssueWorkflowPlan(context.Background(), db.GetIssueWorkflowPlanParams{
+		IssueID: issue.ID, WorkspaceID: issue.WorkspaceID,
+	})
+	if err != nil {
+		t.Fatalf("load installed plan: %v", err)
+	}
+	if uuidToString(plan.ImplementerID) != fx.ImplementerID || uuidToString(plan.ReviewerID) != fx.ReviewerID {
+		t.Fatalf("installed plan does not match template: %+v", plan)
+	}
+
+	if _, err := testPool.Exec(context.Background(), `
+		UPDATE issue_workflow_plan SET correction_count = 1 WHERE issue_id = $1
+	`, fx.IssueID); err != nil {
+		t.Fatalf("advance installed plan: %v", err)
+	}
+	if _, err := service.EnsureSquadWorkflowPlan(context.Background(), testHandler.Queries, issue); err != nil {
+		t.Fatalf("re-ensure plan: %v", err)
+	}
+	plan, err = testHandler.Queries.GetIssueWorkflowPlan(context.Background(), db.GetIssueWorkflowPlanParams{
+		IssueID: issue.ID, WorkspaceID: issue.WorkspaceID,
+	})
+	if err != nil || plan.CorrectionCount != 1 {
+		t.Fatalf("existing issue progress was reset: plan=%+v err=%v", plan, err)
+	}
+}
+
+func TestSquadWorkflowTemplateFailsClosedWhenReviewerLeavesSquad(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	req := withURLParams(newRequest(http.MethodPut, "/api/squads/"+fx.SquadID+"/workflow-template", map[string]any{
+		"implementer_id": fx.ImplementerID,
+		"reviewer_id":    fx.ReviewerID,
+	}), "id", fx.SquadID, "workspaceId", testWorkspaceID)
+	testutil.Call(t, testHandler.PutSquadWorkflowTemplate, req).Want(http.StatusOK)
+	if _, err := testPool.Exec(context.Background(), `
+		DELETE FROM squad_member
+		WHERE squad_id = $1 AND member_type = 'agent' AND member_id = $2
+	`, fx.SquadID, fx.ReviewerID); err != nil {
+		t.Fatalf("remove reviewer: %v", err)
+	}
+	issue, err := testHandler.Queries.GetIssue(context.Background(), parseUUID(fx.IssueID))
+	if err != nil {
+		t.Fatalf("load issue: %v", err)
+	}
+	configured, err := service.EnsureSquadWorkflowPlan(context.Background(), testHandler.Queries, issue)
+	if !configured || err == nil {
+		t.Fatalf("stale configured route did not fail closed: configured=%v err=%v", configured, err)
+	}
+}
+
+func TestWorkflowControlImplementationReadyQueuesReviewerExactlyOnce(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+
+	first := testutil.Call(t, testHandler.PostIssueWorkflowEvent, workflowEventRequest(fx, workflowstate.ImplementationReady)).Want(http.StatusCreated)
+	var firstBody issueWorkflowEventResponse
+	if err := json.Unmarshal([]byte(first.Text()), &firstBody); err != nil {
+		t.Fatalf("decode first event: %v", err)
+	}
+	if firstBody.Decision.Next != workflowstate.TechnicalReview || firstBody.Decision.EnqueueAgentID != fx.ReviewerID || firstBody.Dispatch != "queued" {
+		t.Fatalf("unexpected first decision: %+v", firstBody)
+	}
+
+	second := testutil.Call(t, testHandler.PostIssueWorkflowEvent, workflowEventRequest(fx, workflowstate.ImplementationReady)).Want(http.StatusCreated)
+	var secondBody issueWorkflowEventResponse
+	if err := json.Unmarshal([]byte(second.Text()), &secondBody); err != nil {
+		t.Fatalf("decode replay: %v", err)
+	}
+	if !secondBody.Replay || secondBody.EventID != firstBody.EventID {
+		t.Fatalf("event replay was not idempotent: first=%+v second=%+v", firstBody, secondBody)
+	}
+
+	var count int
+	if err := testPool.QueryRow(context.Background(), `
+		SELECT count(*) FROM agent_task_queue
+		WHERE trigger_evidence_kind = 'workflow_event'
+		  AND trigger_evidence_ref_id = $1
+	`, firstBody.EventID).Scan(&count); err != nil {
+		t.Fatalf("count workflow tasks: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("workflow event created %d reviewer tasks, want exactly 1", count)
+	}
+
+	var status string
+	if err := testPool.QueryRow(context.Background(), `SELECT status FROM issue WHERE id = $1`, fx.IssueID).Scan(&status); err != nil {
+		t.Fatalf("load projected issue status: %v", err)
+	}
+	if status != "in_review" {
+		t.Fatalf("implementation-ready board status = %q, want in_review", status)
+	}
+
+	issue, err := testHandler.Queries.GetIssue(context.Background(), parseUUID(fx.IssueID))
+	if err != nil {
+		t.Fatalf("load issue for trigger check: %v", err)
+	}
+	triggers, _ := testHandler.computeCommentAgentTriggers(context.Background(), issue, "implementation evidence", nil, "agent", fx.ImplementerID, commentTriggerComputeOptions{
+		SourceTaskID: parseUUID(fx.SourceTaskID),
+	})
+	if triggersContainIssueAssigneeSquadLeader(triggers) {
+		t.Fatal("structured implementation-ready event still woke squad leader as a relay")
+	}
+}
+
+func TestWorkflowControlRejectsLegacyEventFromNormalizedWorkflowTask(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+
+	if _, err := testPool.Exec(context.Background(), `
+		UPDATE agent_task_queue SET workflow_action_id = gen_random_uuid() WHERE id = $1
+	`, fx.SourceTaskID); err != nil {
+		t.Fatalf("bind normalized workflow action: %v", err)
+	}
+
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent,
+		workflowEventRequest(fx, workflowstate.ImplementationReady)).Want(http.StatusConflict)
+
+	var events int
+	if err := testPool.QueryRow(context.Background(), `
+		SELECT count(*) FROM issue_workflow_event WHERE issue_id = $1
+	`, fx.IssueID).Scan(&events); err != nil {
+		t.Fatalf("count legacy workflow events: %v", err)
+	}
+	if events != 0 {
+		t.Fatalf("normalized task created %d legacy workflow events, want zero", events)
+	}
+}
+
+func TestWorkflowControlRejectsSelfReviewPlan(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	req := withURLParam(newRequest(http.MethodPut, "/api/issues/"+fx.IssueID+"/workflow-plan", map[string]any{
+		"squad_id": fx.SquadID, "implementer_id": fx.ImplementerID, "reviewer_id": fx.ImplementerID,
+	}), "id", fx.IssueID)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, req).Want(http.StatusBadRequest)
+}
+
+func TestWorkflowControlRejectsEventFromCompletedTask(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+	if _, err := testPool.Exec(context.Background(), `
+		UPDATE agent_task_queue SET status = 'completed', completed_at = now()
+		WHERE id = $1
+	`, fx.SourceTaskID); err != nil {
+		t.Fatalf("complete source task: %v", err)
+	}
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent, workflowEventRequest(fx, workflowstate.ImplementationReady)).Want(http.StatusConflict)
+}
+
+func TestWorkflowControlOwnerDecisionAlertsOnceAndResumesExactWorker(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+	body := map[string]any{"event": workflowstate.OwnerDecisionRequired, "reason": "one product choice is required", "owner_decision": ownerDecisionPacket()}
+	req := withURLParam(newRequest(http.MethodPost, "/api/issues/"+fx.IssueID+"/workflow-events", body), "id", fx.IssueID)
+	req.Header.Set("X-Agent-ID", fx.ImplementerID)
+	req.Header.Set("X-Task-ID", fx.SourceTaskID)
+	result := testutil.Call(t, testHandler.PostIssueWorkflowEvent, req).Want(http.StatusCreated)
+	var waiting issueWorkflowEventResponse
+	result.JSON(&waiting)
+	if waiting.Decision.Next != workflowstate.NeedsOwner || !waiting.Decision.NotifyOwner {
+		t.Fatalf("owner request decision = %+v", waiting.Decision)
+	}
+
+	var alertCount int
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM inbox_item WHERE issue_id=$1 AND type='workflow_owner_decision'`, fx.IssueID).Scan(&alertCount); err != nil {
+		t.Fatal(err)
+	}
+	if alertCount != 1 {
+		t.Fatalf("owner alerts = %d, want 1", alertCount)
+	}
+
+	answerReq := withURLParam(newRequest(http.MethodPost, "/api/issues/"+fx.IssueID+"/workflow-owner-decision", map[string]any{"request_event_id": waiting.EventID, "answer": "A"}), "id", fx.IssueID)
+	answered := testutil.Call(t, testHandler.PostIssueWorkflowOwnerDecision, answerReq).Want(http.StatusCreated)
+	var resumed issueWorkflowEventResponse
+	answered.JSON(&resumed)
+	if resumed.Decision.Next != workflowstate.Working || resumed.Decision.EnqueueAgentID != fx.ImplementerID || resumed.Dispatch != "queued" {
+		t.Fatalf("owner answer did not resume exact worker: %+v", resumed)
+	}
+	if resumed.Plan.SuspendedState.Valid || resumed.Plan.SuspendedAgentID.Valid {
+		t.Fatalf("suspended fields not cleared: %+v", resumed.Plan)
+	}
+
+	var resumedCount int
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM agent_task_queue WHERE trigger_evidence_kind='workflow_event' AND trigger_evidence_ref_id=$1 AND agent_id=$2`, resumed.EventID, fx.ImplementerID).Scan(&resumedCount); err != nil {
+		t.Fatal(err)
+	}
+	if resumedCount != 1 {
+		t.Fatalf("resumed worker tasks = %d, want 1", resumedCount)
+	}
+	replayReq := withURLParam(newRequest(http.MethodPost, "/api/issues/"+fx.IssueID+"/workflow-owner-decision", map[string]any{"request_event_id": waiting.EventID, "answer": "A"}), "id", fx.IssueID)
+	testutil.Call(t, testHandler.PostIssueWorkflowOwnerDecision, replayReq).Want(http.StatusConflict)
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM inbox_item WHERE issue_id=$1 AND type='workflow_owner_decision'`, fx.IssueID).Scan(&alertCount); err != nil {
+		t.Fatal(err)
+	}
+	if alertCount != 1 {
+		t.Fatalf("owner alerts after replay = %d, want 1", alertCount)
+	}
+}
+
+// Characterization only: free-text answers do not encode an outcome today.
+// Even an explicit rejection is treated as OwnerDecisionRecorded and follows
+// the same resume path as approval. Workflow contract v2 must replace this
+// behavior with a typed response; this test must change when that lands.
+func TestWorkflowControlCharacterizationNonemptyRejectionStillResumes(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+
+	body := map[string]any{
+		"event": workflowstate.OwnerDecisionRequired, "reason": "one product choice is required",
+		"owner_decision": ownerDecisionPacket(),
+	}
+	request := withURLParam(newRequest(http.MethodPost, "/api/issues/"+fx.IssueID+"/workflow-events", body), "id", fx.IssueID)
+	request.Header.Set("X-Agent-ID", fx.ImplementerID)
+	request.Header.Set("X-Task-ID", fx.SourceTaskID)
+	var waiting issueWorkflowEventResponse
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent, request).Want(http.StatusCreated).JSON(&waiting)
+
+	answer := withURLParam(newRequest(http.MethodPost, "/api/issues/"+fx.IssueID+"/workflow-owner-decision", map[string]any{
+		"request_event_id": waiting.EventID,
+		"answer":           "Reject",
+	}), "id", fx.IssueID)
+	var rejected issueWorkflowEventResponse
+	testutil.Call(t, testHandler.PostIssueWorkflowOwnerDecision, answer).Want(http.StatusCreated).JSON(&rejected)
+	if rejected.Decision.Next != workflowstate.Working || rejected.Decision.EnqueueAgentID != fx.ImplementerID || rejected.Dispatch != "queued" {
+		t.Fatalf("characterization changed: free-text rejection no longer followed the approval resume path: %+v", rejected)
+	}
+}
+
+// Characterization only: OwnerDecisionRequired currently validates that the
+// caller owns a running task on the issue, but it does not require that task's
+// agent to hold any role in the workflow plan. Contract v2 must reject this.
+func TestWorkflowControlCharacterizationUnrelatedRunningTaskCanRequestOwnerDecision(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+
+	outsiderID := createHandlerTestAgent(t, "Workflow Outsider", nil)
+	outsiderTaskID := dbfx.Task(t, outsiderID, testutil.Cols{
+		"runtime_id":          handlerTestRuntimeID(t),
+		"status":              "running",
+		"issue_id":            fx.IssueID,
+		"started_at":          testutil.Raw("now()"),
+		"squad_id":            fx.SquadID,
+		"originator_user_id":  testUserID,
+		"accountable_user_id": testUserID,
+	})
+	body := map[string]any{
+		"event": workflowstate.OwnerDecisionRequired, "reason": "unrelated task requested owner authority",
+		"owner_decision": ownerDecisionPacket(),
+	}
+	request := withURLParam(newRequest(http.MethodPost, "/api/issues/"+fx.IssueID+"/workflow-events", body), "id", fx.IssueID)
+	request.Header.Set("X-Agent-ID", outsiderID)
+	request.Header.Set("X-Task-ID", outsiderTaskID)
+	var got issueWorkflowEventResponse
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent, request).Want(http.StatusCreated).JSON(&got)
+	if got.Decision.Next != workflowstate.NeedsOwner || !got.Decision.NotifyOwner || uuidToString(got.Plan.SuspendedAgentID) != outsiderID {
+		t.Fatalf("characterization changed: unrelated running task was not accepted as the suspended owner-decision source: %+v", got)
+	}
+}
+
+// Characterization only: duplicate concurrent submissions have one durable
+// logical effect, but the losing request can be either a replay or a conflict
+// depending on whether its initial lookup races the winner's commit. Contract
+// v2 must return one stable idempotent receipt instead of this response race.
+func TestWorkflowControlCharacterizationConcurrentDuplicateHasOneLogicalEffect(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+
+	type result struct {
+		code int
+		body string
+	}
+	start := make(chan struct{})
+	results := make(chan result, 2)
+	for range 2 {
+		request := workflowEventRequest(fx, workflowstate.ImplementationReady)
+		go func() {
+			<-start
+			recorder := httptest.NewRecorder()
+			testHandler.PostIssueWorkflowEvent(recorder, request)
+			results <- result{code: recorder.Code, body: recorder.Body.String()}
+		}()
+	}
+	close(start)
+
+	created := 0
+	replayed := 0
+	conflicted := 0
+	eventID := ""
+	for range 2 {
+		got := <-results
+		switch got.code {
+		case http.StatusCreated:
+			var response issueWorkflowEventResponse
+			if err := json.Unmarshal([]byte(got.body), &response); err != nil {
+				t.Fatalf("decode concurrent response: %v: %s", err, got.body)
+			}
+			if response.Replay {
+				replayed++
+			} else {
+				created++
+			}
+			if eventID != "" && response.EventID != eventID {
+				t.Fatalf("concurrent duplicate returned two event ids: %s and %s", eventID, response.EventID)
+			}
+			eventID = response.EventID
+		case http.StatusConflict:
+			conflicted++
+		default:
+			t.Fatalf("concurrent duplicate returned unexpected status %d: %s", got.code, got.body)
+		}
+	}
+	if created != 1 || replayed+conflicted != 1 {
+		t.Fatalf("characterization changed: created=%d replayed=%d conflicted=%d", created, replayed, conflicted)
+	}
+
+	var eventCount, taskCount int
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM issue_workflow_event WHERE source_task_id=$1 AND event_type=$2`, fx.SourceTaskID, workflowstate.ImplementationReady).Scan(&eventCount); err != nil {
+		t.Fatalf("count concurrent workflow events: %v", err)
+	}
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM agent_task_queue WHERE trigger_evidence_kind='workflow_event' AND trigger_evidence_ref_id=$1`, eventID).Scan(&taskCount); err != nil {
+		t.Fatalf("count concurrent workflow tasks: %v", err)
+	}
+	if eventCount != 1 || taskCount != 1 {
+		t.Fatalf("concurrent duplicate produced event/task counts %d/%d, want 1/1", eventCount, taskCount)
+	}
+}
+
+// Characterization only: the workflow event and state commit before dispatch.
+// On dispatch failure, "pending_retry" exists only in this HTTP response; no
+// durable task or retry record is admitted for an automatic worker to claim.
+func TestWorkflowControlCharacterizationPostCommitDispatchFailureHasNoDurableRetry(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+	if _, err := testPool.Exec(context.Background(), `UPDATE agent SET archived_at=now() WHERE id=$1`, fx.ReviewerID); err != nil {
+		t.Fatalf("archive dispatch target: %v", err)
+	}
+
+	var pending issueWorkflowEventResponse
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent, workflowEventRequest(fx, workflowstate.ImplementationReady)).Want(http.StatusAccepted).JSON(&pending)
+	if pending.Dispatch != "pending_retry" || pending.Decision.Next != workflowstate.TechnicalReview || pending.Replay {
+		t.Fatalf("characterization changed: post-commit dispatch failure response = %+v", pending)
+	}
+
+	var eventCount, taskCount int
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM issue_workflow_event WHERE id=$1`, pending.EventID).Scan(&eventCount); err != nil {
+		t.Fatalf("count committed workflow event: %v", err)
+	}
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM agent_task_queue WHERE trigger_evidence_kind='workflow_event' AND trigger_evidence_ref_id=$1`, pending.EventID).Scan(&taskCount); err != nil {
+		t.Fatalf("count failed-dispatch workflow tasks: %v", err)
+	}
+	if eventCount != 1 || taskCount != 0 {
+		t.Fatalf("post-commit dispatch failure left event/task counts %d/%d, want 1/0", eventCount, taskCount)
+	}
+
+	var replay issueWorkflowEventResponse
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent, workflowEventRequest(fx, workflowstate.ImplementationReady)).Want(http.StatusAccepted).JSON(&replay)
+	if !replay.Replay || replay.EventID != pending.EventID || replay.Dispatch != "pending_retry" {
+		t.Fatalf("manual replay did not expose the same undelivered event: first=%+v replay=%+v", pending, replay)
+	}
+	if err := testPool.QueryRow(context.Background(), `SELECT count(*) FROM agent_task_queue WHERE trigger_evidence_kind='workflow_event' AND trigger_evidence_ref_id=$1`, pending.EventID).Scan(&taskCount); err != nil {
+		t.Fatalf("recount failed-dispatch workflow tasks: %v", err)
+	}
+	if taskCount != 0 {
+		t.Fatalf("manual replay unexpectedly created %d durable retry tasks, want 0", taskCount)
+	}
+}
+
+func TestWorkflowControlReviewFailureRequiresStructuredCorrection(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent,
+		workflowEventRequestFor(fx, workflowstate.ReviewFailed, fx.ReviewerID, fx.SourceTaskID, nil),
+	).Want(http.StatusBadRequest)
+}
+
+func TestWorkflowControlCorrectionLoopIsBoundedAndDoesNotRelayThroughMika(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+
+	ready := testutil.Call(t, testHandler.PostIssueWorkflowEvent,
+		workflowEventRequest(fx, workflowstate.ImplementationReady),
+	).Want(http.StatusCreated)
+	var readyBody issueWorkflowEventResponse
+	ready.JSON(&readyBody)
+
+	var firstReviewerTask string
+	if err := testPool.QueryRow(context.Background(), `
+		UPDATE agent_task_queue SET status = 'running', started_at = now()
+		WHERE trigger_evidence_kind = 'workflow_event' AND trigger_evidence_ref_id = $1
+		RETURNING id
+	`, readyBody.EventID).Scan(&firstReviewerTask); err != nil {
+		t.Fatalf("start first reviewer: %v", err)
+	}
+	firstFailure := testutil.Call(t, testHandler.PostIssueWorkflowEvent,
+		workflowEventRequestFor(fx, workflowstate.ReviewFailed, fx.ReviewerID, firstReviewerTask, correctionPacket()),
+	).Want(http.StatusCreated)
+	var firstFailureBody issueWorkflowEventResponse
+	firstFailure.JSON(&firstFailureBody)
+	if firstFailureBody.Decision.Next != workflowstate.Correction || firstFailureBody.Decision.EnqueueAgentID != fx.ImplementerID || firstFailureBody.Decision.WakeLeader {
+		t.Fatalf("first failure did not route directly to correction: %+v", firstFailureBody)
+	}
+	if firstFailureBody.Plan.CorrectionCount != 1 {
+		t.Fatalf("correction count = %d, want 1", firstFailureBody.Plan.CorrectionCount)
+	}
+
+	var stored workflowCorrectionPacket
+	var payload []byte
+	if err := testPool.QueryRow(context.Background(), `SELECT payload FROM issue_workflow_event WHERE id = $1`, firstFailureBody.EventID).Scan(&payload); err != nil {
+		t.Fatalf("load correction payload: %v", err)
+	}
+	if err := json.Unmarshal(payload, &stored); err != nil || stored.RequiredCorrection != "change only the output to APPROVED" {
+		t.Fatalf("stored correction packet = %+v, err=%v", stored, err)
+	}
+
+	var correctionTask string
+	if err := testPool.QueryRow(context.Background(), `
+		UPDATE agent_task_queue SET status = 'running', started_at = now()
+		WHERE trigger_evidence_kind = 'workflow_event' AND trigger_evidence_ref_id = $1
+		RETURNING id
+	`, firstFailureBody.EventID).Scan(&correctionTask); err != nil {
+		t.Fatalf("start correction worker: %v", err)
+	}
+	corrected := testutil.Call(t, testHandler.PostIssueWorkflowEvent,
+		workflowEventRequestFor(fx, workflowstate.ImplementationReady, fx.ImplementerID, correctionTask, nil),
+	).Want(http.StatusCreated)
+	var correctedBody issueWorkflowEventResponse
+	corrected.JSON(&correctedBody)
+
+	var secondReviewerTask string
+	if err := testPool.QueryRow(context.Background(), `
+		UPDATE agent_task_queue SET status = 'running', started_at = now()
+		WHERE trigger_evidence_kind = 'workflow_event' AND trigger_evidence_ref_id = $1
+		RETURNING id
+	`, correctedBody.EventID).Scan(&secondReviewerTask); err != nil {
+		t.Fatalf("start second reviewer: %v", err)
+	}
+	secondFailure := testutil.Call(t, testHandler.PostIssueWorkflowEvent,
+		workflowEventRequestFor(fx, workflowstate.ReviewFailed, fx.ReviewerID, secondReviewerTask, correctionPacket()),
+	).Want(http.StatusCreated)
+	var secondFailureBody issueWorkflowEventResponse
+	secondFailure.JSON(&secondFailureBody)
+	if secondFailureBody.Decision.Next != workflowstate.Blocked || !secondFailureBody.Decision.WakeLeader || secondFailureBody.Decision.EnqueueAgentID != fx.LeaderID {
+		t.Fatalf("second failure did not stop and escalate: %+v", secondFailureBody)
+	}
+	if secondFailureBody.Plan.CorrectionCount != 1 {
+		t.Fatalf("bounded correction count = %d, want 1", secondFailureBody.Plan.CorrectionCount)
+	}
+
+	var status string
+	if err := testPool.QueryRow(context.Background(), `SELECT status FROM issue WHERE id = $1`, fx.IssueID).Scan(&status); err != nil {
+		t.Fatalf("load final issue status: %v", err)
+	}
+	if status != "blocked" {
+		t.Fatalf("issue status = %q, want blocked", status)
+	}
+	var leaderTaskCount int
+	if err := testPool.QueryRow(context.Background(), `
+		SELECT count(*) FROM agent_task_queue
+		WHERE trigger_evidence_kind = 'workflow_event'
+		  AND trigger_evidence_ref_id = $1
+		  AND agent_id = $2
+		  AND is_leader_task = true
+	`, secondFailureBody.EventID, fx.LeaderID).Scan(&leaderTaskCount); err != nil {
+		t.Fatalf("count leader escalation task: %v", err)
+	}
+	if leaderTaskCount != 1 {
+		t.Fatalf("leader escalation tasks = %d, want 1", leaderTaskCount)
+	}
+	issue, err := testHandler.Queries.GetIssue(context.Background(), parseUUID(fx.IssueID))
+	if err != nil {
+		t.Fatalf("load issue for escalation trigger check: %v", err)
+	}
+	triggers, _ := testHandler.computeCommentAgentTriggers(context.Background(), issue, "second review failure", nil, "agent", fx.ReviewerID, commentTriggerComputeOptions{
+		SourceTaskID: parseUUID(secondReviewerTask),
+	})
+	if triggersContainIssueAssigneeSquadLeader(triggers) {
+		t.Fatal("controller-dispatched leader escalation still created a second comment fallback")
+	}
+}
+
+func TestWorkflowControlCommentBeforeMissingDispatchDoesNotRaceLeaderFallback(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+	if _, err := testPool.Exec(context.Background(), `
+		INSERT INTO issue_workflow_event (
+			id, workspace_id, issue_id, source_task_id, actor_id,
+			event_type, reason, decision
+		) VALUES (
+			gen_random_uuid(), $1, $2, $3, $4,
+			'implementation_ready', 'dispatch deliberately absent',
+			jsonb_build_object('next', 'technical_review', 'enqueue_agent_id', $5::text)
+		)
+	`, testWorkspaceID, fx.IssueID, fx.SourceTaskID, fx.ImplementerID, fx.ReviewerID); err != nil {
+		t.Fatalf("seed event without dispatched task: %v", err)
+	}
+	issue, err := testHandler.Queries.GetIssue(context.Background(), parseUUID(fx.IssueID))
+	if err != nil {
+		t.Fatalf("load issue: %v", err)
+	}
+	triggers, _ := testHandler.computeCommentAgentTriggers(context.Background(), issue, "dispatch failed", nil, "agent", fx.ImplementerID, commentTriggerComputeOptions{
+		SourceTaskID: parseUUID(fx.SourceTaskID),
+	})
+	if triggersContainIssueAssigneeSquadLeader(triggers) {
+		t.Fatal("workflow-role comment raced the terminal recovery boundary")
+	}
+	if _, err := testHandler.TaskService.CompleteTask(context.Background(), parseUUID(fx.SourceTaskID), []byte(`{"output":"implementation finished"}`), "", "", "", false, "", ""); err != nil {
+		t.Fatalf("complete workflow task: %v", err)
+	}
+	var recoveryCount int
+	if err := testPool.QueryRow(context.Background(), `
+		SELECT count(*) FROM agent_task_queue
+		WHERE trigger_evidence_kind = 'workflow_missing_event'
+		  AND trigger_evidence_ref_id = $1
+		  AND agent_id = $2
+		  AND is_leader_task = true
+	`, fx.SourceTaskID, fx.LeaderID).Scan(&recoveryCount); err != nil {
+		t.Fatalf("count terminal recovery tasks: %v", err)
+	}
+	if recoveryCount != 1 {
+		t.Fatalf("terminal recovery tasks = %d, want exactly 1", recoveryCount)
+	}
+}
+
+func TestWorkflowControlSuccessfulDispatchDoesNotWakeRecoveryLeader(t *testing.T) {
+	if testHandler == nil || testPool == nil {
+		t.Skip("database not available")
+	}
+	fx := newWorkflowControlFixture(t)
+	testutil.Call(t, testHandler.PutIssueWorkflowPlan, putWorkflowPlanRequest(fx)).Want(http.StatusOK)
+	testutil.Call(t, testHandler.PostIssueWorkflowEvent,
+		workflowEventRequest(fx, workflowstate.ImplementationReady),
+	).Want(http.StatusCreated)
+
+	if _, err := testHandler.TaskService.CompleteTask(context.Background(), parseUUID(fx.SourceTaskID), []byte(`{"output":"implementation finished"}`), "", "", "", false, "", ""); err != nil {
+		t.Fatalf("complete workflow task: %v", err)
+	}
+	var recoveryCount int
+	if err := testPool.QueryRow(context.Background(), `
+		SELECT count(*) FROM agent_task_queue
+		WHERE trigger_evidence_kind = 'workflow_missing_event'
+		  AND trigger_evidence_ref_id = $1
+	`, fx.SourceTaskID).Scan(&recoveryCount); err != nil {
+		t.Fatalf("count terminal recovery tasks: %v", err)
+	}
+	if recoveryCount != 0 {
+		t.Fatalf("successful workflow dispatch created %d recovery tasks, want 0", recoveryCount)
+	}
+}

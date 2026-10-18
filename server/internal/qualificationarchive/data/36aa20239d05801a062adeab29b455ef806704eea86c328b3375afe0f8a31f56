@@ -1,0 +1,166 @@
+package agentqualification
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"sort"
+	"strings"
+)
+
+const (
+	GuardedChildExecutionBoundaryVersionV1 = "silver-mediums.guarded-child-execution-boundary.v1"
+	GuardedEnvironmentPolicyExactV1        = "exact_allowlist_v1"
+	GuardedToolPolicyNoneV1                = "tool_free_v1"
+	GuardedHostAttestationParentOnlyV1     = "daemon_parent_only_v1"
+	GuardedClaudeAdapterV1                 = "claude_stream_json_tool_free_v1"
+	GuardedOpenCodeAdapterV1               = "opencode_run_json_tool_free_v1"
+)
+
+// GuardedChildExecutionBoundaryV1 is durable runtime-qualification evidence
+// for the last local process boundary. It binds the executable bytes, the
+// exact set of child environment keys, and a provider-native tool-free adapter.
+// Host attestation stays in the daemon parent and is never a child env value.
+type GuardedChildExecutionBoundaryV1 struct {
+	Version                    string `json:"version"`
+	HostOS                     string `json:"host_os"`
+	Adapter                    string `json:"adapter"`
+	EnvironmentPolicy          string `json:"environment_policy"`
+	EnvironmentAllowlistSHA256 string `json:"environment_allowlist_sha256"`
+	ToolPolicy                 string `json:"tool_policy"`
+	HostAttestationCustody     string `json:"host_attestation_custody"`
+	ExecutableSHA256           string `json:"executable_sha256"`
+}
+
+// GuardedHostExecutionFactsV1 are independently derived by the daemon from
+// the resolved built-in executable and its local launch policy.
+type GuardedHostExecutionFactsV1 struct {
+	HostOS                     string
+	Adapter                    string
+	EnvironmentPolicy          string
+	EnvironmentAllowlistSHA256 string
+	ToolPolicy                 string
+	HostAttestationCustody     string
+	ExecutableSHA256           string
+}
+
+// GuardedChildEnvironmentKeysV1 returns the complete child env name allowlist.
+// It intentionally contains no MULTICA_*, provider credential, inherited
+// profile, or host-attestation key.
+func GuardedChildEnvironmentKeysV1(provider, hostOS string) ([]string, error) {
+	keys := []string{
+		"HOME", "PATH", "PWD", "TEMP", "TMP", "TMPDIR", "USERPROFILE",
+		"XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME",
+	}
+	switch strings.ToLower(strings.TrimSpace(hostOS)) {
+	case "windows":
+		keys = append(keys, "APPDATA", "LOCALAPPDATA", "SYSTEMROOT")
+	case "darwin", "linux":
+		// No additional host variables are required for an absolute native
+		// executable on supported POSIX hosts.
+	default:
+		return nil, fmt.Errorf("%w: unsupported guarded host OS", ErrGuardedEnvironmentNotIsolated)
+	}
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "claude":
+		keys = append(keys, "CLAUDE_CODE_MAX_RETRIES", "CLAUDE_CODE_TMPDIR", "CLAUDE_CONFIG_DIR")
+	case "opencode":
+		keys = append(keys,
+			"OPENCODE_CONFIG_CONTENT", "OPENCODE_CONFIG_DIR",
+			"OPENCODE_DISABLE_AUTOUPDATE", "OPENCODE_DISABLE_GLOBAL_CONFIG",
+			"OPENCODE_DISABLE_PRUNE",
+		)
+	default:
+		return nil, fmt.Errorf("%w: provider has no guarded tool-free adapter", ErrGuardedEnvironmentNotIsolated)
+	}
+	sort.Strings(keys)
+	return keys, nil
+}
+
+func GuardedAdapterV1(provider string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "claude":
+		return GuardedClaudeAdapterV1, nil
+	case "opencode":
+		return GuardedOpenCodeAdapterV1, nil
+	default:
+		return "", fmt.Errorf("%w: provider has no guarded tool-free adapter", ErrGuardedEnvironmentNotIsolated)
+	}
+}
+
+// GuardedEnvironmentAllowlistSHA256V1 hashes a canonical, duplicate-free list
+// of names. Values are task-local paths/config assembled by the daemon and are
+// validated separately at construction time.
+func GuardedEnvironmentAllowlistSHA256V1(keys []string) (string, error) {
+	canonical := append([]string(nil), keys...)
+	sort.Strings(canonical)
+	for i, key := range canonical {
+		if strings.TrimSpace(key) == "" || strings.Contains(key, "=") || (i > 0 && key == canonical[i-1]) {
+			return "", fmt.Errorf("%w: invalid guarded environment allowlist", ErrGuardedEnvironmentNotIsolated)
+		}
+	}
+	raw, err := json.Marshal(canonical)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(raw)
+	return hex.EncodeToString(sum[:]), nil
+}
+
+func validateGuardedChildExecutionBoundaryV1(boundary GuardedChildExecutionBoundaryV1) error {
+	if boundary.Version != GuardedChildExecutionBoundaryVersionV1 ||
+		boundary.EnvironmentPolicy != GuardedEnvironmentPolicyExactV1 ||
+		boundary.ToolPolicy != GuardedToolPolicyNoneV1 ||
+		boundary.HostAttestationCustody != GuardedHostAttestationParentOnlyV1 ||
+		!validSHA256(boundary.EnvironmentAllowlistSHA256) ||
+		!validSHA256(boundary.ExecutableSHA256) {
+		return ErrGuardedConfigurationUnbound
+	}
+	adapter, err := GuardedAdapterV1(boundaryAdapterProvider(boundary.Adapter))
+	if err != nil || adapter != boundary.Adapter {
+		return ErrGuardedConfigurationUnbound
+	}
+	keys, err := GuardedChildEnvironmentKeysV1(boundaryAdapterProvider(boundary.Adapter), boundary.HostOS)
+	if err != nil {
+		return ErrGuardedConfigurationUnbound
+	}
+	digest, err := GuardedEnvironmentAllowlistSHA256V1(keys)
+	if err != nil || digest != boundary.EnvironmentAllowlistSHA256 {
+		return ErrGuardedConfigurationUnbound
+	}
+	return nil
+}
+
+func validateGuardedChildExecutionProviderV1(boundary GuardedChildExecutionBoundaryV1, provider string) error {
+	if boundaryAdapterProvider(boundary.Adapter) != strings.ToLower(strings.TrimSpace(provider)) {
+		return ErrGuardedConfigurationUnbound
+	}
+	return nil
+}
+
+func boundaryAdapterProvider(adapter string) string {
+	switch adapter {
+	case GuardedClaudeAdapterV1:
+		return "claude"
+	case GuardedOpenCodeAdapterV1:
+		return "opencode"
+	default:
+		return ""
+	}
+}
+
+func validateGuardedHostExecutionFactsV1(boundary GuardedChildExecutionBoundaryV1, actual GuardedHostExecutionFactsV1) error {
+	if err := validateGuardedChildExecutionBoundaryV1(boundary); err != nil {
+		return err
+	}
+	if boundary.HostOS != actual.HostOS || boundary.Adapter != actual.Adapter ||
+		boundary.EnvironmentPolicy != actual.EnvironmentPolicy ||
+		boundary.EnvironmentAllowlistSHA256 != actual.EnvironmentAllowlistSHA256 ||
+		boundary.ToolPolicy != actual.ToolPolicy ||
+		boundary.HostAttestationCustody != actual.HostAttestationCustody ||
+		boundary.ExecutableSHA256 != actual.ExecutableSHA256 {
+		return ErrGuardedEnvironmentNotIsolated
+	}
+	return nil
+}

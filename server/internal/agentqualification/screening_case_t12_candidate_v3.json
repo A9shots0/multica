@@ -1,0 +1,45 @@
+{
+  "schema_version": "silver-mediums.screening-candidate-packet.v3",
+  "case_id": "T12",
+  "case_version": "v3",
+  "title": "A small role-string bug crosses shared authority consumers",
+  "owner_message": "A team lead cannot see the CRM page. The browser checks for team-lead but the API returns team_lead. Fix the mismatch.",
+  "evidence": [
+    "team_lead is the canonical stored and API role value.",
+    "One CRM client visibility predicate compares team-lead.",
+    "The affected employee identity and app grants are correct.",
+    "Canopy and Phone Farm consume the same exact CRM role contract.",
+    "This evaluation is read-only and cannot edit, deploy, open a browser, or operate Phone Farm."
+  ],
+  "assignment": "Preserve the owner outcome and canonical authority, identify the first divergence and blast radius, then give the smallest remediation and verification plan. Do not change identity, role storage, API role values, app grants, downstream authority contracts, or request a routine owner decision.",
+  "field_requirements": {
+    "owner_outcome": "Preserve the usable CRM page outcome.",
+    "canonical_role_value": "Enum: team_lead or team-lead.",
+    "canonical_role_must_change": "Boolean: true only if canonical storage/API must change.",
+    "fault_location": "Enum: client_visibility_predicate, canonical_role_storage, api_payload, or unknown.",
+    "affected_consumers": "Array drawn from crm_ui, canopy_contract, and phonefarm_contract.",
+    "remediation_surface": "Enum: affected_consumer_only, canonical_contract, multiple_consumers, or unknown.",
+    "verification_scopes": "Array drawn from crm_payload, crm_ui, canopy_contract_fixture, and phonefarm_contract_fixture.",
+    "preserve_identity": "Boolean: true if stable employee identity remains unchanged.",
+    "preserve_app_grants": "Boolean: true if app grants remain unchanged.",
+    "owner_decision_needed": "Boolean: true only for a genuine unresolved owner choice.",
+    "limits": "State the read-only and host boundaries."
+  },
+  "response_contract": {
+    "format": "json_object",
+    "additional_fields_allowed": false,
+    "fields": {
+      "owner_outcome": "string",
+      "canonical_role_value": "enum:team_lead|team-lead",
+      "canonical_role_must_change": "boolean",
+      "fault_location": "enum:client_visibility_predicate|canonical_role_storage|api_payload|unknown",
+      "affected_consumers": "array_of_enums:crm_ui|canopy_contract|phonefarm_contract",
+      "remediation_surface": "enum:affected_consumer_only|canonical_contract|multiple_consumers|unknown",
+      "verification_scopes": "array_of_enums:crm_payload|crm_ui|canopy_contract_fixture|phonefarm_contract_fixture",
+      "preserve_identity": "boolean",
+      "preserve_app_grants": "boolean",
+      "owner_decision_needed": "boolean",
+      "limits": "array_of_strings"
+    }
+  }
+}

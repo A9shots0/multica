@@ -1,0 +1,139 @@
+{
+  "schema_version": "silver-mediums.role-squad-operating-contract.v1",
+  "contract_id": "item-14-provider-free-role-squad-operating-contract-20260914",
+  "status": "accepted_provider_free_candidate",
+  "review_outcome": "self_adversarial_revise_p1_no_p0",
+  "consolidated_corrections": 1,
+  "provider_calls_allowed": false,
+  "credential_reads_allowed": false,
+  "production_actions_allowed": false,
+  "permanent_seat_selection_allowed": false,
+  "model_selection_allowed": false,
+  "source_hashes": {
+    "role_catalog": "c89c5f619c5f1a724e255b9014bfc882295a2c00504191bfc48569a5bbcc63e2",
+    "system_graph": "ff4119b1d70ced0a943f8dd056a1f3851e24c975ebacfad37dfc76d9aa75d1fa",
+    "qualification_cases": "960a68690a74d1af7949bcbcef94f34643ec241e690448512dd317948146a176",
+    "role_artifacts_v1": "87cf7679ae51d3b93b6b5ac7719cf337165b41483f8d728209e16e7473c5614a",
+    "role_artifacts_v2": "cfd54fc509eeadb7f6a5a985e100f990d8dd3adc2faa99c314c39f4d0df942c1"
+  },
+  "counts": {
+    "roles": 21,
+    "controller_only_outcome_identities": 10,
+    "maintained_candidate_cores": 3,
+    "conditional_candidate_packets": 6,
+    "external_mac_roles": 2,
+    "skill_only_packets": 1,
+    "squads": 3,
+    "system_journeys": 13,
+    "locked_cases": 19
+  },
+  "execution_classes": {
+    "controller_only_outcome_identities": [
+      "canopy_accounts_outcome",
+      "canopy_desktop_outcome",
+      "canopy_publishing_outcome",
+      "content_inspiration_outcome",
+      "crm_access_outcome",
+      "crm_product_outcome",
+      "linkhub_domains_outcome",
+      "media_pipeline_outcome",
+      "reporting_outcome",
+      "telnyx_messaging_outcome"
+    ],
+    "maintained_candidate_cores": [
+      "mika_owner_interface",
+      "quality_checker",
+      "shared_windows_executor"
+    ],
+    "conditional_candidate_packets": [
+      "architecture_assurance",
+      "company_auditor",
+      "data_sync_integrity",
+      "product_ui",
+      "release_runtime_assurance",
+      "security_privacy_review"
+    ],
+    "external_mac_roles": [
+      "phone_fleet_reliability",
+      "phonefarm_application_specialist"
+    ],
+    "skill_only_packets": [
+      "mac_alert_analysis"
+    ]
+  },
+  "collaboration_rules": {
+    "controller_owns_all_moves": true,
+    "one_accountable_outcome": true,
+    "one_primary_executor_per_host": true,
+    "max_concurrent_workers": 2,
+    "max_automatic_corrections": 1,
+    "max_review_attempts": 2,
+    "reviewer_must_be_distinct": true,
+    "participants_are_ordered_stages": true,
+    "mika_relay_forbidden": true,
+    "specialist_fanout_requires_unique_named_evidence": true,
+    "journey_required_function_does_not_automatically_create_a_separate_seat": true,
+    "historical_configuration_labels_do_not_create_seats": true,
+    "shared_skill_packet_is_not_independent_review": true
+  },
+  "ui_routing_rules": [
+    {
+      "id": "ui-exact-acceptance",
+      "condition": "functional acceptance and current design-system behavior are exact",
+      "participants": ["shared_windows_executor", "quality_checker"],
+      "shared_executor_skills": ["product_ui"],
+      "owner_decision": false,
+      "execution_allowed": true
+    },
+    {
+      "id": "ui-ambiguous-experience",
+      "condition": "interaction or information behavior requires experience judgment",
+      "participants": ["product_ui", "shared_windows_executor", "quality_checker"],
+      "shared_executor_skills": [],
+      "owner_decision": false,
+      "execution_allowed": true
+    },
+    {
+      "id": "ui-consequential-taste",
+      "condition": "a brand, preference, or business tradeoff cannot be derived from accepted constraints",
+      "participants": ["mika_owner_interface"],
+      "shared_executor_skills": [],
+      "owner_decision": true,
+      "execution_allowed": false
+    }
+  ],
+  "case_routes": [
+    {"case_id":"T01","squad_id":"cross_boundary_change","accountable_identity":"controller_unbound_until_first_divergence","host":"alienware_windows","participants":["shared_windows_executor","data_sync_integrity","quality_checker"],"shared_executor_skills":["architecture_assurance","product_ui"],"release_stage":false},
+    {"case_id":"T02","squad_id":"cross_boundary_change","accountable_identity":"linkhub_domains_outcome","host":"alienware_windows","participants":["shared_windows_executor","release_runtime_assurance","quality_checker"],"shared_executor_skills":["product_ui"],"release_stage":true},
+    {"case_id":"T03","squad_id":"cross_boundary_change","accountable_identity":"media_pipeline_outcome","host":"alienware_windows","participants":["shared_windows_executor","data_sync_integrity","quality_checker"],"shared_executor_skills":["product_ui"],"release_stage":false},
+    {"case_id":"T04","squad_id":"cross_boundary_change","accountable_identity":"canopy_publishing_outcome","host":"alienware_windows","participants":["shared_windows_executor","data_sync_integrity","quality_checker"],"shared_executor_skills":["security_privacy_review","product_ui"],"release_stage":false},
+    {"case_id":"T05","squad_id":"cross_boundary_change","accountable_identity":"phonefarm_application_specialist","host":"mac_studio_only","participants":["phonefarm_application_specialist","phone_fleet_reliability","quality_checker"],"shared_executor_skills":[],"release_stage":false},
+    {"case_id":"T06","squad_id":"cross_boundary_change","accountable_identity":"release_runtime_assurance","host":"alienware_windows","participants":["shared_windows_executor","release_runtime_assurance","quality_checker"],"shared_executor_skills":[],"release_stage":true},
+    {"case_id":"T07","squad_id":"cross_boundary_change","accountable_identity":"content_inspiration_outcome","host":"alienware_windows","participants":["shared_windows_executor","data_sync_integrity","quality_checker"],"shared_executor_skills":["product_ui"],"release_stage":false},
+    {"case_id":"T08","squad_id":"cross_boundary_change","accountable_identity":"release_runtime_assurance","host":"alienware_windows","participants":["release_runtime_assurance","quality_checker"],"shared_executor_skills":[],"release_stage":true},
+    {"case_id":"T09","squad_id":"standard_outcome_delivery","accountable_identity":"reporting_outcome","host":"alienware_windows","participants":["shared_windows_executor","product_ui","quality_checker"],"shared_executor_skills":[],"release_stage":false},
+    {"case_id":"T10","squad_id":"cross_boundary_change","accountable_identity":"release_runtime_assurance","host":"alienware_windows","participants":["shared_windows_executor","release_runtime_assurance","quality_checker"],"shared_executor_skills":[],"release_stage":true},
+    {"case_id":"T11","squad_id":"standard_outcome_delivery","accountable_identity":"controller_unbound_until_first_divergence","host":"alienware_windows","participants":["mika_owner_interface","shared_windows_executor","quality_checker"],"shared_executor_skills":[],"release_stage":false},
+    {"case_id":"T12","squad_id":"cross_boundary_change","accountable_identity":"controller_unbound_until_first_divergence","host":"alienware_windows","participants":["architecture_assurance","shared_windows_executor","quality_checker"],"shared_executor_skills":[],"release_stage":false},
+    {"case_id":"T13","squad_id":"standard_outcome_delivery","accountable_identity":"crm_product_outcome","host":"alienware_windows","participants":["shared_windows_executor","quality_checker"],"shared_executor_skills":["product_ui"],"release_stage":false},
+    {"case_id":"T14","squad_id":"cross_boundary_change","accountable_identity":"release_runtime_assurance","host":"alienware_windows","participants":["shared_windows_executor","quality_checker"],"shared_executor_skills":["security_privacy_review","architecture_assurance"],"release_stage":false},
+    {"case_id":"T15","squad_id":"cross_boundary_change","accountable_identity":"controller_unbound_until_first_divergence","host":"alienware_windows","participants":["architecture_assurance","shared_windows_executor","quality_checker"],"shared_executor_skills":[],"release_stage":false},
+    {"case_id":"T16","squad_id":"cross_boundary_change","accountable_identity":"controller_read_only_preflight","host":"alienware_windows","participants":["security_privacy_review","architecture_assurance","quality_checker"],"shared_executor_skills":[],"release_stage":false},
+    {"case_id":"T17","squad_id":"cross_boundary_change","accountable_identity":"canopy_accounts_outcome","host":"alienware_windows","participants":["shared_windows_executor","data_sync_integrity","security_privacy_review","quality_checker"],"shared_executor_skills":[],"release_stage":false},
+    {"case_id":"T18","squad_id":"cross_boundary_change","accountable_identity":"canopy_desktop_outcome","host":"alienware_windows","participants":["shared_windows_executor","release_runtime_assurance","product_ui","quality_checker"],"shared_executor_skills":[],"release_stage":true},
+    {"case_id":"T19","squad_id":"cross_boundary_change","accountable_identity":"telnyx_messaging_outcome","host":"alienware_windows","participants":["shared_windows_executor","data_sync_integrity","security_privacy_review","quality_checker"],"shared_executor_skills":[],"release_stage":false}
+  ],
+  "additional_routes": [
+    {"id":"A01","squad_id":"independent_audit","participants":["company_auditor","quality_checker"],"purpose":"bounded company audit plus evidence-completeness review"}
+  ],
+  "adversarial_denials": [
+    "controller_outcome_identity_attempts_execution",
+    "quality_checker_shares_agent_or_configuration_with_implementation",
+    "windows_attempts_phone_farm_technical_work",
+    "mika_attempts_workflow_movement_or_status_polling",
+    "specialist_adds_no_unique_named_evidence",
+    "more_than_two_workers_run_concurrently",
+    "second_automatic_correction_is_requested",
+    "shared_skill_is_presented_as_independent_review"
+  ]
+}

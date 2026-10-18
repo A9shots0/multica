@@ -1,0 +1,17 @@
+{
+  "release": "release-20260919",
+  "source_id": "42e12e331eaf0e1198c767eb0daa31491554e278",
+  "source_head": "42e12e331eaf0e1198c767eb0daa31491554e278",
+  "images": {
+    "backend": "sha256:92be5ab183598e41eb9546f1e6b47792fcc5807fc68e2aec0cfe9c7be56e246f",
+    "frontend": "sha256:d232d2b31f8a47e001ecee90828c8ea1552f6e36db4286344541bb4307d4be73",
+    "postgres": "sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f"
+  },
+  "rollback_images": {
+    "backend": "sha256:cafcc75a96c53ddc7ead672d14bb6d9f85f463ab92f6406d56065078c61df188",
+    "frontend": "sha256:d232d2b31f8a47e001ecee90828c8ea1552f6e36db4286344541bb4307d4be73"
+  },
+  "rollback_source_id": "8dc8226d181a463949a590387b4c3c43bee0b515",
+  "rollback_release": "recovery-lead-20260919",
+  "scope": "backend_only"
+}

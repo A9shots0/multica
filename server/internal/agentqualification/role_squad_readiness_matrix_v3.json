@@ -1,0 +1,57 @@
+{
+  "schema_version": "silver-mediums.role-squad-readiness-matrix.v3",
+  "matrix_id": "item-14-role-squad-readiness-after-cef7-20260915",
+  "status": "accepted_reversible_local_default_with_structural_roles_held",
+  "valid_until": "2026-09-22T13:15:00Z",
+  "source_hashes": {
+    "predecessor_readiness_v2": "4116a6d8b0b026d313dfe205d4cb62f8b7c0cf63a9532e2ba98b704483f43c8f",
+    "provisional_configuration_v2": "e3a68b16ce1f6975639229e82f1a251e7e11800347738534afa6441adf41e3a2",
+    "provisional_configuration_lifecycle_v2": "53d0a16b2d5fd26b0549fc94f148c739944362787d5db30db8fcec4f4471fc42",
+    "provisional_rehearsal_v2": "d93daf50b962e5de98640ab2538568239e7c29873eba01f763d0aca54342fe4c",
+    "integration_replay_result": "b4eed5453e1098ac9faed668961d1e6db2244fb7bf53ec39da1cf1fb005ab5a2",
+    "role_squad_operating_contract": "b3f88549e6a92df5708c7a89c53cb31b0b034cfbf7639f52c96e76659ae8fe09"
+  },
+  "role_packets": [
+    {"role_id":"architecture_assurance","artifact_binding_id":"silver-mediums.role-artifact.v2.architecture_assurance","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"provisional_inline_skill_exact_local_r01_like_scope_only"},
+    {"role_id":"company_auditor","artifact_binding_id":"silver-mediums.role-artifact.v2.company_auditor","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_no_runtime_reliability_evidence"},
+    {"role_id":"data_sync_integrity","artifact_binding_id":"silver-mediums.role-artifact.v2.data_sync_integrity","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_cef7_guard_label_is_not_role_qualification"},
+    {"role_id":"mika_owner_interface","artifact_binding_id":"silver-mediums.role-artifact.v1.mika_owner_interface","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_no_runtime_reliability_evidence"},
+    {"role_id":"phone_fleet_reliability","artifact_binding_id":"silver-mediums.role-artifact.v2.phone_fleet_reliability","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_external_mac_authority_required"},
+    {"role_id":"phonefarm_application_specialist","artifact_binding_id":"silver-mediums.role-artifact.v2.phonefarm_application_specialist","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_external_mac_authority_required"},
+    {"role_id":"product_ui","artifact_binding_id":"silver-mediums.role-artifact.v1.product_ui","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"held_unqualified_r02_zero_of_six"},
+    {"role_id":"quality_checker","artifact_binding_id":"silver-mediums.role-artifact.v1.quality_checker","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_cef7_temporary_reviewer_is_not_quality_checker_role_qualification"},
+    {"role_id":"release_runtime_assurance","artifact_binding_id":"silver-mediums.role-artifact.v2.release_runtime_assurance","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_no_runtime_reliability_evidence"},
+    {"role_id":"security_privacy_review","artifact_binding_id":"silver-mediums.role-artifact.v2.security_privacy_review","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"structural_only_no_runtime_reliability_evidence"},
+    {"role_id":"shared_windows_executor","artifact_binding_id":"silver-mediums.role-artifact.v1.shared_windows_executor","structural_status":"qualified_provider_free_contract_and_rehearsal","runtime_status":"provisional_manual_guarded_local_r01_like_with_inline_architecture_skill"}
+  ],
+  "task_scoped_functions": [
+    {"function_id":"intake_leader","binding":"task_scoped_no_permanent_seat","status":"provisional_exact_local_r01_like_route_only"},
+    {"function_id":"independent_reviewer","binding":"cef7_exact_temporary_reviewer_contract_not_permanent_quality_checker_qualification","status":"provisional_exact_local_r01_like_route_only"}
+  ],
+  "squads": [
+    {"squad_id":"cross_boundary_change","route_count":16,"status":"structural_provider_free_rehearsal_passed_activation_held"},
+    {"squad_id":"independent_audit","route_count":1,"status":"structural_provider_free_rehearsal_passed_activation_held"},
+    {"squad_id":"standard_outcome_delivery","route_count":3,"status":"structural_provider_free_rehearsal_passed_activation_held"}
+  ],
+  "controller_only_outcome_identities": 10,
+  "structural_instruction_skill_pairs": 11,
+  "provisional_local_operating_defaults": 1,
+  "provisional_runtime_role_packets": 2,
+  "provisional_task_scoped_functions": 2,
+  "activated_permanent_squads": 0,
+  "transport_default": "claude_code_subscription_composite",
+  "requested_primary_model_default": "claude-sonnet-4-6",
+  "exact_single_model_qualification": false,
+  "permanent_model_selection": "none",
+  "permanent_role_selection": "none",
+  "automatic_dispatch": false,
+  "configuration_authorizes_provider_call": false,
+  "production_activation": false,
+  "provider_calls": 0,
+  "credential_reads": 0,
+  "native_tool_executions": 0,
+  "provider_child_repository_accesses": 0,
+  "production_accesses": 0,
+  "outbound_actions": 0,
+  "phone_farm_windows_accesses": 0
+}

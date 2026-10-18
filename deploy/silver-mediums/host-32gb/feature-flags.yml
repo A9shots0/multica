@@ -1,0 +1,8 @@
+continuous_work_observation_v1:
+  default: false
+  allow_by: workspace_provider
+  allow:
+    - "4e3cdf12-463c-4834-9291-c5ff2e422663:codex"
+
+continuous_work_checkpoint_v1:
+  default: false

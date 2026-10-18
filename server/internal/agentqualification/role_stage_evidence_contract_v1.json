@@ -1,0 +1,116 @@
+{
+  "schema_version": "silver-mediums.role-stage-evidence-contract.v1",
+  "contract_id": "item-14-role-stage-evidence-contract-20260914",
+  "status": "accepted_provider_free_candidate_contract",
+  "source_hashes": {
+    "operating_contract": "b3f88549e6a92df5708c7a89c53cb31b0b034cfbf7639f52c96e76659ae8fe09",
+    "role_squad_rehearsal_result": "d0fef123bab7d08ff591eef7f5633dc9e04f481018190b19a31da9cd25e96a81",
+    "primary_subscription_trial_result": "03208af564632ff8a030029c963085f3ffce3c3b1e442714512cacadfabbc41a"
+  },
+  "provider_calls_allowed": false,
+  "credential_reads_allowed": false,
+  "repository_access_allowed": false,
+  "production_actions_allowed": false,
+  "phone_farm_windows_access_allowed": false,
+  "model_selection_allowed": false,
+  "permanent_seat_selection_allowed": false,
+  "direct_role_to_role_handoff_allowed": false,
+  "controller_reissues_complete_packet": true,
+  "specialist_evidence_is_advisory": true,
+  "specialist_evidence_can_expand_authority": false,
+  "downstream_executor_must_return_self_contained_payload": true,
+  "failed_stage_is_terminal_without_automatic_replay": true,
+  "route_count": 20,
+  "participant_stage_count": 59,
+  "shared_skill_attachment_count": 10,
+  "role_contracts": [
+    {
+      "role_id": "architecture_assurance",
+      "artifact_binding_id": "silver-mediums.role-artifact.v2.architecture_assurance",
+      "response_class": "conditional_specialist_evidence",
+      "top_level_fields": ["authoritative_source", "compatibility_and_migration", "conflicts", "decision", "directly_affected", "evidence", "regression_obligations", "required_constraints", "rollback_boundary", "trigger_boundary", "unknown_coverage", "verification_radius"]
+    },
+    {
+      "role_id": "company_auditor",
+      "artifact_binding_id": "silver-mediums.role-artifact.v2.company_auditor",
+      "response_class": "independent_audit_evidence",
+      "top_level_fields": ["audit_question", "confidence_and_limitations", "conflicts_and_unknowns", "definitions", "evidence", "exclusions", "findings", "metrics", "prioritized_recommendations", "scope", "snapshot_time", "stop_reason"]
+    },
+    {
+      "role_id": "data_sync_integrity",
+      "artifact_binding_id": "silver-mediums.role-artifact.v2.data_sync_integrity",
+      "response_class": "conditional_specialist_evidence",
+      "top_level_fields": ["affected_consumers", "authority_source", "comparison", "evidence", "expected_state", "first_divergence", "named_boundary", "observed_state", "repair_constraints", "required_reconciliation_proof", "route_settled", "stop_reason"]
+    },
+    {
+      "role_id": "mika_owner_interface",
+      "artifact_binding_id": "silver-mediums.role-artifact.v1.mika_owner_interface",
+      "response_class": "owner_interface_response",
+      "top_level_fields": ["action", "answer", "owner_decision_needed", "truth"]
+    },
+    {
+      "role_id": "phone_fleet_reliability",
+      "artifact_binding_id": "silver-mediums.role-artifact.v2.phone_fleet_reliability",
+      "response_class": "external_mac_sanitized_evidence",
+      "top_level_fields": ["affected_population", "application_evidence_needed", "authorized_recovery", "first_divergence", "fleet_boundary", "healthy_controls", "observations", "owner_decision_needed", "post_recovery_checks", "sanitized_receipt"]
+    },
+    {
+      "role_id": "phonefarm_application_specialist",
+      "artifact_binding_id": "silver-mediums.role-artifact.v2.phonefarm_application_specialist",
+      "response_class": "external_mac_sanitized_evidence",
+      "top_level_fields": ["application_findings", "contract_and_blast_radius", "first_failing_boundary", "fleet_evidence_needed", "focused_checks", "implementation_boundary", "owner_decision_needed", "regression_checks", "release_and_outcome_proof_needed", "sanitized_receipt"]
+    },
+    {
+      "role_id": "product_ui",
+      "artifact_binding_id": "silver-mediums.role-artifact.v1.product_ui",
+      "response_class": "conditional_specialist_evidence",
+      "top_level_fields": ["functional_acceptance", "information_priority", "interaction_and_accessibility", "maximum_state", "medium_view", "minimum_state", "narrow_view", "taste_decision_needed", "typical_state", "user_problem", "wide_view"]
+    },
+    {
+      "role_id": "quality_checker",
+      "artifact_binding_id": "silver-mediums.role-artifact.v1.quality_checker",
+      "response_class": "independent_outcome_verdict",
+      "top_level_fields": ["completion_boundary", "evidence", "failed_criteria", "independence_check", "required_correction", "verdict"]
+    },
+    {
+      "role_id": "release_runtime_assurance",
+      "artifact_binding_id": "silver-mediums.role-artifact.v2.release_runtime_assurance",
+      "response_class": "release_runtime_evidence",
+      "top_level_fields": ["action", "authority_receipt", "business_proof_remaining", "candidate_identity", "deployment_receipt", "evidence", "release_boundary", "rollback_receipt", "rollback_state", "runtime_checks", "runtime_identity", "status", "target_and_host_lane"]
+    },
+    {
+      "role_id": "security_privacy_review",
+      "artifact_binding_id": "silver-mediums.role-artifact.v2.security_privacy_review",
+      "response_class": "conditional_specialist_evidence",
+      "top_level_fields": ["abuse_paths", "assets_and_data_classes", "capability_review", "containment", "evidence", "existing_controls", "missing_controls", "owner_authority_needed", "recommendation", "residual_risk", "risk_question", "trust_boundaries"]
+    },
+    {
+      "role_id": "shared_windows_executor",
+      "artifact_binding_id": "silver-mediums.role-artifact.v1.shared_windows_executor",
+      "response_class": "primary_executor_evidence",
+      "top_level_fields": ["accountable_actor", "authority_and_host_limits", "blast_radius", "completion_proof", "first_failing_boundary", "focused_checks", "implementation_plan", "owner_decision_needed", "prohibited_shortcuts", "regression_checks"]
+    }
+  ],
+  "controller_action_protocol": {
+    "applies_to_role_id": "shared_windows_executor",
+    "maximum_actions": 10,
+    "allowed_action_kinds": ["read", "search", "edit", "run_check", "browser", "finish"],
+    "required_action_fields": ["check", "contents", "kind", "path", "query", "summary"],
+    "edit_contents_semantics": "complete_literal_file_contents_not_instructions_diff_or_placeholder",
+    "check_semantics": "exact_controller_allowlist_member",
+    "browser_semantics": "controller_owned_local_loopback_only_when_case_requires",
+    "finish_semantics": "exactly_once_final_action_with_meaningful_summary",
+    "provider_native_tools_allowed": false,
+    "participant_repository_access_allowed": false,
+    "automatic_repair_or_replay_allowed": false
+  },
+  "trial_findings": {
+    "separate_product_ui_specialist_sessions_completed": 2,
+    "separate_product_ui_observations_passed": 0,
+    "downstream_executor_contract_failures": 2,
+    "inline_observations_passed": 3,
+    "separate_observations_passed": 2,
+    "configuration_selection": "held_no_configuration_qualified",
+    "permanent_seat_selection": "held_no_permanent_seat_selected"
+  }
+}

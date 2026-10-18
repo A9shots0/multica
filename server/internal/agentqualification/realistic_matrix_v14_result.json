@@ -1,0 +1,52 @@
+{
+  "schema_version": "silver-mediums.realistic-screening-result.v1",
+  "matrix_id": "realistic-foundation-screen-v14",
+  "matrix_sha256": "a8ddf1383bf74e30fb2ac377de004c3846d203477e80747335768b08f8e1a9f2",
+  "status": "complete_reliability_gap_closed",
+  "test_validity": "valid",
+  "planned_cases": ["R03"],
+  "attempted_cases": ["R03"],
+  "policy_skipped_cases": [],
+  "provider_calls": 12,
+  "retries": 0,
+  "owner_interventions": 0,
+  "input_tokens": 46747,
+  "output_tokens": 2035,
+  "reasoning_tokens": 420,
+  "total_tokens": 49202,
+  "receipt_cost_usd": 0.141414,
+  "authoritative_usage_reference_before_batch_usd": 110.383288,
+  "authoritative_usage_after_batch_usd": 110.475429,
+  "reference_account_delta_usd": 0.092141,
+  "receipt_delta_difference_usd": 0.049273,
+  "provider_event_time_seconds": 54.953,
+  "measured_command_wall_time_seconds_approx": 95.5,
+  "result": {
+    "model": "openrouter/anthropic/claude-sonnet-5",
+    "candidate_id": "realistic.claudesonnet5.medium.anchor.r03.parser-corrected.v14",
+    "effort": "medium",
+    "direct_provider": "openrouter",
+    "requested_upstream_provider": "anthropic",
+    "actual_upstream_provider_evidence": "unavailable_from_provider_metadata",
+    "provider_fallbacks": false,
+    "case": "R03",
+    "case_version": "v2",
+    "outcome": "pass",
+    "failure_class": "",
+    "reliability_gap_closed": true,
+    "production_role_selected": false
+  },
+  "evidence_root": ".qualification-evidence/realistic-v28",
+  "execution_receipt_sha256": "46347c097c1cc06a095e076558c8255e0f8dd9fae82e477fb346114e1801c282",
+  "grade_sha256": "87c3f317a1c1a3e5daa3e50734f11115e0401186f686dcd54340b9a4bb157db4",
+  "controller_result_sha256": "8c572cb18aa7fcad6384c2120f420500a418c8e679b2a717d0ef86f088496af7",
+  "post_batch_correction_list": [
+    "Audit the $0.049273 difference between isolated receipted cost and the authoritative OpenRouter account delta without rewriting either source."
+  ],
+  "notes": [
+    "The affected-only repeat used the unchanged R03 v2 fixture, grader, instructions, tools, permissions, controller, model, effort, and OpenRouter transport after the declaration parser correction.",
+    "R01 and R04 were not repeated because each already had an initial valid pass plus a valid reliability pass; R02 remains deferred at the trusted Browser evidence boundary.",
+    "The Claude Code subscription was not substituted because it is a different, uncalibrated material transport configuration and would not repair the missing same-configuration observation.",
+    "No retry, browser action, production action, outbound message, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

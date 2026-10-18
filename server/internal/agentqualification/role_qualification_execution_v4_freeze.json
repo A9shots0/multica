@@ -1,0 +1,23 @@
+{
+  "schema_version":"silver-mediums.role-qualification-execution-freeze.v4",
+  "freeze_id":"role-qualification-execution-freeze-v4",
+  "status":"frozen_preflight_required_not_executed",
+  "v3_freeze_sha256":"cd2f01e9ff7beaf2bbb0f4c4bfa06a4c6ebc11060a8a62fb15ef4c616cb7a0f3",
+  "cells_per_batch":12,
+  "provider_calls_made":0,
+  "retries":0,
+  "fallbacks":false,
+  "implicit_all_models":false,
+  "artifacts":{
+    "server/internal/agentqualification/role_qualification_execution_v4.json":"bb7e618ac8959a450dbd8f9532bc485d7b4a894d5e6eb08779646eb159d861ed",
+    "server/internal/agentqualification/role_qualification_execution_v4.go":"c51087f83595d4cf22b1c8b931757eebf2eb0363b72be7d0037a27288d9a6774",
+    "server/internal/agentqualification/role_qualification_execution_v4_test.go":"f29316b1e05ad1069defb67bbaafd110ccb4e507f22419e5fcf728e624db28fe",
+    "server/internal/agentqualification/role_qualification_execution_v4_prevalidation.md":"84e8e44c9d7049d62f41306ac75e44e7d086625f7f19859f5ef4d0c83a93ad0d",
+    "server/internal/agentqualification/role_qualification_execution_v4_freeze.go":"33f28099704b1cb0b5bcf2d7be36edf17caaf3b767f7026b690d50b74dd6302c",
+    "server/internal/agentqualification/role_qualification_execution_v4_freeze_test.go":"1ac8911a4aee44ae978a31b691462574dfe43fa7a1e91edc71e95d765f8454ec",
+    "server/cmd/role-qualification-run-v4/main.go":"8f1c68b31c5322e8f94328c45cd5397f8561ce9e9ebe20bda27bc6bbcf4284ea",
+    "server/cmd/role-qualification-run-v4/main_test.go":"2f61d666bc20493a2d21ceeca7ae28e724e4f3e8e397cb30d8119f6eed0d3298",
+    "server/cmd/role-qualification-run-v4/provider.go":"d57699f3c4bac621e29a032597f3c6b3a0f506156f990deab58c503add70ed6c",
+    "server/cmd/role-qualification-run-v4/provider_test.go":"38bb5fe9c48bbe755466f24b3754d451770b6a9dc1465169d49ceece401497e8"
+  }
+}

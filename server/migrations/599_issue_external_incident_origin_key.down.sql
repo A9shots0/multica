@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS issue_external_incident_origin_key;

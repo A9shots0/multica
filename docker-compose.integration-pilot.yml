@@ -1,0 +1,16 @@
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-15432}:5432"
+
+  backend:
+    image: smk-multica-integration-backend:20260914
+
+  frontend:
+    image: smk-multica-integration-web:20260914
+    environment:
+      # Keep Browser traffic same-origin. Cross-port localhost values fail
+      # closed under the in-app Browser's CORS boundary; Next proxies these
+      # relative API and WebSocket requests to REMOTE_API_URL inside Docker.
+      NEXT_PUBLIC_API_URL: ""
+      NEXT_PUBLIC_WS_URL: ""

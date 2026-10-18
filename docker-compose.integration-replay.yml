@@ -1,0 +1,32 @@
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-15434}:5432"
+
+  backend:
+    image: smk-multica-integration-replay-backend:20260915-crossos-v2
+    environment:
+      APP_ENV: development
+      FRONTEND_ORIGIN: http://localhost:13001
+      MULTICA_APP_URL: http://localhost:13001
+      MULTICA_DAEMON_SERVER_URL: http://127.0.0.1:18081
+      MULTICA_WORKFLOW_CONTROLLER_ID: 00000000-0000-4000-8000-000000001401
+      MULTICA_LLM_API_KEY: ""
+      MULTICA_LLM_BASE_URL: ""
+      MULTICA_LLM_DEFAULT_MODEL: ""
+      MULTICA_LLM_MAX_RETRIES: "0"
+      MULTICA_OWNER_SMS_MODE: "off"
+      ANALYTICS_DISABLED: "true"
+      POSTHOG_API_KEY: ""
+      RESEND_API_KEY: ""
+      SMTP_HOST: ""
+      MULTICA_CLOUD_URL: ""
+      TELNYX_API_KEY: ""
+      TELNYX_PHONE_NUMBER: ""
+      TELNYX_MESSAGING_PROFILE_ID: ""
+
+  frontend:
+    image: smk-multica-integration-web:20260914
+    environment:
+      NEXT_PUBLIC_API_URL: ""
+      NEXT_PUBLIC_WS_URL: ""

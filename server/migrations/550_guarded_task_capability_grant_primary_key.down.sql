@@ -1,0 +1,1 @@
+ALTER TABLE guarded_task_capability_grant DROP CONSTRAINT IF EXISTS guarded_task_capability_grant_pkey;

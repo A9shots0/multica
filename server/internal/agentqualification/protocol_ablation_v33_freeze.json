@@ -1,0 +1,40 @@
+{
+  "schema_version": "silver-mediums.protocol-ablation-freeze.v33",
+  "freeze_id": "realistic-r05-opencode-structured-freeze-v33",
+  "status": "frozen_ready_not_executed",
+  "provider_calls_allowed": true,
+  "v32_freeze_sha256": "8a8f19d766ec229d5d07d300d157a84305f7b8b5cf3f3e3cdeb099bb0bffd77a",
+  "r05_fixture_sha256": "406c40e75d2a39cecc816b3f4506234c3720161aa9cb1e6c56e214b6a1eb721f",
+  "r05_grader_sha256": "1454ccbf164d8152779ecc2768e46132f42df53dee7e36e1c099d777e87bf07a",
+  "opencode_version": "1.18.18",
+  "opencode_executable_sha256": "b6efa9eb3ee1d5c25438f3cba03c471e5d8661a6121abc47f209db3b3f05f415",
+  "opencode_openapi_sha256": "c3a9f94af0c3324d97b482b14c692e810ce7ccac3136319ba46334de972b4cf1",
+  "execution_order": [
+    "protocol-v32.claudesonnet5.medium.one-action-loop-v1",
+    "protocol-v32.claudesonnet5.medium.one-shot-plan-v1",
+    "protocol-v32.gpt54.medium.one-shot-plan-v1",
+    "protocol-v32.gpt54.medium.one-action-loop-v1"
+  ],
+  "max_combined_tokens": 300000,
+  "max_combined_cost_micros": 1805000,
+  "max_combined_provider_turns": 22,
+  "retries": 0,
+  "provider_fallbacks": false,
+  "local_components": {
+    "opencode_structured_v33.go": "2fa598d5d7007271cdde388c0a8d102eccf17afd4066af56d88852f76df0ec20",
+    "opencode_structured_v33_lifecycle.go": "bb81ca24a6e33d97fa4890504d636385e24369920377d5d43590b5f92aba7fb2",
+    "opencode_structured_v33_test.go": "849d7c8343bce2b68f6e8e22b7f07ec72cf4f7bc3ce96ebc204c1da021cda718",
+    "protocol_ablation_v33_freeze.go": "ca1cf883ca3b34eca4576ebec7e45adb67bd3f56d66d42aa5c739a4a1938d8b5",
+    "protocol_ablation_v33_freeze_test.go": "ce3df26347753622f9c1ecb218f2738ad48a1a3ab1695d3b4b398567b9f70fa4"
+  },
+  "command_sources": {
+    "protocol-ablation-v33/main.go": "a02efabc7bee1191de96e34dec7e7cf9c8cb5c92aa50e97a3fa00ca71f1666fa",
+    "protocol-ablation-v33/execute.go": "cb1680ca12a946310894800b09f521f83215bb1801b0df2cda945603d7767d4a",
+    "protocol-ablation-v33/main_test.go": "03c11f46ce72db91c2510a63085f75beeba8d2f557346fb0770bec5196d6ca55",
+    "protocol-ablation-v33/recovery.go": "55d071edafa6bc96d0be1821d0230a0e7a89129e349b2f8ed69df1657cd06b89",
+    "protocol-ablation-v33/recovery_test.go": "72be2ecf6f7917ddefd740346c2416aaa7e97a61d796f5377eac4fed98403f4d"
+  },
+  "documents": {
+    "docs/silver-mediums/ITEM-14-OPENCODE-STRUCTURED-OUTPUT-V33-PREVALIDATION.md": "652a325c549562b88f02bfee1801295bb777a78383dd3ca3d63b52d09f29bf04"
+  }
+}

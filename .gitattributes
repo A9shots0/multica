@@ -1,0 +1,47 @@
+# Ensure shell scripts always use LF line endings (needed for Docker on Windows)
+*.sh text eol=lf
+docker/entrypoint.sh text eol=lf
+
+# Default behavior
+* text=auto
+
+# Qualification artifacts and the sources their freezes hash are pinned by
+# SHA-256. A CRLF checkout changes their bytes and every integrity check fails
+# closed, so keep these packages LF. The system graph role catalog is part of the same
+# digest chain.
+server/internal/agentqualification/** text eol=lf
+server/internal/systemgraph/** text eol=lf
+
+# Embedded skill bundles must have identical frontmatter and content bytes on
+# Windows and Unix, including the legacy pointers shipped to older daemons.
+server/internal/service/builtin_skills/** text eol=lf
+server/internal/service/builtin_skills_legacy/** text eol=lf
+
+# The complete local-shadow suite hashes these external source artifacts by
+# exact byte content. Keep their checked-out representation identical to the
+# canonical repository blobs on every host.
+docs/silver-mediums/HOSTED-WORKFLOW-INTERACTION-AUDIT-20260910.md text eol=lf
+docs/silver-mediums/ACCEPTANCE.md text eol=lf
+docs/silver-mediums/ITEM-10-INBOX-CHAT-ACCEPTANCE.md text eol=lf
+docs/silver-mediums/ITEM-11-MOBILE-PARITY.md text eol=lf
+docs/silver-mediums/ITEM-12-SMS-NOTIFICATIONS.md text eol=lf
+docs/silver-mediums/ITEM-13-RECOVERY-CONTRACT.md text eol=lf
+docs/silver-mediums/ITEM-14-ROLE-INSTRUCTION-CONTRACT.md text eol=lf
+server/internal/handler/workflow_control_test.go text eol=lf
+server/internal/handler/workflow_chat_operational_guard_test.go text eol=lf
+server/internal/handler/owner_notification_dry_run_e2e_test.go text eol=lf
+server/internal/workflowstate/v2/scenario_test.go text eol=lf
+server/internal/workflowcommand/state_loader_test.go text eol=lf
+server/internal/workflowprojection/projector_test.go text eol=lf
+server/internal/ownernotification/policy_test.go text eol=lf
+server/internal/service/delegated_failure_recovery_test.go text eol=lf
+server/internal/service/delegated_failure_recovery_settled_test.go text eol=lf
+packages/core/inbox/owner-control.test.ts text eol=lf
+packages/views/inbox/components/owner-inbox-panel.test.tsx text eol=lf
+apps/mobile/data/inbox-schema.test.ts text eol=lf
+apps/mobile/lib/inbox-display.test.ts text eol=lf
+
+# Command sources participate in frozen qualification digests.
+server/cmd/**/*.go text eol=lf
+docs/silver-mediums/ITEM-14-BENCHMARK-CLOSURE.md text eol=lf
+docs/silver-mediums/ITEM-14-ROLE-DESIGN-DECISION-REGISTER.md text eol=lf

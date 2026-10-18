@@ -1,0 +1,16 @@
+{
+  "schema_version": "silver-mediums.topology-freeze.v6",
+  "bundle_id": "realistic-topology-r03-mercury-claude-v6",
+  "status": "frozen_reviewed",
+  "experiment_sha256": "d07a0b8b3d52d649451d835ad87d4deed9bda2843ca8e29890a341c4fda38ecb",
+  "runner_sha256": "9ec078871533a9b85c1587bf51c01b856017254ce1981251c7a5bfcd38764f1b",
+  "review_sha256": "7d16ec3fea96a76e2a2f0b791abaf90a2806ce1117f263695722d47a0005da53",
+  "campaign_sha256": "90fa5986cfe4721b20bea698b022a866590acb8fa77296f3401c0cfb08133622",
+  "campaign_executor_sha256": "735a3c1d09831c8b5079bafa01a6561ff6ff46a18a90a49c90ea73921cb27f05",
+  "main_sha256": "407bde5239e6c2b723cf163c6439c08084aab0cb2be27f06eaba808a3069258f",
+  "opencode_provider_sha256": "50536fc60a6126c857a4818e4672ec90f4f3bbd766e2e5242095993bef0c7a37",
+  "opencode_runtime_sha256": "f0c2c93dda650147eed84d4c334bb5df8ee7e057be3ab32224dddcf857617165",
+  "topology_v5_freeze_sha256": "c8040a5982567ae69a0bf8b856dbb017b27c71efd87d0ae9f51e9ea82adc8255",
+  "validation_matrix": ["exact_mercury25_inception_screening_default_executor","exact_claude_sonnet5_anthropic_medium_reviewer","cross_model_reviewer_independence","generation_bound_reviewer_validation","executor_protocol_failure_candidate_local","correction_protocol_failure_candidate_local","provider_budget_breach_global_halt","evidence_corruption_global_halt","harness_imperfection_observation_local","unchanged_r03_v2_fixture_and_grader","r03_reference_pass","r03_subtle_fail_rejected","r03_paraphrase_pass","r03_adversarial_fail_rejected","no_fallbacks","no_transport_retries","local_only_no_external_side_effects","four_fresh_counterbalanced_observations","reviewer_16000_total_cap","reviewed_arm_140000_covers_all_substages","campaign_430000_total_cap","incremental_spend_1300000_micros","paid_response_sealed_before_stop","exact_receipt_accounting","exclusive_claim","crash_no_retry","one_correction_ceiling","v5_byte_preservation","recursive_v5_v4_v3_v2_v1_command_source_admission"],
+  "provider_calls_allowed": true
+}

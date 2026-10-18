@@ -1,0 +1,16 @@
+{
+  "schema_version": "silver-mediums.topology-freeze.v3",
+  "bundle_id": "realistic-topology-r03-repeat-v3",
+  "status": "frozen_reviewed",
+  "experiment_sha256": "04eed6ea0b7433e5857344aa265eb2da9d69e262d50f2c540e49fcb0a6646a4b",
+  "runner_sha256": "8b9894fec990d7f08d0926eb048e425f571dded9faf152d1564b4c6b028da2ba",
+  "review_sha256": "0062bdce0f678ecbd271ad79793ef482d50c1412e54ccbb81c7368ec212e8885",
+  "campaign_sha256": "cdd1d1955ec4531f48f3c9cf67914334073ce4fe8c1f1b42be572f2ea675e4ff",
+  "campaign_executor_sha256": "44d2163a75d7cee9ca3ebbf2ca3a40534d31d440d03e6168063ab89a6f16e7c4",
+  "main_sha256": "ed6d1836200489fa02a18273c6d9c946f4024d02515cb681ca4e9ccaddbd5192",
+  "opencode_provider_sha256": "74e40b1aaf4020ba6d6e0a774f3c30e4bd0f71ef069bb1d7081712c41ba8ec7a",
+  "opencode_runtime_sha256": "f0c2c93dda650147eed84d4c334bb5df8ee7e057be3ab32224dddcf857617165",
+  "topology_v2_freeze_sha256": "744874d0568dc9c82a6245a3031d34df0fa255ebc52ccbcddd8b7aba8c847144",
+  "validation_matrix": ["exact_model_provider_effort","unchanged_r03_v2_fixture_and_grader","no_fallbacks","no_transport_retries","four_fresh_counterbalanced_observations","reviewer_16000_total_cap","reviewed_arm_covers_all_substages","campaign_covers_all_arms","paid_response_sealed_before_stop","exact_receipt_accounting","exclusive_claim","crash_no_retry","one_correction_ceiling","v2_byte_preservation"],
+  "provider_calls_allowed": true
+}

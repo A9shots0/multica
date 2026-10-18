@@ -1,0 +1,31 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-blast-radius-t12-openrouter-v7",
+  "status": "completed_first_valid_screening_round",
+  "case_id": "T12",
+  "case_version": "v4",
+  "grader_version": "deterministic-t12.v4",
+  "observations": 6,
+  "retries": 0,
+  "provider_calls": 6,
+  "initial_openrouter_usage_usd": "102.075658209",
+  "final_openrouter_usage_usd": "102.079155878",
+  "exact_batch_spend_usd": "0.003497669",
+  "rounded_receipt_spend_micros": 3500,
+  "configured_incremental_spend_ceiling_micros": 20000,
+  "strong_anchor_run": false,
+  "strong_anchor_reason": "not needed to separate the first cheap screening round",
+  "independent_evidence_review": "GO",
+  "preserved_v6_batch_sha256": "50c137231d7feefc6ead09a5b90ee35ec176b4dccbb74d05683d2b5849dc0794",
+  "preserved_v6_result_sha256": "a37f4076bc80f77972f7d429eeaeeead6728f5d5e1fe73fc11155fb0bc0c1614",
+  "results": [
+    {"model":"openrouter/nvidia/nemotron-3-super-120b-a12b:free","effort":"low","actual_serving_provider":"nvidia","provider_evidence":"enforced_single_route_no_fallback","verdict":"PASS","failure_reason":"","tokens":4690,"input_tokens":2473,"reasoning_tokens":2125,"output_tokens":92,"receipt_cost_micros":0,"provider_event_seconds":21.919,"advances":true},
+    {"model":"openrouter/xiaomi/mimo-v2.5","effort":"medium","actual_serving_provider":"xiaomi","provider_evidence":"enforced_single_route_no_fallback","verdict":"FAIL","failure_reason":"omitted_verification_radius","tokens":4461,"input_tokens":2299,"reasoning_tokens":1989,"output_tokens":173,"receipt_cost_micros":928,"provider_event_seconds":66.458,"advances":false},
+    {"model":"openrouter/z-ai/glm-5.3-flash","effort":"low","actual_serving_provider":"z-ai","provider_evidence":"enforced_single_route_no_fallback","verdict":"PASS","failure_reason":"","tokens":2422,"input_tokens":2288,"reasoning_tokens":0,"output_tokens":134,"receipt_cost_micros":411,"provider_event_seconds":0.251,"advances":true},
+    {"model":"openrouter/inclusionai/ling-3.0-flash","effort":"medium","actual_serving_provider":"novita","provider_evidence":"enforced_single_route_no_fallback","verdict":"PASS","failure_reason":"","tokens":3375,"input_tokens":2493,"reasoning_tokens":722,"output_tokens":160,"receipt_cost_micros":108,"provider_event_seconds":2.168,"advances":true},
+    {"model":"openrouter/qwen/qwen3-coder-flash","effort":"screening_default","actual_serving_provider":"alibaba","provider_evidence":"enforced_single_route_no_fallback","verdict":"PASS","failure_reason":"","tokens":2474,"input_tokens":2299,"reasoning_tokens":0,"output_tokens":175,"receipt_cost_micros":619,"provider_event_seconds":1.517,"advances":true},
+    {"model":"openrouter/minimax/minimax-m2.7","effort":"screening_default","actual_serving_provider":"minimax","provider_evidence":"enforced_single_route_no_fallback","verdict":"PASS","failure_reason":"","tokens":2912,"input_tokens":2290,"reasoning_tokens":475,"output_tokens":147,"receipt_cost_micros":1434,"provider_event_seconds":10.823,"advances":true}
+  ],
+  "decision": "Nemotron Free, GLM 5.3 Flash, Ling 3.0 Flash, Qwen3 Coder Flash, and MiniMax M2.7 advance only to later survivor validation. MiMo 2.5 is eliminated from this round. No model or role is qualified.",
+  "evidence_root": ".qualification-evidence/openrouter-v7"
+}

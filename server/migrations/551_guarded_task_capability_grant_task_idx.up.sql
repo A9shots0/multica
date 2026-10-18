@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY guarded_task_capability_grant_task_idx ON guarded_task_capability_grant (workspace_id, task_id);

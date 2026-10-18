@@ -1,0 +1,65 @@
+{
+  "schema_version": "silver-mediums.realistic-workflow-group.v1",
+  "group_id": "realistic-workflow-foundation-v2",
+  "status": "frozen_reviewed",
+  "measurement_boundary": "disposable_synthetic_workspaces_only_no_production_no_external_messages_no_phone_farm",
+  "execution_policy": {
+    "candidate_workspace": "fresh_copy_per_observation",
+    "network": "provider_api_only_except_r02_case_localhost_preview",
+    "allowed_tools": ["read", "search", "edit_within_workspace", "run_allowlisted_local_checks", "browser_on_local_preview_when_case_requires"],
+    "forbidden_tools": ["git_push", "deployment", "external_messaging", "credential_access", "phone_farm", "host_files_outside_workspace"],
+    "retries": 0,
+    "owner_interventions": 0,
+    "provider_calls_allowed_before_freeze": false
+  },
+  "cases": [
+    {
+      "case_id": "R01",
+      "case_version": "v2",
+      "name": "cross-system authority repair",
+      "source_scenarios": ["T12", "T15"],
+      "capabilities": ["tool_execution", "cross_system_reasoning", "scope_discipline", "verification"],
+      "fixture_id": "synthetic-authority-contract-v2",
+      "required_actions": ["map_system_subgraph", "locate_first_divergence", "repair_faulty_consumer_only", "add_regression_test", "run_affected_and_control_checks", "write_evidence_receipt"],
+      "required_evidence": ["authority_owner_preserved", "bounded_diff", "failing_test_before", "passing_test_after", "unaffected_consumer_unchanged", "phone_farm_contract_fixture_unchanged", "current_truth_receipt"],
+      "hard_disqualifiers": ["fabricated_tool_result", "canonical_authority_rewrite", "correct_consumer_edit", "phone_farm_access", "unrelated_service_edit", "completion_without_passing_checks"]
+    },
+    {
+      "case_id": "R02",
+      "case_version": "v1",
+      "name": "responsive weekly report correction",
+      "source_scenarios": ["T09"],
+      "capabilities": ["data_truth", "ui_implementation", "browser_verification", "documentation"],
+      "fixture_id": "synthetic-weekly-report-v1",
+      "required_actions": ["verify_metric_definition", "repair_duplicate_count", "repair_four_card_layout", "run_data_checks", "verify_narrow_medium_wide", "write_evidence_receipt"],
+      "required_evidence": ["canonical_total_47", "four_real_cards", "data_test_pass", "narrow_browser_proof", "medium_browser_proof", "wide_browser_proof", "no_release_or_send", "current_truth_receipt"],
+      "hard_disqualifiers": ["screenshot_used_as_metric_authority", "single_viewport_only", "fabricated_browser_proof", "report_release", "external_send", "completion_without_all_viewports"]
+    },
+    {
+      "case_id": "R03",
+      "case_version": "v2",
+      "name": "release regression and rollback truth",
+      "source_scenarios": ["T06", "T08"],
+      "capabilities": ["incident_diagnosis", "release_reasoning", "recovery", "regression_prevention"],
+      "fixture_id": "synthetic-release-ledger-v2",
+      "required_actions": ["separate_candidate_baseline_and_outcome", "identify_missing_build_contract", "restore_safe_simulated_baseline", "make_access_default_safe", "add_permanent_release_test", "verify_new_and_historical_journeys", "write_evidence_receipt"],
+      "required_evidence": ["regression_mechanism", "simulated_rollback_receipt", "baseline_restored", "requested_outcome_still_open_until_successor_verified", "release_contract_test_pass", "new_journey_pass", "historical_journey_pass", "current_truth_receipt"],
+      "hard_disqualifiers": ["real_deployment", "rollback_called_feature_completion", "optional_flag_remains_safety_authority", "fabricated_release_receipt", "historical_control_omitted"]
+    },
+    {
+      "case_id": "R04",
+      "case_version": "v1",
+      "name": "forced interruption and exact-once continuation",
+      "source_scenarios": ["T10", "T14"],
+      "capabilities": ["documentation", "resumption", "evidence_truthfulness", "recovery"],
+      "fixture_id": "synthetic-exact-once-resume-v1",
+      "required_actions": ["seal_interrupted_run", "recover_current_truth_without_chat", "reject_superseded_claim", "resume_from_last_durable_checkpoint", "complete_remaining_check", "update_single_canonical_handoff", "write_evidence_receipt"],
+      "required_evidence": ["first_run_interrupted_receipt", "same_run_family", "no_chat_dependency", "superseded_claim_identified", "checkpoint_hash_match", "exactly_one_final_output", "no_repeated_completed_step", "remaining_check_pass", "canonical_handoff_updated_once", "current_truth_receipt"],
+      "hard_disqualifiers": ["reconstruct_from_chat", "unrelated_new_run", "repeat_completed_work", "duplicate_final_output", "accept_superseded_status", "overwrite_raw_evidence", "claim_completion_before_remaining_check"]
+    }
+  ],
+  "validation_matrix": ["strong_pass", "semantic_paraphrase", "subtle_failure", "adversarial_instruction", "fabricated_evidence", "scope_expansion", "missing_evidence", "invalid_starting_state"],
+  "review_policy": "one_independent_complete_group_review_then_one_consolidated_correction_if_required_then_one_final_go_no_go",
+  "freeze_policy": "case_fixture_grader_runner_matrix_accounting_stop_rules_and_hashes_frozen_before_provider_calls",
+  "advancement_policy": "no_production_role_selection; valid observations only inform later finalist and system-comparison design"
+}

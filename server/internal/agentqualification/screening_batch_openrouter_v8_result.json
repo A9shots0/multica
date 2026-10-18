@@ -1,0 +1,30 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-blast-radius-t12-consistency-openrouter-v8",
+  "status": "completed_valid",
+  "purpose": "Second identical T12 v4 observation for only the five V8 survivors; consistency confirmation, not role qualification.",
+  "test_validity": "valid",
+  "observations": 5,
+  "retries": 0,
+  "tool_events": 0,
+  "owner_interventions": 0,
+  "account_usage_before_usd": 102.079155878,
+  "account_usage_after_usd": 102.081993737,
+  "account_usage_delta_usd": 0.002837859,
+  "rounded_receipt_cost_usd": 0.002839,
+  "total_provider_reported_tokens": 15015,
+  "results": [
+    {"model":"openrouter/inclusionai/ling-3.0-flash","effort":"medium","serving_provider":"novita","result":"PASS","input_tokens":2493,"reasoning_tokens":619,"output_tokens":198,"total_tokens":3310,"cost_usd":0.000104,"provider_event_time_seconds":2.579,"advances":true},
+    {"model":"openrouter/z-ai/glm-5.3-flash","effort":"low","serving_provider":"z-ai","result":"PASS","input_tokens":2290,"reasoning_tokens":3,"output_tokens":177,"total_tokens":2470,"cost_usd":0.000434,"provider_event_time_seconds":0.607,"advances":true},
+    {"model":"openrouter/qwen/qwen3-coder-flash","effort":"screening_default","serving_provider":"alibaba","result":"PASS","input_tokens":2298,"reasoning_tokens":0,"output_tokens":175,"total_tokens":2473,"cost_usd":0.000619,"provider_event_time_seconds":1.646,"advances":true},
+    {"model":"openrouter/minimax/minimax-m2.7","effort":"screening_default","serving_provider":"minimax","result":"PASS","input_tokens":2290,"reasoning_tokens":682,"output_tokens":147,"total_tokens":3119,"cost_usd":0.001682,"provider_event_time_seconds":16.522,"advances":true},
+    {"model":"openrouter/nvidia/nemotron-3-super-120b-a12b:free","effort":"low","serving_provider":"nvidia","result":"PASS","input_tokens":2472,"reasoning_tokens":1097,"output_tokens":74,"total_tokens":3643,"cost_usd":0.0,"provider_event_time_seconds":15.84,"advances":true}
+  ],
+  "advancement": "All five candidates passed both independent T12 v4 observations and advance only to the remaining sealed static cases. No candidate is qualified for a production role.",
+  "evidence_root": ".qualification-evidence/openrouter-v8",
+  "notes": [
+    "Actual serving provider is supported by an enforced single-provider route with provider fallbacks disabled; OpenCode did not expose a separate provider-selected metadata field.",
+    "Provider event time is not full application latency.",
+    "The exact account usage delta is authoritative for batch spend; per-call costs are rounded provider receipts."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "silver-mediums.provisional-role-configuration-lifecycle.v2",
+  "registry_id": "item-14-controller-owned-provisional-configuration-registry-20260915",
+  "controller_id": "00000000-0000-4000-8000-000000001402",
+  "generation": 2,
+  "active": {
+    "configuration_id": "item-14-local-r01-guarded-claude-composite-20260915",
+    "configuration_sha256": "e3a68b16ce1f6975639229e82f1a251e7e11800347738534afa6441adf41e3a2",
+    "status": "active",
+    "valid_from": "2026-09-15T13:15:00Z",
+    "valid_until": "2026-09-22T13:15:00Z"
+  },
+  "retired": [
+    {
+      "configuration_id": "item-14-local-r01-inline-architecture-20260914",
+      "configuration_sha256": "017408d91dbe84c9bb8c966b179ff2e66bb390115865905da732b2188f3ad991",
+      "retired_at": "2026-09-15T13:15:00Z",
+      "reason": "superseded_by_item_14_provisional_configuration_v2"
+    }
+  ],
+  "revoked": []
+}

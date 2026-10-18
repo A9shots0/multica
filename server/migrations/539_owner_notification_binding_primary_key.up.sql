@@ -1,0 +1,1 @@
+ALTER TABLE owner_notification_binding ADD CONSTRAINT owner_notification_binding_pkey PRIMARY KEY USING INDEX owner_notification_binding_pkey_idx;

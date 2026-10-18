@@ -1,0 +1,19 @@
+{
+  "schema_version": "silver-mediums.topology-freeze.v7",
+  "bundle_id": "realistic-topology-r03-mercury-claude-v7",
+  "status": "frozen_reviewed",
+  "experiment_sha256": "26378217cf1cdf514fe3085ba7c72463de30def61094d389c2f4235a5479e690",
+  "runner_sha256": "c558dc77a4a61b0a0911587b81e40835f083b2ba01bee0a87bfc1caa516d7d72",
+  "review_sha256": "3b20ece69389820de8caba0908f194f15a3ed367885182f735c4a8661a08f8f3",
+  "campaign_sha256": "1bf8512ca8c737ee6a4df9811323a1b7cf5ba20fb4aaa5c5fc845452b4a2769c",
+  "campaign_executor_sha256": "5ebeea1c23a87d1f2b45917c2e02de3480040bb382f74e9142f8c7d840cad56f",
+  "main_sha256": "51d35003e6bcf3863130addae65ddc45c3079f15cb598f3ed876dcb8c413e60d",
+  "opencode_provider_sha256": "0d42866d00393a213dc50b4bbfe374c98a41c2fd132afa9ed6cc067113096ab5",
+  "opencode_runtime_sha256": "d10616dbe649491b283fc84400054fafcfcc30a7cdf2ed00ff2b7a6fb152e45d",
+  "executor_plan_sha256": "ff09b5e119a290a088e68c2d44126158558b51ee5ec9649ebeb581e49ad011eb",
+  "executor_seal_sha256": "dee8e1295e8ea99d01e8aaaaeec2daff5cd581ad209fec4b5405c301f2e1f9cd",
+  "prevalidation_sha256": "0e9a2a478698b103b538c04cd18ae3caf5a86deb9c0024e6dfc88ebda3fd2753",
+  "topology_v6_freeze_sha256": "ed5091d170982e118d6ff57a85a8604ede9845eb019abb0c482e7b0b5d25d7e4",
+  "validation_matrix": ["a_executor_id_model_effort_provider_mutation_rejected","b_plan_and_sealer_exact_same_executor","c_reviewer_route_fallback_order_tools_instructions_exact","d_preclaim_failure_zero_claim_zero_call","e_zero_call_runtime_invalid_persisted_claim_cleared_continue","f_malformed_zero_call_invalid_rejected","g_v6_bytes_and_recursive_v6_v1_sources_preserved","h_paid_partial_protocol_caps_and_recovery_preserved","i_execute_and_correction_use_generation_bound_runner","v7_stage_overcap_finish_and_nonfinish_exact","v7_invalid_safety_hash_envelope","complete_reviewer_plan_binding","resolved_config_validated_without_transport_alias","require_complete_realistic_freeze","provider_source_hash_gates","unchanged_r03_v2_fixture_and_grader","four_fresh_counterbalanced_observations","reviewer_16000_total_cap","reviewed_arm_140000_covers_all_substages","campaign_430000_total_cap","incremental_spend_1300000_micros","no_fallbacks","no_transport_retries","zero_owner_interventions","testing_only_no_selection"],
+  "provider_calls_allowed": true
+}

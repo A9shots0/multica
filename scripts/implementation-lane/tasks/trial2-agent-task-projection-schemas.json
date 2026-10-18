@@ -1,0 +1,15 @@
+{
+  "task_id": "trial2-agent-task-projection-schemas",
+  "title": "Validate agent task snapshot, run count and active-task responses",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Endpoint responses consumed by UI logic must pass through a schema before returning.' packages/core/api/client.ts getAgentTaskSnapshot, getWorkspaceAgentRunCounts and getActiveTasksForIssue return unvalidated this.fetch(...) results although AgentTaskSchema and AgentTaskListSchema already exist in packages/core/api/schemas.ts.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/agent-task-projection-schemas.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 50,
+  "trial_role": "Trial 2, task 3. Reuse of an existing schema rather than writing one; tests whether the executor finds and reuses AgentTaskSchema instead of duplicating it.",
+  "objective": "packages/core/api/client.ts has three agent task projection methods that trust the server response without validation: getAgentTaskSnapshot (AgentTask[]), getWorkspaceAgentRunCounts (AgentRunCount[]) and getActiveTasksForIssue ({ tasks: AgentTask[] }). packages/core/api/schemas.ts already defines AgentTaskSchema and AgentTaskListSchema. The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a zod schema via parseWithFallback, with a malformed-response test.\n\nBring these three methods under that pattern, reusing existing schemas where they fit and adding only what is missing. Do not change any other method.\n\nWrite tests at exactly packages/core/api/agent-task-projection-schemas.test.ts that show each method returns the parsed value for a well-formed response and does not pass a malformed response through to the caller."
+}

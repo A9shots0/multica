@@ -1,0 +1,47 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-blast-radius-t12-openrouter-v1",
+  "status": "stopped_invalid_harness",
+  "grader_configuration_id": "deterministic-t12.v2",
+  "capacity": {
+    "provider": "openrouter",
+    "account_lane": "opencode_local_openrouter",
+    "baseline_usage_micros": 102071724,
+    "final_usage_micros": 102073860,
+    "provider_exact_delta_micros": 2136
+  },
+  "observations": [
+    {
+      "candidate_id": "screen.generalist.qwen37flash.high.openrouter.v1",
+      "model": "openrouter/qwen/qwen3.7-flash",
+      "reasoning_effort": "high",
+      "started_at": "2026-09-12T00:34:14.036Z",
+      "completed_at": "2026-09-12T00:36:41.599Z",
+      "provider_session_id": "ses_f6cf6c11affeDzLtYkEP2iV0hO",
+      "run_sha256": "b4c68008be4aeeff17a6d2590031de06e96a99fc07881747117beac293f87f74",
+      "export_sha256": "b436eb6a8220229a0f2a2a3ee2d10acb6e9152a540119fb7cd7259a48ad42d27",
+      "output_sha256": "eda35541b53e7afa1aca7fc49fea8ac953ba67acf1143ab0d8614e9a08930ad4",
+      "verdict": "INVALID",
+      "failure_class": "infrastructure",
+      "failed_checks": [
+        "candidate_response_not_json",
+        "opencode_step_cap_injected_terminal_summary"
+      ],
+      "input_tokens": 1057,
+      "cached_input_tokens": 0,
+      "reasoning_tokens": 16000,
+      "output_tokens": 183,
+      "total_tokens": 17240,
+      "provider_reported_cost_micros": 2136,
+      "retries": 0,
+      "owner_interventions": 0,
+      "tool_calls": 0,
+      "model_competence_scored": false
+    }
+  ],
+  "stop_reason": "transport_step_cap_invalidated_candidate_response",
+  "planned_observations": 2,
+  "executed_observations": 1,
+  "automatic_retry_performed": false,
+  "second_candidate_launched": false
+}

@@ -1,0 +1,1 @@
+ALTER TABLE issue_workflow_consequence_receipt ADD CONSTRAINT issue_workflow_consequence_receipt_pkey PRIMARY KEY USING INDEX issue_workflow_consequence_receipt_pkey_idx;

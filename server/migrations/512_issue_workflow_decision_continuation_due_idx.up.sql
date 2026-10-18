@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY idx_issue_workflow_decision_continuation_due ON issue_workflow_action_receipt (not_before, lease_expires_at, created_at, id) WHERE action_type IN ('resume_exact_operation', 'replan_exact_operation') AND state IN ('admitted', 'retry_wait', 'reconciling', 'leased');

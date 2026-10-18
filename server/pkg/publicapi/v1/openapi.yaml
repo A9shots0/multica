@@ -1,0 +1,638 @@
+openapi: 3.1.0
+info:
+  title: Multica Public API
+  version: v1
+  description: >-
+    Canonical v1 resource contract shared by Multica API surfaces. The Plugin
+    API is the first deployed consumer and applies installation identity plus
+    manifest scopes. Plugin-specific context and storage remain extensions.
+servers:
+  - url: https://plugin-api.multica.ai/v1
+    description: Installed Plugin and invocation callback tokens
+security:
+  - pluginBearer: []
+paths:
+  /context:
+    get:
+      operationId: getPluginContext
+      summary: Get the authorized Plugin invocation context
+      x-multica-contract: plugin_extension
+      responses:
+        "200":
+          description: Plugin context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Context"
+        default:
+          $ref: "#/components/responses/Problem"
+  /issues/{issue_ref}:
+    parameters:
+      - $ref: "#/components/parameters/IssueRef"
+    get:
+      operationId: getIssue
+      summary: Get an issue
+      x-multica-contract: shared_resource
+      x-multica-scope: issues:read
+      responses:
+        "200":
+          description: Issue
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Issue"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: patchIssue
+      summary: Update an issue title or description
+      x-multica-contract: shared_resource
+      x-multica-scope: issues:write
+      parameters:
+        - $ref: "#/components/parameters/IfMatch"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchIssueRequest"
+      responses:
+        "200":
+          description: Updated issue
+          headers:
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Issue"
+        default:
+          $ref: "#/components/responses/Problem"
+  /issues/{issue_ref}/comments:
+    parameters:
+      - $ref: "#/components/parameters/IssueRef"
+    get:
+      operationId: listIssueComments
+      summary: List the newest 200 comments in chronological order
+      x-multica-contract: shared_resource
+      x-multica-scope: comments:read
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createIssueComment
+      summary: Create an issue comment without mention dispatch
+      x-multica-contract: shared_resource
+      x-multica-scope: comments:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+      responses:
+        "201":
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        default:
+          $ref: "#/components/responses/Problem"
+  /issues/{issue_ref}/external-receipts:
+    parameters:
+      - $ref: "#/components/parameters/IssueRef"
+    post:
+      operationId: createExternalOutcomeReceipt
+      summary: Admit an observation-only Outcome Receipt v0.2 for an existing issue
+      description: >-
+        Stores the raw provider receipt as evidence and maps only validated
+        observations into native workflow records. Provider prose cannot grant
+        authority, establish production truth, or complete the company outcome.
+      x-multica-contract: shared_resource
+      x-multica-scope: issues:write
+      parameters:
+        - name: If-Match
+          in: header
+          required: true
+          schema: { type: string }
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, maxLength: 255 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OutcomeReceiptV02"
+      responses:
+        "201":
+          description: Receipt admitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalReceiptAdmissionResponse"
+        "200":
+          description: Exact idempotent replay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalReceiptAdmissionResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /issues/{issue_ref}/context-requests:
+    parameters:
+      - $ref: "#/components/parameters/IssueRef"
+    post:
+      operationId: createIssueContextRequest
+      summary: Resolve bounded read-only context for linked outside work
+      description: >-
+        Routes a request through the issue's canonical workspace and project.
+        The work id must already have an admitted external receipt. The caller
+        cannot choose a Brain project or receive broader context than the
+        requested response fields.
+      x-multica-contract: shared_resource
+      x-multica-scope: issues:read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContextRequestV02"
+      responses:
+        "200":
+          description: Bounded context result, including explicit unknown or unauthorized states
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContextResponseV02"
+        default:
+          $ref: "#/components/responses/Problem"
+  /storage/{scope}:
+    get:
+      operationId: listPluginStorageKeys
+      summary: List Plugin storage keys
+      x-multica-contract: plugin_extension
+      parameters:
+        - $ref: "#/components/parameters/StorageScope"
+      responses:
+        "200":
+          description: Storage keys
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageKeyListResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /storage/{scope}/{key}:
+    parameters:
+      - $ref: "#/components/parameters/StorageScope"
+      - $ref: "#/components/parameters/StorageKey"
+    get:
+      operationId: getPluginStorageValue
+      summary: Get a Plugin storage value
+      x-multica-contract: plugin_extension
+      responses:
+        "200":
+          description: Storage value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageValueResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+    put:
+      operationId: putPluginStorageValue
+      summary: Put a Plugin storage value
+      x-multica-contract: plugin_extension
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutStorageValueRequest"
+      responses:
+        "204":
+          description: Stored
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deletePluginStorageValue
+      summary: Delete a Plugin storage value
+      x-multica-contract: plugin_extension
+      responses:
+        "204":
+          description: Deleted
+        default:
+          $ref: "#/components/responses/Problem"
+components:
+  securitySchemes:
+    pluginBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: mpi_ or mpc_ token
+  parameters:
+    IssueRef:
+      name: issue_ref
+      in: path
+      required: true
+      description: Issue UUID or workspace identifier such as MUL-123
+      schema:
+        type: string
+    StorageScope:
+      name: scope
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [user, workspace]
+    StorageKey:
+      name: key
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 1024
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: Weak or strong ETag containing the expected positive revision
+      schema:
+        type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Reserved for durable retry deduplication as write endpoints adopt it
+      schema:
+        type: string
+        maxLength: 255
+  headers:
+    ETag:
+      description: Weak ETag derived from the resource revision
+      schema:
+        type: string
+  responses:
+    Problem:
+      description: Stable API problem
+      headers:
+        X-Request-Id:
+          description: Request correlation identifier
+          schema:
+            type: string
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code, detail, request_id, error]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string }
+        detail: { type: string }
+        request_id: { type: string }
+        error:
+          type: string
+          deprecated: true
+          description: Compatibility alias for detail
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"
+    FieldError:
+      type: object
+      required: [field, code, message]
+      properties:
+        field: { type: string }
+        code: { type: string }
+        message: { type: string }
+    Context:
+      type: object
+      required: [workspace, config, granted_net_domains, actor]
+      properties:
+        workspace:
+          $ref: "#/components/schemas/ContextWorkspace"
+        user:
+          $ref: "#/components/schemas/ContextUser"
+        issue:
+          $ref: "#/components/schemas/ContextIssue"
+        config:
+          type: object
+          additionalProperties: true
+        granted_net_domains:
+          type: array
+          items: { type: string }
+        actor:
+          type: string
+          enum: [member, plugin]
+    ContextWorkspace:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+    ContextUser:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+    ContextIssue:
+      type: object
+      required: [id, identifier, title]
+      properties:
+        id: { type: string }
+        identifier: { type: string }
+        title: { type: string }
+    Issue:
+      type: object
+      required:
+        - id
+        - workspace_id
+        - number
+        - identifier
+        - title
+        - description
+        - status
+        - priority
+        - assignee_type
+        - assignee_id
+        - creator_type
+        - creator_id
+        - parent_issue_id
+        - project_id
+        - position
+        - stage
+        - start_date
+        - due_date
+        - created_at
+        - updated_at
+        - revision
+        - last_activity_at
+        - metadata
+        - properties
+      properties:
+        id: { type: string }
+        workspace_id: { type: string }
+        number: { type: integer, format: int32 }
+        identifier: { type: string }
+        title: { type: string }
+        description: { type: [string, "null"] }
+        status: { type: string }
+        status_category: { type: string }
+        priority: { type: string }
+        assignee_type: { type: [string, "null"] }
+        assignee_id: { type: [string, "null"] }
+        creator_type: { type: string }
+        creator_id: { type: string }
+        parent_issue_id: { type: [string, "null"] }
+        project_id: { type: [string, "null"] }
+        position: { type: number }
+        stage: { type: [integer, "null"], format: int32 }
+        start_date: { type: [string, "null"], format: date }
+        due_date: { type: [string, "null"], format: date }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        revision: { type: integer, format: int64, minimum: 1 }
+        last_activity_at: { type: [string, "null"], format: date-time }
+        metadata: { type: object, additionalProperties: true }
+        properties: { type: object, additionalProperties: true }
+    PatchIssueRequest:
+      type: object
+      properties:
+        expected_revision: { type: integer, format: int64, minimum: 1 }
+        title: { type: string }
+        description: { type: string }
+      anyOf:
+        - required: [title]
+        - required: [description]
+    OutcomeReceiptV02:
+      type: object
+      additionalProperties: false
+      required:
+        - work_id
+        - run_id
+        - receipt_revision
+        - provider
+        - objective
+        - scope
+        - requested_mode
+        - authority
+        - state
+        - current_milestone
+        - change_since_last_receipt
+        - evidence
+        - dependencies
+        - next_action
+        - owner_decision
+        - risk
+        - resource_usage
+        - effect
+        - freshness
+        - acceptance
+      properties:
+        work_id: { type: string, minLength: 1, maxLength: 512 }
+        run_id: { type: string, minLength: 1, maxLength: 512 }
+        receipt_revision: { type: integer, format: int64, minimum: 1 }
+        supersedes_receipt_revision: { type: [integer, "null"], format: int64, minimum: 1 }
+        provider: { type: string, enum: [codex, claude, chatgpt, copilot, evo, other] }
+        objective: { type: string, minLength: 1, maxLength: 16384 }
+        scope: { type: string, minLength: 1, maxLength: 16384 }
+        requested_mode: { type: string, enum: [explain, review, diagnose, change, deploy, monitor] }
+        authority:
+          type: object
+          additionalProperties: false
+          required: [reference, allowed_effects]
+          properties:
+            reference: { type: string, minLength: 1, maxLength: 512 }
+            allowed_effects: { type: array, maxItems: 256, items: { type: string, minLength: 1, maxLength: 16384 } }
+        state: { type: string, enum: [working, waiting_external, waiting_owner, blocked, complete, stopped] }
+        current_milestone: { type: string, minLength: 1, maxLength: 16384 }
+        change_since_last_receipt: { type: string, minLength: 1, maxLength: 16384 }
+        evidence:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items:
+            type: object
+            additionalProperties: false
+            required: [type, reference]
+            properties:
+              type: { type: string, enum: [commit, pr, test, deployment, runtime, artifact, owner_ui, owner_report, controller] }
+              reference: { type: string, minLength: 1, maxLength: 16384 }
+        dependencies: { type: array, maxItems: 256, items: { type: string, minLength: 1, maxLength: 16384 } }
+        next_action: { type: string, minLength: 1, maxLength: 16384 }
+        owner_decision:
+          type: object
+          additionalProperties: false
+          required: [required, category, question, options, why_now, invalidated_by]
+          properties:
+            required: { type: boolean }
+            category: { type: [string, "null"], enum: [business, ui, budget, policy_exception, null] }
+            question: { type: [string, "null"] }
+            options: { type: array, maxItems: 256, items: { type: string } }
+            why_now: { type: [string, "null"] }
+            invalidated_by: { type: array, maxItems: 256, items: { type: string } }
+        risk: { type: string, enum: [low, medium, high] }
+        resource_usage:
+          type: object
+          additionalProperties: false
+          required: [source]
+          properties:
+            source: { type: string, enum: [provider_reported, measured, unavailable] }
+            attempts: { type: [integer, "null"], format: int64, minimum: 0 }
+            wall_clock_seconds: { type: [integer, "null"], format: int64, minimum: 0 }
+            active_compute_seconds: { type: [integer, "null"], format: int64, minimum: 0 }
+            input_tokens: { type: [integer, "null"], format: int64, minimum: 0 }
+            output_tokens: { type: [integer, "null"], format: int64, minimum: 0 }
+            cost_usd: { type: [number, "null"], minimum: 0 }
+            capacity_window_ref: { type: [string, "null"] }
+        effect:
+          type: object
+          additionalProperties: false
+          required: [user_outcome, production_changed]
+          properties:
+            user_outcome: { type: string, enum: [unavailable, degraded, temporarily_restored, restored, unchanged] }
+            production_changed: { type: boolean }
+        freshness:
+          type: object
+          additionalProperties: false
+          required: [observed_at, expires_at]
+          properties:
+            observed_at: { type: string, format: date-time }
+            expires_at: { type: [string, "null"] }
+        acceptance:
+          type: object
+          additionalProperties: false
+          required: [stage, status, criteria_remaining]
+          properties:
+            stage: { type: string, enum: [local, source_ready, merged, release_ready, deployed, production_verified] }
+            status: { type: string, enum: [not_tested, partial, accepted, rejected] }
+            criteria_remaining: { type: array, maxItems: 256, items: { type: string } }
+    ExternalReceiptAdmissionResponse:
+      type: object
+      required: [receipt_id, evidence_id, execution_id, execution_revision, current_picture_revision, authority_claim_state, decision_proposal_state, replay]
+      properties:
+        receipt_id: { type: string }
+        evidence_id: { type: string }
+        execution_id: { type: string }
+        execution_revision: { type: integer, format: int64, minimum: 1 }
+        current_picture_revision: { type: integer, format: int64, minimum: 1 }
+        authority_claim_state: { type: string, enum: [not_required_for_observation, unverified, matched_native_authority] }
+        decision_proposal_state: { type: string, enum: [none, recorded_non_actionable] }
+        replay: { type: boolean }
+    ContextRequestV02:
+      type: object
+      additionalProperties: false
+      required: [request_id, work_id, request_type, need, reason, scope, freshness_required, maximum_payload, response_contract, authorization_boundary, cache_policy]
+      properties:
+        request_id: { type: string, minLength: 1, maxLength: 512 }
+        work_id: { type: string, minLength: 1, maxLength: 512 }
+        request_type: { type: string, enum: [decision, source, runtime, artifact, history, policy, dependency] }
+        need: { type: string, minLength: 1, maxLength: 16384 }
+        reason: { type: string, minLength: 1, maxLength: 16384 }
+        scope: { type: string, minLength: 1, maxLength: 16384 }
+        freshness_required: { type: string, minLength: 1, maxLength: 16384 }
+        maximum_payload: { type: string, enum: [compact, document, exact_artifact] }
+        response_contract:
+          type: object
+          additionalProperties: false
+          required: [required_fields, evidence_level]
+          properties:
+            required_fields:
+              type: array
+              minItems: 1
+              maxItems: 32
+              uniqueItems: true
+              items: { type: string, minLength: 1, maxLength: 128 }
+            evidence_level: { type: string, enum: [observed, derived, authoritative] }
+        authorization_boundary: { type: string, enum: [read_only, bounded_write, exact_action] }
+        cache_policy: { type: string, minLength: 1, maxLength: 16384 }
+    ContextResponseV02:
+      type: object
+      additionalProperties: false
+      required: [request_id, work_id, status, source, evidence_level, observed_at, expires_at, payload, limitations]
+      properties:
+        request_id: { type: string }
+        work_id: { type: string }
+        status: { type: string, enum: [found, unknown, stale, unauthorized, too_large, error] }
+        source:
+          type: object
+          additionalProperties: false
+          required: [system, reference]
+          properties:
+            system: { type: string, enum: [multica, brain, repository, runtime, artifact, dependency, provider] }
+            reference: { type: [string, "null"] }
+        evidence_level: { type: string, enum: [observed, derived, authoritative] }
+        observed_at: { type: string, format: date-time }
+        expires_at: { type: [string, "null"] }
+        payload: { type: object, additionalProperties: true }
+        limitations:
+          type: array
+          items: { type: string }
+    Comment:
+      type: object
+      required: [id, author_type, author_id, content, type, created_at]
+      properties:
+        id: { type: string }
+        author_type: { type: string, enum: [member, agent, plugin] }
+        author_id: { type: string }
+        content: { type: string }
+        type: { type: string }
+        parent_id: { type: string }
+        created_at: { type: string, format: date-time }
+    CommentListResponse:
+      type: object
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+    CreateCommentRequest:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, maxLength: 65536 }
+        parent_id: { type: string }
+    StorageKey:
+      type: object
+      required: [key, size_bytes, updated_at]
+      properties:
+        key: { type: string }
+        size_bytes: { type: integer, format: int64 }
+        updated_at: { type: string, format: date-time }
+    StorageKeyListResponse:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items:
+            $ref: "#/components/schemas/StorageKey"
+    StorageValueResponse:
+      type: object
+      required: [value]
+      properties:
+        value: { type: string }
+    PutStorageValueRequest:
+      type: object
+      required: [value]
+      properties:
+        value: { type: string, maxLength: 102400 }

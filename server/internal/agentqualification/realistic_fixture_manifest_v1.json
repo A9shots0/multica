@@ -1,0 +1,42 @@
+{
+  "schema_version": "silver-mediums.realistic-fixture-manifest.v1",
+  "group_id": "realistic-workflow-foundation-v2",
+  "status": "frozen_reviewed",
+  "fixtures": [
+    {
+      "case_id": "R01",
+      "fixture_id": "synthetic-authority-contract-v2",
+      "tree_sha256": "940f83aa117b94f305c12e0f108981d7fc11f46bf72389f427c41998bd8ceede",
+      "editable_paths": ["consumer_faulty/normalize.py", "tests/test_contract.py", "EVIDENCE.md"],
+      "allowlisted_checks": ["python -m unittest discover -s tests -v"],
+      "browser_required": false
+    },
+    {
+      "case_id": "R02",
+      "fixture_id": "synthetic-weekly-report-v1",
+      "tree_sha256": "20e6361aec612e3974cc73569e24d14630715df0598cf538b3f571f422fa8b49",
+      "editable_paths": ["report/report.js", "report/styles.css", "report/index.html", "tests/report.test.mjs", "EVIDENCE.json"],
+      "allowlisted_checks": ["node tests/report.test.mjs", "local-static-preview report"],
+      "browser_required": true
+    },
+    {
+      "case_id": "R03",
+      "fixture_id": "synthetic-release-ledger-v2",
+      "tree_sha256": "8c7a539c1cd98d5ef59af47f0e9d86b74bc14b5870b78c8a1767737739d35476",
+      "editable_paths": ["app/access.py", "tests/test_release_contract.py", "release/state.json", "release/receipt.json", "EVIDENCE.md"],
+      "allowlisted_checks": ["python -m unittest discover -s tests -v", "local-release-simulator verify", "local-release-simulator rollback"],
+      "browser_required": false
+    },
+    {
+      "case_id": "R04",
+      "fixture_id": "synthetic-exact-once-resume-v1",
+      "tree_sha256": "7981726a62742205b8c9f9f3790099414d0e40939762aa0a3e91eb6ca347a2a3",
+      "editable_paths": ["HANDOFF.md"],
+      "allowlisted_checks": ["python resume.py", "python -m unittest discover -s tests -v"],
+      "browser_required": false
+    }
+  ],
+  "copy_policy": "copy_embedded_fixture_to_new_empty_temp_directory_excluding_generated_cache_files",
+  "verification_policy": "hidden_verifier_runs_from_clean_copy_and_recomputes_all_evidence",
+  "hash_policy": "sha256_of_sorted_relative_path_nul_file_sha256_newline_rows"
+}

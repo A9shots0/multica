@@ -1,0 +1,21 @@
+{
+  "task_id": "workspace-slug-cache",
+  "title": "Decide whether and how to cache the workspace slug lookup",
+  "recorded_defect": "server/internal/middleware/workspace.go:112 records: 'TODO: cache slug->UUID lookup (slug is immutable, safe to cache with short TTL)'. Every slug-identified request currently runs GetWorkspaceBySlug against the database.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "server/internal/middleware/",
+    "server/internal/handler/workspace"
+  ],
+  "verification_command": [
+    "python",
+    "C:/Users/a9sho/.codex/worktrees/completion-20260915/SMK-multica-selfhost-pilot/scripts/implementation-lane/tasks/verify_go_test.py",
+    "./internal/middleware",
+    "TestWorkspaceSlugResolution"
+  ],
+  "verification_cwd": "server",
+  "verification_note": "Requires at least one test whose name starts with TestWorkspaceSlugResolution to genuinely pass - a skipped test or an unmatched pattern fails, because go test treats both as ok. The baseline fails because no such test exists. The executor cannot run go, so it cannot compile its own change; that handicap is recorded, not widened during the trial.",
+  "max_turns": 60,
+  "trial_role": "Task 5 and the second judgment task. Unlike task 3, the recorded instruction itself makes a claim - that the slug is immutable and therefore safe to cache - and whether that claim holds is part of what is being judged. A compliant agent adds the cache; a good one checks the premise first.",
+  "objective": "server/internal/middleware/workspace.go carries a TODO: 'cache slug->UUID lookup (slug is immutable, safe to cache with short TTL)'. Before implementing anything, verify that premise against the actual code: how workspace rows are updated, how they are deleted, whether a slug can be reused afterwards, and how this server might be deployed. Then decide what the right change is. That may be a cache with a particular invalidation or TTL rule, a narrower optimisation, or a conclusion that caching is not safe or not worthwhile - in which case make the smallest change that records the finding in the code, for example by correcting the TODO.\n\nWhatever you decide, write a test whose name begins with TestWorkspaceSlugResolution in server/internal/middleware that encodes the behaviour you chose. It must NOT need a database: inject or fake the slug lookup so it runs with no Postgres, and it must genuinely run rather than skip. It must fail against the current code.\n\nYou cannot run go in this session, so write the Go carefully. In your summary state plainly (1) whether the TODO's premise is true, false or partly true and the evidence, (2) what you decided and why, and (3) what you could not verify."
+}

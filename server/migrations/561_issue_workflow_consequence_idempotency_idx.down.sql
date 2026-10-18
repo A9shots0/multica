@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS issue_workflow_consequence_idempotency_idx;

@@ -1,0 +1,15 @@
+{
+  "task_id": "trial3-inbox-item-mutations",
+  "title": "Validate inbox item mutation responses with a schema",
+  "recorded_defect": "CLAUDE.md, API Compatibility: 'Do not cast network JSON to T' and 'include a malformed-response test'. packages/core/api/client.ts markInboxRead, markInboxUnread, archiveInbox and unarchiveInbox return this.fetch(...) cast to InboxItem with no validation, although packages/core/api/schemas.ts already validates inbox item lists.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/core/api/"],
+  "verification_command": ["npx", "vitest", "run", "api/inbox-item-mutations.test.ts", "--passWithNoTests=false"],
+  "verification_cwd": "packages/core",
+  "install_scope": "@multica/core...",
+  "dependencies": "pnpm",
+  "toolchains": ["node"],
+  "max_turns": 50,
+  "trial_role": "Trial 3, task 1. Single-entity mutation responses: a fallback object would be a fabricated inbox item, so the executor must choose what a malformed response should do, reusing the existing inbox item schema.",
+  "objective": "packages/core/api/client.ts has four inbox item mutation methods that trust the server response without validation: markInboxRead, markInboxUnread, archiveInbox and unarchiveInbox, each typed as returning InboxItem. packages/core/api/schemas.ts already validates inbox item lists for GET /api/inbox. The repository rule in CLAUDE.md (API Compatibility) requires endpoint responses consumed by UI logic to pass through a schema, with a malformed-response test.\n\nRead the Go handlers that serve these four endpoints and the struct they serialise, and read how packages/core uses each method's return value. Reuse the existing inbox item schema where it fits. Decide what each method must return or do when the response is malformed, keeping in mind that a made-up inbox item written into a cache would be wrong. Do not change any other method.\n\nWrite tests at exactly packages/core/api/inbox-item-mutations.test.ts covering a well-formed response and a malformed response for each method."
+}

@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS owner_notification_attempt_notification_idx;

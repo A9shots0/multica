@@ -1,0 +1,27 @@
+{
+  "schema_version": "silver-mediums.realistic-run-matrix.v1",
+  "matrix_id": "realistic-foundation-screen-v13",
+  "status": "frozen_reviewed",
+  "execution_order": ["R01", "R03", "R04"],
+  "deferred_cases": ["R02"],
+  "candidates": [
+    {"configuration_id":"realistic.gemini35flashlite.default.openrouter.r01r03r04.v13","model":"openrouter/google/gemini-3.5-flash-lite","effort":"screening_default","serving_provider":"google-ai-studio"},
+    {"configuration_id":"realistic.nexn25pro.free.openrouter.r01r03r04.v13","model":"openrouter/nex-agi/nex-n2.5-pro:free","effort":"screening_default","serving_provider":"nex-agi"},
+    {"configuration_id":"realistic.qwen3codernext.default.openrouter.r01r03r04.v13","model":"openrouter/qwen/qwen3-coder-next","effort":"screening_default","serving_provider":"alibaba"},
+    {"configuration_id":"realistic.solarpro4.default.openrouter.r01r03r04.v13","model":"openrouter/upstage/solar-pro4","effort":"screening_default","serving_provider":"upstage"}
+  ],
+  "selection_reason": "four v26 static reliability survivors advance to the unchanged frozen realistic capability cases without role assignment",
+  "stage_policy": "all_candidates_run_R01_once_then_only_valid_passes_continue_R03_R04_in_order",
+  "reliability_policy": "first_realistic_capability_pass_no_retries",
+  "max_incremental_spend_micros": 5000000,
+  "max_total_tokens": 900000,
+  "per_observation_generated_token_ceiling": 20000,
+  "per_observation_total_token_reservation": 75000,
+  "retries": 0,
+  "owner_interventions": 0,
+  "provider_fallbacks": false,
+  "global_halt_reasons": ["credential_failure", "evidence_integrity_failure", "unsafe_execution", "budget_breach", "uncontrolled_spending"],
+  "candidate_elimination_reasons": ["competence_failure", "hard_disqualifier", "response_or_tool_protocol_failure"],
+  "shared_failure_policy": "same_case_failure_by_two_unrelated_candidates_is_logged_for_post_batch_audit_without_pausing_unaffected_candidates",
+  "advancement_policy": "testing_evidence_only_no_role_assignment_no_production_promotion"
+}

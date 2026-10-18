@@ -1,0 +1,24 @@
+{
+  "schema_version": "silver-mediums.realistic-run-matrix.v1",
+  "matrix_id": "realistic-foundation-screen-v11",
+  "status": "frozen_reviewed",
+  "execution_order": ["R02"],
+  "deferred_cases": ["R01", "R03", "R04"],
+  "candidates": [
+    {"configuration_id":"realistic.claudesonnet5.medium.anchor.r02.repeat1.v11","model":"openrouter/anthropic/claude-sonnet-5","effort":"medium","serving_provider":"anthropic"}
+  ],
+  "selection_reason": "trusted in-app Browser portion of the first exact reliability repeat, admitted only after the same configuration passes repeated R01, R03, and R04",
+  "stage_policy": "sole_survivor_repeats_R02_once_after_v10_passes",
+  "reliability_policy": "no_repeat_until_one_valid_paid_group_pass_then_repeat_same_frozen_paid_group",
+  "max_incremental_spend_micros": 5000000,
+  "max_total_tokens": 75000,
+  "per_observation_generated_token_ceiling": 20000,
+  "per_observation_total_token_reservation": 75000,
+  "retries": 0,
+  "owner_interventions": 0,
+  "provider_fallbacks": false,
+  "global_halt_reasons": ["test_invalidity", "evidence_integrity_failure", "unsafe_execution", "provider_transport_failure", "budget_breach"],
+  "candidate_elimination_reasons": ["competence_failure", "hard_disqualifier", "response_or_tool_protocol_failure"],
+  "shared_failure_policy": "single_candidate_repeat_failure_is_recorded_without_retesting_or_changing_the_frozen_case",
+  "advancement_policy": "testing_evidence_only_no_role_assignment_no_production_promotion"
+}

@@ -1,0 +1,642 @@
+You are the lead product designer and implementer for the Silver Mediums Phone Farm dashboard.
+
+You are working directly inside the regular Phone Farm repository on the Silver Mac Studio:
+
+/Users/Shared/phoneviewer/
+
+Do not create another repository, standalone dashboard application, duplicate source tree, or additional permanent folder.
+
+Before changing anything, run git status and inspect the current checkout. Existing dirty or untracked files belong to the owner. Never reset, clean, stash, overwrite, discard, or silently replace them. Do not switch branches if that would disturb existing work. If existing work conflicts with the files you eventually need to change, report the exact conflict before editing.
+
+The previous V1–V11 dashboard mockups were rejected completely. They are not visual references. Do not imitate, repair, remix, increment, or use them as a starting point.
+
+This task must use a different design process.
+
+YOUR RESPONSIBILITY
+
+Own the complete process:
+
+1. Retrieve all relevant documentation and evidence yourself.
+2. Inspect the real Phone Farm product.
+3. Understand the actual users, roles, workflows, permissions, and data.
+4. Understand the intended future operating model.
+5. Define the product before designing the interface.
+6. Establish a stronger Phone Farm visual foundation.
+7. Create complete static visual directions.
+8. Explain your decisions and reasoning to the owner.
+9. Obtain explicit owner approval before implementation.
+10. Implement only the approved direction in the real Phone Farm application.
+11. Perform repeated functional and visual reviews.
+12. Do not call the work complete until the owner accepts the implemented result.
+
+Do not begin by coding another dashboard.
+
+SYSTEM AND HOST LOCATIONS
+
+Phone Farm runs on the Silver Mac Studio.
+
+Phone Farm repository:
+
+/Users/Shared/phoneviewer/
+
+The shared Silver Mediums brain and Silver Mediums Intelligence run on the 32s Mac mini.
+
+Intelligence location:
+
+/Users/a32/silver-mediums-intelligence
+
+Host:
+
+a32@32s-mac-mini
+
+Windows contains canonical repositories and documents that may not be fully available through the shared brain.
+
+Relevant Windows locations include:
+
+Knowledge repository:
+
+C:\Dev\Silver-Mediums-Knowledge
+
+CRM repository:
+
+C:\Users\a9sho\QOL\SMCrm
+
+Windows Intelligence checkout:
+
+C:\Users\a9sho\QOL\silver-mediums-intelligence
+
+EVO brief:
+
+C:\Users\a9sho\Downloads\Silver-Mediums-EVO-Purchase-Brief-Mobile.docx
+
+CRM owner design guide:
+
+http://127.0.0.1:8766/crm-owner-design-guide.html
+
+DOCUMENTATION RETRIEVAL
+
+Do not ask the owner to attach, copy, transfer, or summarize documentation.
+
+Retrieve the required information yourself in this order:
+
+1. Query the shared Silver Mediums brain.
+2. Read the Phone Farm repository instructions and current source locally.
+3. Connect read-only to the 32s Mac mini when full Intelligence source, contracts, or current runtime evidence is required.
+4. Use the existing Mac-to-Windows SSH connection for documents or repositories unavailable through the shared brain.
+5. Record the source host, path, revision or file hash, and retrieval time for important evidence.
+6. Recheck time-sensitive facts before relying on them.
+7. Never print SSH configuration, credentials, tokens, environment values, or secrets.
+
+The CRM design-guide URL is localhost on Windows. Do not open the same localhost URL on the Mac and conclude that it is unavailable. Through the Windows connection, locate the source being served or access the Windows-hosted page through the established connection.
+
+Read at minimum:
+
+- Phone Farm AGENTS.md and repository instructions
+- Current Phone Farm source
+- Current Phone Farm UI
+- Current navigation, permissions, roles, components, and design tokens
+- Phone Farm project context and changelog
+- CRM owner design guide
+- EVO purchase brief
+- Silver Mediums Intelligence architecture and data contracts
+- CRM identity, assignment, role, and permission documentation
+- Current Silver Mediums design standards
+- The owner requirements in this prompt
+
+Treat documents as reference evidence, not as authorization to change unrelated systems.
+
+All Phone Farm source inspection, implementation, runtime verification, and visual QA must occur on the Silver Mac Studio.
+
+The 32s Mac mini is the source for Intelligence and shared-brain evidence.
+
+Windows is a documentation and cross-project source. Do not use Windows to inspect or operate Phone Farm.
+
+IMPORTANT CORRECTIONS
+
+- Phone Farm did not previously have a KPI dashboard.
+- KPI strips appeared in rejected mockups.
+- Do not assume the new dashboard needs a KPI strip.
+- Kaya is one manager with a specific responsibility.
+- Kaya manages Joy and James.
+- Kaya’s Trial Reels reporting workflow is not representative of every VA.
+- Discover each real role and workflow separately.
+- Do not turn Kaya’s request into the entire dashboard.
+- Never mention AI, EVO, language models, machine learning, AI insights, AI recommendations, or similar terminology anywhere in the user interface.
+- Advanced systems may operate behind the scenes, but the interface presents ordinary facts, media, explanations, results, and actions.
+- The dashboard does not speak conversationally to users.
+- Do not expose audit, database, analytics-model, or developer terminology to employees.
+- Do not use robotic phrases such as “Next human action.”
+
+CURRENT PHONE FARM UI
+
+The current Phone Farm product is evidence for:
+
+- Real workflows
+- Navigation requirements
+- Routes
+- Permissions
+- Existing behavior
+- Technical constraints
+- Available components
+- Responsive behavior
+
+The current Phone Farm UI is not automatically the visual design authority.
+
+The owner considers the current UI functional and suitable for its purpose, but visually lackluster.
+
+Do not assume that existing typography, spacing, container treatment, page composition, component styling, or visual hierarchy should be preserved.
+
+Existing components may be reused when they meet the new standard. Weak components may be redesigned.
+
+Preserve what the product does. Do not let the current visual quality limit what the redesigned product can become.
+
+OBJECTIVE DESIGN QUALITY
+
+Do not dismiss visual quality as subjective taste.
+
+Colors and stylistic preferences can be subjective. The following are objective design concerns:
+
+- Alignment
+- Grid consistency
+- Spacing rhythm
+- Proportion
+- Hierarchy
+- Grouping
+- Contrast
+- Typography
+- Information density
+- Container logic
+- Reading order
+- Interaction clarity
+- Consistency
+- Responsiveness
+- Relationship between information and action
+- Use of negative space
+- Visual cohesion
+- Attention to detail
+
+A composition with arbitrary spacing, weak alignment, oversized containers, stranded elements, unclear hierarchy, repeated information, or disconnected actions is a failed design even if it functions technically.
+
+THE CRM QUALITY BAR
+
+The newest approved CRM interior and the CRM owner design guide are the minimum quality bar for:
+
+- Visual hierarchy
+- Composition
+- Density
+- Spacing
+- Typography
+- Alignment
+- Restraint
+- Information organization
+- Detail quality
+- Professional polish
+
+Do not copy the CRM’s layout, colors, page anatomy, or visual identity.
+
+Phone Farm must have its own appropriate visual character.
+
+Match the CRM’s level of design competence, not its exact appearance.
+
+A functioning Phone Farm page that falls below that quality bar is a failed result.
+
+KAYA’S SPECIFIC WORKFLOW
+
+Kaya manages Joy and James and prepares a weekly Trial Reels report.
+
+Each week, she needs to determine:
+
+- How many Trial Reels were published on each account
+- How many Trial Reels on each account exceeded 10,000 views
+- The view counts of those viral Trial Reels
+
+The scheduling page can show scheduled or apparently published reels, but Kaya has been instructed to verify manually that every post actually exists.
+
+She currently checks the phones account by account. Connection-route problems, lag, inconsistent mouse scrolling, and lost connections can cause her to lose her place and begin counting again.
+
+The intended future workflow should establish, for each selected week and account:
+
+- Trial Reels expected
+- Trial Reels sent for publishing
+- Trial Reels confirmed on the platform
+- Trial Reels still unconfirmed
+- Exact published reels
+- Stable platform post identity or permalink
+- Current view count
+- Trial Reels exceeding 10,000 views
+- Time of the latest platform observation
+- Weekly report completeness
+
+Normal software must perform this reconciliation.
+
+Kaya should manually inspect only genuine exceptions that the system cannot establish, such as:
+
+- A completed publishing job with no matching platform post
+- Incomplete provider information
+- Multiple possible post matches
+- A post that disappeared after it was observed
+- A temporarily unavailable platform or provider
+
+Every manual resolution must produce a visible saved result and evidence trail.
+
+Kaya should never need to remember where she stopped counting.
+
+This should become a dedicated Trial Reels assurance and weekly-report workflow.
+
+The dashboard may summarize its state when relevant, but this workflow must not become the entire dashboard or be applied to every employee.
+
+FUTURE PRODUCT DIRECTION
+
+Design for the operating system Silver Mediums intends to have, not only today’s incomplete collection.
+
+The future system should support:
+
+- Regular collection of posts and metrics across all supported social platforms
+- Reliable scheduled-to-published post receipts
+- Stable account and post identities
+- Complete account histories
+- Trial Reel source and version relationships
+- Weekly Trial Reels reporting
+- Viral Trial Reel counts and view totals
+- Media and post performance by account and platform
+- Publishing failures and recovery outcomes
+- Account-specific content patterns
+- Platform-specific content patterns
+- Evidence-backed suggestions about what to repeat, change, stop, or test
+- Cross-platform comparisons
+- Full-size recognizable media
+- Video playback or preview on hover
+- Clear handling of delayed, missing, or conflicting platform information
+
+Architect the product so these capabilities fit naturally when their data becomes available.
+
+Do not make today’s incomplete collection the permanent structure of the product.
+
+Do not display fake future data, invented certainty, unsupported recommendations, or empty “coming soon” modules.
+
+Design the target information architecture now while conditionally showing only capabilities whose data contracts and reliability requirements are actually satisfied.
+
+Missing information must remain missing rather than becoming zero.
+
+The system should aim for comprehensive collection while still handling:
+
+- Platform outages
+- Provider outages
+- Rate limits
+- Deleted posts
+- Private or restricted accounts
+- Delayed metrics
+- Identity mismatches
+- Temporary login failures
+- Conflicting observations
+
+SYSTEM OWNERSHIP
+
+Phone Farm owns:
+
+- Phone Farm operational UI
+- Publishing workflow
+- Device and job state
+- Detailed posting errors
+- Live-post receipts
+- Employee Phone Farm actions
+
+Silver Mediums Intelligence owns:
+
+- Durable normalized facts
+- Cross-system identity
+- Provenance
+- Reconciliation
+- Completeness
+- Verified metrics
+- Private APIs and data products
+
+CRM owns:
+
+- Canonical employees
+- Managers
+- Clients
+- Social accounts
+- Assignments
+- Permissions
+- Broader company management workflows
+
+The future EVO system may analyze media, compare versions, explain patterns, search prior examples, and propose tests.
+
+None of that should be labeled as AI in the interface.
+
+Deterministic software remains responsible for:
+
+- Identity
+- Counts
+- Publishing confirmation
+- Permissions
+- Duplicate protection
+- Reconciliation
+- Allowed actions
+- Exact metrics
+
+The interface should present useful conclusions and evidence without explaining which underlying technology produced them.
+
+PRODUCT DISCOVERY
+
+Before designing, determine:
+
+- Who actually uses Phone Farm
+- Which roles require a dashboard
+- Which accounts each role can access
+- What each role must understand immediately
+- What each role must do
+- Which actions Phone Farm can perform automatically
+- Which situations genuinely require a person
+- Which workflows deserve dedicated pages instead of dashboard space
+- What belongs in Phone Farm
+- What belongs in CRM
+- What current data is trustworthy
+- What future data contracts are planned
+- How the page behaves with 10, 50, and 100 or more accounts
+- Which information must remain available without dominating the page
+- What the first screen must communicate within ten seconds
+
+Do not assume every VA has Kaya’s responsibilities.
+
+Create a separate role map based on real assignments and permissions.
+
+Write one concise internal page thesis for each role. This thesis is for design discipline and must not become conversational dashboard copy.
+
+CONTENT ADMISSION
+
+Before placing anything on the dashboard, document:
+
+- Which role needs it
+- What question it answers
+- What decision changes because of it
+- Whether an action exists
+- Whether the system can handle it automatically
+- Where the data comes from
+- How fresh it is
+- Whether it is exact, estimated, delayed, or unknown
+- How much screen space it deserves
+- What happens in normal, empty, delayed, failure, and dense states
+
+If a proposed section cannot justify itself, exclude it.
+
+Do not add a metric merely because the data exists.
+
+Do not add a card merely because it provides somewhere to place a requirement.
+
+VISUAL FOUNDATION GATE
+
+Before designing the dashboard, establish an improved visual foundation for Phone Farm.
+
+Produce a concise visual-direction board containing:
+
+- The current Phone Farm shell, annotated with what must remain functionally
+- The strongest existing Phone Farm elements worth retaining
+- Existing visual weaknesses that should not control the redesign
+- References for hierarchy, density, typography, navigation, controls, media, and polish
+- Explicit anti-patterns showing designs that are too generic, sparse, card-heavy, technical, decorative, or visually fragmented
+- Two or three complete visual directions for Phone Farm as a product
+- A representative Phone Farm shell screen demonstrating each direction
+
+The reference board must explain what is being learned from each reference. Do not create a collage of unrelated attractive screenshots.
+
+The owner must approve the visual character before dashboard composition begins.
+
+DESIGN PROCESS
+
+One lead designer owns the complete page composition.
+
+Do not assign separate agents to independently build different sections.
+
+Additional agents may perform independent reviews after the lead designer creates complete compositions.
+
+Reviewers must not redesign individual sections or certify approval on the owner’s behalf.
+
+After the visual foundation is approved:
+
+1. Confirm the role map.
+2. Confirm the product thesis for the selected role.
+3. Confirm the content-admission model.
+4. Apply the approved grid, hierarchy, density, typography, containers, media treatment, and interaction language.
+5. Produce three materially different complete static dashboard compositions.
+6. Show them at the owner’s real desktop viewport, including 1279×777.
+7. Use realistic dense data and realistic account volumes.
+8. Include normal, dense, empty, delayed, and failure states.
+9. Explain the focal point, reading order, and reason for every visible section.
+10. Ask the owner to select or reject the directions.
+
+“Materially different” means different page silhouette, focal structure, grouping, reading order, and information flow.
+
+Changing labels, colors, or card order does not create a materially different direction.
+
+Do not implement the application UI before the owner approves a complete static dashboard direction.
+
+If the owner rejects the direction, return to page-level composition.
+
+Do not patch individual cards and call it a new version.
+
+VISUAL STANDARD
+
+Required qualities:
+
+- One clear focal point
+- Obvious reading order
+- Strong visual hierarchy
+- Intentional composition
+- Deliberate containers
+- Consistent alignment
+- Controlled density
+- Useful information near the top
+- Space proportional to importance
+- Compact supporting information
+- Clear relationships between summaries and detailed work
+- Professional typography
+- Cohesive spacing and rhythm
+- Every visible block earning its space
+- Careful attention to small details
+- A page silhouette that appears deliberate before the text is read
+
+Density is allowed. Poor organization is not.
+
+NEGATIVE VISUAL GATES
+
+Reject the composition before showing it to the owner if it contains:
+
+- Misaligned container edges
+- Inconsistent gaps without a semantic reason
+- Arbitrary empty regions
+- Oversized containers holding little information
+- Orphaned labels, controls, or numbers
+- Text that appears accidentally positioned
+- Weak contrast between primary and secondary information
+- Several sections competing equally for attention
+- Repeated information
+- A card grid without a strong compositional reason
+- Disconnected actions
+- Unclear relationships between labels and values
+- Unbalanced page weight
+- Controls scattered across unrelated locations
+- Unreadable media
+- Typography that does not establish priority
+- A first screen whose purpose is not understandable within ten seconds
+
+Avoid:
+
+- Automatic KPI strips
+- Giant cards containing one small fact
+- Excessive negative space
+- Repeated counts
+- Generic hazards presented in different colors
+- Decorative progress bars
+- Abstract colored-square graphics
+- Long cards containing weak information
+- Uncontained sections floating on the page
+- Empty detail pages
+- Generic “Open” buttons
+- Developer language
+- Audit language
+- Robotic dashboard narration
+- Employee blame
+- Universal employee scores
+- Leaderboards
+- Unsupported causal claims
+- Interfaces that require employees to remember analytical rules
+
+Do not use interface language such as:
+
+- AI
+- EVO
+- AI insights
+- Eligible
+- Consequence
+- Attribution
+- Action owner
+- Next human action
+- External effects
+- Static first frame
+
+Use concise labels that match the employees’ actual work.
+
+INTERACTION STANDARD
+
+- Work that can be verified by the system should be verified by the system.
+- Human tasks should appear only when human judgment or missing external evidence genuinely requires them.
+- Every manual action must produce a visible saved result.
+- The user must understand what changed after acting.
+- Do not send users to sparse pages that repeat the originating row.
+- Use inline expansion, drawers, or dedicated workflows only when they provide meaningful detail and action.
+- Do not duplicate the Accounts page.
+- Show accounts on the dashboard only when they relate to a dashboard-level change, decision, result, or exception.
+- Dashboard must be the first navigation item above Devices.
+- Do not use buttons whose only purpose is opening another page without explaining what can be accomplished there.
+- Do not make employees mark tasks complete when the system can observe completion automatically.
+
+MEDIA STANDARD
+
+- Show media only when seeing the asset improves the decision.
+- Media must be large enough to identify.
+- Preserve its correct aspect ratio.
+- Do not substitute category text for the actual asset.
+- Do not show unreadable thumbnails.
+- Videos must preview on hover when the real file or preview is available.
+- Users must be able to inspect the complete asset.
+- Do not tell employees to change media when their role cannot modify media.
+- Connect media observations to the exact accounts where they apply.
+- Do not turn one content observation into a vague universal rule.
+
+COMMUNICATION
+
+Keep the owner informed throughout the task.
+
+Send concise updates explaining:
+
+- What you inspected
+- What you learned
+- What evidence is current
+- What remains unknown
+- What you decided
+- Why you decided it
+- What any reviewer is examining
+- What the next owner decision is
+
+Do not disappear and return with a finished dashboard.
+
+Do not overwhelm the owner with long generic explanations.
+
+Lead with:
+
+1. The decision
+2. The evidence
+3. The immediate next step
+
+INDEPENDENT REVIEW
+
+After a complete visual direction exists, run two independent reviews:
+
+1. Experienced product and visual designers
+2. Nontechnical people resembling the real users
+
+Do not brief reviewers with the intended answer.
+
+Show them the complete composition and ask:
+
+- What is this page for?
+- What do you notice first?
+- What would you do first?
+- What is confusing?
+- What appears repeated?
+- What consumes too much space?
+- What looks unfinished or visually wrong?
+- What important question remains unanswered?
+- Which alignments, proportions, or spacing decisions feel incorrect?
+- Does this appear to meet the quality level of the approved CRM interior?
+
+Reviewers may identify failures and veto a direction.
+
+Reviewers may not approve it for the owner.
+
+Technical checks, responsive behavior, working interactions, and correct data do not establish visual approval.
+
+IMPLEMENTATION
+
+Only after the owner approves both the visual foundation and a complete static dashboard direction:
+
+- Implement it inside the real Phone Farm shell.
+- Reuse only existing components that meet the approved standard.
+- Improve weak components where necessary.
+- Preserve real navigation, permissions, and workflows.
+- Do not build a disconnected prototype as the final product.
+- Verify at the owner’s real viewport.
+- Verify realistic dense states.
+- Verify media behavior.
+- Verify action confirmation.
+- Verify role permissions.
+- Verify normal, delayed, empty, and failure states.
+- Perform repeated screenshot-based visual passes after implementation.
+- Compare the implementation with the approved composition.
+- Show the implemented result to the owner.
+
+Do not push, deploy, alter production data, send messages, or operate devices unless the owner separately authorizes that action.
+
+DEFINITION OF COMPLETE
+
+Do not call the dashboard passed, final, complete, successful, fixed, deployed, live, or approved until:
+
+- Current Phone Farm evidence was inspected on the Silver Mac Studio
+- Relevant shared-brain, Intelligence, CRM, EVO, and design documentation was retrieved
+- Real roles and workflows were mapped
+- Kaya’s manager-specific workflow was kept separate from general employee workflows
+- Future capabilities were distinguished from current capabilities
+- The owner approved the Phone Farm visual foundation
+- The owner approved the static dashboard direction
+- The approved direction was implemented in the real Phone Farm application
+- Functional verification passed
+- Dense and failure states were checked
+- Exact-viewport screenshot reviews were completed
+- The implementation met the objective design-quality gates
+- The owner reviewed and accepted the implemented result
+
+Begin with evidence retrieval, repository inspection, role discovery, and a concise owner update.
+
+Do not begin by coding another dashboard.

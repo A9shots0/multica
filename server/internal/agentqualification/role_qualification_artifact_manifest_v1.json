@@ -1,0 +1,37 @@
+{
+  "schema_version": "silver-mediums.role-qualification-artifact-manifest.v1",
+  "status": "draft_prevalidation",
+  "artifacts": [
+    {"id":"hosted_workflow_interaction_audit_20260910","path":"docs/silver-mediums/HOSTED-WORKFLOW-INTERACTION-AUDIT-20260910.md","sha256":"afa2965d29644fa93b938ecf698840749e81958c889c327f24796ddf4337d375"},
+    {"id":"item_09_to_12_acceptance_matrix","path":"docs/silver-mediums/ACCEPTANCE.md","sha256":"f229251e7812f16cb1d663c528334780b404f274d192390ffc7338864ff09bff"},
+    {"id":"item_10_inbox_chat_acceptance","path":"docs/silver-mediums/ITEM-10-INBOX-CHAT-ACCEPTANCE.md","sha256":"333845344ef7b27c329569c2748790fdc8feddb3d5452b1e81a33df31e9d5643"},
+    {"id":"item_11_mobile_parity","path":"docs/silver-mediums/ITEM-11-MOBILE-PARITY.md","sha256":"c0ab1dd5db9622417367b3f4fe425e2dc4348f2c70c556df31243150f7e5425b"},
+    {"id":"item_12_sms_notifications","path":"docs/silver-mediums/ITEM-12-SMS-NOTIFICATIONS.md","sha256":"0b9afc179a56a71cd2789304d3d16cac08466a31de560009d23fc5fe65b648fb"},
+    {"id":"topology_scenario_bank_v2","path":"docs/silver-mediums/ITEM-14-TOPOLOGY-SCENARIO-BANK.md","sha256":"60ce72c23fe6ab0ad26459cff5704b0e50c026ba8f48ba034b9b7a38838b6070"},
+    {"id":"role_design_decision_register_v1","path":"docs/silver-mediums/ITEM-14-ROLE-DESIGN-DECISION-REGISTER.md","sha256":"44025c5503da7f0b7047d4133caccfd3ef1ce06aca925df038c19a1d30fd1c94"},
+    {"id":"item_14_benchmark_closure","path":"docs/silver-mediums/ITEM-14-BENCHMARK-CLOSURE.md","sha256":"8c6ccea4fe3dee76b3f72cb6501ef9c99a5f9e12e6f45f4aedbed482c7fb7cb4"},
+    {"id":"mika_owner_interface_instructions_v1","path":"server/internal/agentqualification/role_artifacts/v1/mika_owner_interface.instructions.md","sha256":"19b57802d948faa326a44292a51529c7072444741bbf00c54aa02f18c5fe5f8c"},
+    {"id":"mika_owner_interface_skill_v1","path":"server/internal/agentqualification/role_artifacts/v1/mika_owner_interface.skill.md","sha256":"6bff178295d90e62a7278acea2afbb1234aacce866b7907acb4f34daaa3eb9b9"},
+    {"id":"quality_checker_instructions_v1","path":"server/internal/agentqualification/role_artifacts/v1/quality_checker.instructions.md","sha256":"b66719ae6a344ad00352c32dfce94d9e8b2979b9a3b41cacc08168d6a56aa814"},
+    {"id":"quality_checker_skill_v1","path":"server/internal/agentqualification/role_artifacts/v1/quality_checker.skill.md","sha256":"9e4ab086030e9f7c032fab59c650510bd2f59d04b1ba92b222b8a6e10e5dfd13"},
+    {"id":"product_ui_instructions_v1","path":"server/internal/agentqualification/role_artifacts/v1/product_ui.instructions.md","sha256":"4c91cd080f987411e9709e1462d6b4e5cd144ba324836de322a44f49013b0faf"},
+    {"id":"product_ui_skill_v1","path":"server/internal/agentqualification/role_artifacts/v1/product_ui.skill.md","sha256":"5bf6c432d0592d1e60dfeda28c5d85f8c613787fed7d971d6b2d0cca90634eea"},
+    {"id":"shared_windows_executor_instructions_v1","path":"server/internal/agentqualification/role_artifacts/v1/shared_windows_executor.instructions.md","sha256":"54478c5615afc1d6367d5f95de2a50b3cf1cad9515dd202dbd84c21561883058"},
+    {"id":"shared_windows_executor_skill_v1","path":"server/internal/agentqualification/role_artifacts/v1/shared_windows_executor.skill.md","sha256":"f37ad08f525fbc3b520f2526083ded2b0f5a489a7d776201094c3667e02b4e9b"},
+    {"id":"role_qualification_hidden_graders_v1","path":"server/internal/agentqualification/role_qualification_hidden_graders_v1.json","sha256":"e37a0ebcf4c26486f107b76400246dce2fa5611e707fbf093b472ea9444017a9"},
+    {"id":"role_qualification_calibration_fixtures_v1","path":"server/internal/agentqualification/role_qualification_calibration_fixtures_v1.json","sha256":"935a65e3d50283b458a9700f45241eeaedaaaf87761bbb8657c893bf96059526"},
+    {"id":"role_qualification_run_matrix_v1","path":"server/internal/agentqualification/role_qualification_run_matrix_v1.json","sha256":"0c004c5a5f6d0441abf49084fae8187962e9d002b09a5b6c3b6640f80210465b"},
+    {"id":"role_qualification_candidate_packets_v1","path":"server/internal/agentqualification/role_qualification_candidate_packets_v1.json","sha256":"b9578b836e3d781244c21b8af158c9360f6871f7101d3862f37c6358fb639613"}
+    ,{"id":"role_qualification_case_group_v1","path":"server/internal/agentqualification/role_qualification_case_group_v1.json","sha256":"169d7cb3870d4cbabfefc46f638db73294110cf652c9ef9ffdc5c12bee2a2b1f"}
+    ,{"id":"role_qualification_case_group_loader_v1","path":"server/internal/agentqualification/role_qualification_case_group_v1.go","sha256":"49a6b149c6889ff15719a614472937ae679ce760619f996bbf64be42a7ef088a"}
+    ,{"id":"role_qualification_case_group_tests_v1","path":"server/internal/agentqualification/role_qualification_case_group_v1_test.go","sha256":"5daf2a950da8f74c8fc020838b5388b920c43c4dbaf017189bac56a41239cb32"}
+    ,{"id":"role_qualification_calibration_runner_v1","path":"server/internal/agentqualification/role_qualification_calibration_v1.go","sha256":"b802f9866c07b6185869d6c0759901c1bd74a65c1c85c56d5060bd5fd295a6c5"}
+    ,{"id":"role_qualification_calibration_tests_v1","path":"server/internal/agentqualification/role_qualification_calibration_v1_test.go","sha256":"9c8d5247abf15bce4245eef41158db52bf942ef8629acec1b0f6eba6871c8fc1"}
+  ],
+  "candidate_bindings": [
+    {"candidate_class":"mika_owner_interface","instruction_artifact_id":"mika_owner_interface_instructions_v1","skill_artifact_id":"mika_owner_interface_skill_v1"},
+    {"candidate_class":"quality_checker","instruction_artifact_id":"quality_checker_instructions_v1","skill_artifact_id":"quality_checker_skill_v1"},
+    {"candidate_class":"product_ui","instruction_artifact_id":"product_ui_instructions_v1","skill_artifact_id":"product_ui_skill_v1"},
+    {"candidate_class":"shared_windows_executor","instruction_artifact_id":"shared_windows_executor_instructions_v1","skill_artifact_id":"shared_windows_executor_skill_v1"}
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "schema_version": "silver-mediums.integration-replay-result.v1",
+  "result_id": "item-14-cef-7-real-integration-replay-20260915",
+  "status": "accepted_local_runtime_verified_integration_observation",
+  "evidence_stage": "local-only",
+  "observed_at": "2026-09-15T13:15:00Z",
+  "issue_id": "8f3111b6-c9b5-4919-986a-6a043837cdb3",
+  "issue_key": "CEF-7",
+  "workflow_kind": "controller_bound_read_only_windows_repository_inventory",
+  "tasks": [
+    {"stage":"task_scoped_intake_leader","task_id":"01a0a52c-fe4a-79a4-8cd7-6ce364016ef2","agent_id":"7fc31137-43c4-4031-9036-9c01f0ed7b0e","status":"completed","attempt":1,"max_attempts":1,"duration_ms":6458},
+    {"stage":"shared_windows_executor_fixture","task_id":"01a0a52d-27ac-7dab-99ee-8dc30d819583","agent_id":"12df8369-55e8-4c1a-9995-42530d75c64b","status":"completed","attempt":1,"max_attempts":1,"duration_ms":18332},
+    {"stage":"task_scoped_independent_reviewer","task_id":"01a0a52d-78a9-7544-af88-e58fa8e47398","agent_id":"8b74703a-b5ca-4247-87c5-6f684e87caf6","status":"completed","attempt":1,"max_attempts":1,"duration_ms":9068}
+  ],
+  "workflow_events": ["implementation_ready", "review_passed"],
+  "review_outcome": "ITEM14_REVIEW_PASS",
+  "correction_count": 0,
+  "provider_task_ceiling": 5,
+  "provider_task_invocations": 3,
+  "receipts": 3,
+  "revoked_receipts": 3,
+  "capability_grants": 3,
+  "launch_consumptions": 3,
+  "distinct_package_hashes": 3,
+  "distinct_daemons": 1,
+  "guard_role_id": "data_sync_integrity",
+  "guard_role_interpretation": "transport_guard_label_only_not_permanent_role_qualification",
+  "transport": {
+    "lane": "claude_code_subscription_composite",
+    "runtime_provider": "claude",
+    "requested_primary_model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "observed_models": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6"],
+    "exact_single_model_proven": false,
+    "underlying_http_request_count_certified": false,
+    "automatic_retries": 0,
+    "fallbacks": false,
+    "tools": 0,
+    "provider_child_repository_accesses": 0
+  },
+  "usage": {
+    "rows": 6,
+    "sonnet_rows": 3,
+    "haiku_rows": 3,
+    "input_tokens": 2887,
+    "output_tokens": 88,
+    "cache_read_tokens": 7763,
+    "cache_write_tokens": 2958,
+    "total_accounted_tokens": 13696,
+    "database_cost_reported": false,
+    "ui_estimated_cost_usd": "0.02"
+  },
+  "owner_projection": {
+    "issue_status": "done",
+    "plan_state": "done",
+    "picture_revision": 1,
+    "scope_revision": 1,
+    "outcome_state": "satisfied",
+    "execution_state": "completed",
+    "release_state": "not_required",
+    "attention_state": "resolved",
+    "milestone": "complete",
+    "board_issue_inbox_passed": true
+  },
+  "report": {
+    "roots": 10,
+    "required_path_checks": 444,
+    "completed_path_checks": 444,
+    "present": 439,
+    "absent": 5,
+    "artifacts": [
+      {"path":".qualification-evidence/item14-integration-replay-20260915-v3/real-claude-replay-report/EVIDENCE.md","sha256":"0310bf784a2f5da817921cd638ac531b9f04fecce3969875ec5d05c3f3d9e87f"},
+      {"path":".qualification-evidence/item14-integration-replay-20260915-v3/real-claude-replay-report/WINDOWS-REPOSITORY-WORKTREE-INVENTORY.md","sha256":"48382cc93f8d178bbc737b63bbe74b591b00a40cf7fb3f338fed801dec01ce7e"},
+      {"path":".qualification-evidence/item14-integration-replay-20260915-v3/real-claude-replay-report/inventory.json","sha256":"4f6309ba8d864d513c4c2a70e6f7e0f599051a9ac1681a5e08eb376fa48ea4b9"}
+    ]
+  },
+  "source_bindings": {
+    "launch_contract_path": ".qualification-evidence/item14-integration-replay-20260915-v3/EXACT-LAUNCH-CONTRACT.json",
+    "launch_contract_sha256": "837411cfb5a4d4a0cf43d66bc468da0f7fbe69b7314e33c12c77dcea43577469",
+    "broker_path": "server/bin/item14-integration-pilot-broker-v3.exe",
+    "broker_sha256": "366718905d210c833d10a1116e4ef4033613be65046fa647625be88e09b4d4da",
+    "authority_helper_path": "server/bin/item14-integration-pilot-authority-v7-real.exe",
+    "authority_helper_sha256": "26bde00be5ed07d7a0692dd51a6625039e798ba9a343df6f1ee925e2246b3d0b",
+    "controller_image_digest": "sha256:53ce0736da07fbc00c0fc7c7be8c2b8414e5afea63100aa921fee881b5f37080"
+  },
+  "cleanup": {
+    "runtime_offline": true,
+    "daemon_tokens": 0,
+    "credential_copy_absent": true,
+    "provider_profile_absent": true,
+    "daemon_profile_absent": true,
+    "child_temp_roots_absent": true,
+    "matching_processes": 0,
+    "active_receipts": 0
+  },
+  "production_actions": 0,
+  "outbound_actions": 0,
+  "phone_farm_windows_accesses": 0,
+  "permanent_selections": 0
+}

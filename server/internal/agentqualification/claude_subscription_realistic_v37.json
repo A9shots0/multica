@@ -1,0 +1,41 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-realistic.v37",
+  "batch_id": "claude-subscription-realistic-r03-phased-plan-v37",
+  "status": "frozen_reviewed",
+  "provider_calls_allowed": true,
+  "transport": "claude_code_print_restricted_tool_free_v2",
+  "topology": "bounded_phased_candidate_plans_to_deterministic_controller_no_reviewer_no_correction",
+  "configuration": {
+    "id": "realistic.generalist.claude46.medium.subscription.phased-plan.v37",
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium",
+    "runtime_provider": "claude_code_subscription",
+    "serving_provider": "anthropic",
+    "provider_fallbacks": false
+  },
+  "execution_order": ["R03:v2"],
+  "caps": {
+    "max_provider_invocations": 5,
+    "max_actions_per_phase": 4,
+    "max_total_actions": 20,
+    "max_total_reported_tokens": 75000,
+    "max_generated_tokens": 20000,
+    "max_cost_equivalent_micros": 200000,
+    "max_retries": 0
+  },
+  "runtime_identity": {
+    "version_output": "2.1.270 (Claude Code)",
+    "executable_path": "C:\\Users\\a9sho\\AppData\\Roaming\\npm\\claude.cmd",
+    "executable_sha256": "7999fba95dbffe167d9e0a043f29057979a0518ebe89b60c4fcfc6401ea8c424",
+    "route_evidence": "claude-code subscription restricted tool-free stdin json-schema lane"
+  },
+  "frozen_antecedents": {
+    "claude_subscription_realistic_v36_freeze.json": "86ef9a33a047ede5f004ef73f35d76c6d8ef3400f32b8a89a4a2f025867afe6b",
+    "realistic_workflow_group_v1.json": "3b7a9d315ef3abd9aac7dca8d879719f5402db538f6e401c59194c09f9594bcf",
+    "realistic_fixture_manifest_v1.json": "e182e08f9946384cbbb8b43316c52932af5c71b19c22ec9df372120f9b474c9d",
+    "realistic_freeze_v1.json": "fd2e81e609ae0521125bc742aa850e70c0412fb6b5c94847803ab99dc8a1933c"
+  },
+  "production_allowed": false,
+  "external_side_effects_allowed": false,
+  "role_selection_allowed": false
+}

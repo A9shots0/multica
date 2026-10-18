@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "inbox": "收件箱",
+    "chat": "聊天",
+    "my_issues": "我的任务",
+    "issues": "HQ",
+    "projects": "项目",
+    "autopilots": "自动化",
+    "agents": "智能体",
+    "squads": "小队",
+    "usage": "统计",
+    "runtimes": "运行时",
+    "skills": "Skills",
+    "deployments": "部署发布",
+    "knowledge": "知识库",
+    "settings": "设置"
+  },
+  "tab": {
+    "issue": "任务",
+    "project": "项目",
+    "autopilot": "自动化",
+    "agent": "智能体",
+    "member": "成员",
+    "squad": "小队",
+    "skill": "Skill",
+    "machine": "机器",
+    "runtime": "运行时",
+    "attachment": "附件",
+    "create_agent": "创建智能体",
+    "unknown": "未知页面"
+  },
+  "help": {
+    "trigger": "帮助",
+    "download_desktop": "桌面端",
+    "docs": "文档",
+    "changelog": "更新日志",
+    "discord": "Discord",
+    "feedback": "反馈",
+    "server_version": "服务器版本 {{version}}"
+  },
+  "workspace_loader": {
+    "loading_workspace": "正在加载工作区...",
+    "loading_named_prefix": "正在加载"
+  },
+  "sidebar": {
+    "unpin_tooltip": "取消固定",
+    "workspaces_label": "工作区",
+    "create_workspace": "创建工作区",
+    "pending_invitations_label": "待处理的邀请",
+    "invitation_workspace_fallback": "工作区",
+    "invitation_join": "加入",
+    "invitation_decline": "拒绝",
+    "log_out": "退出登录",
+    "new_issue": "新建任务",
+    "new_issue_shortcut": "C",
+    "pinned_label": "固定",
+    "work_group": "工作",
+    "ai_team_group": "AI 团队",
+    "show_more_pins": "再显示 {{count}} 项...",
+    "show_fewer_pins": "收起",
+    "unread_overflow": "99+",
+    "discord_card": {
+      "title": "加入 Discord",
+      "dismiss": "关闭"
+    }
+  },
+  "control_plane": {
+    "name": "Silver Mediums Agent Control Plane",
+    "built_on": "基于 Multica 构建",
+    "about_trigger": "关于控制平面",
+    "about_intro": "底层产品是 Multica。控制平面是在其之上决定智能体如何工作的 Silver Mediums 层。",
+    "points": {
+      "truthful_states": {
+        "title": "属实的状态",
+        "body": "状态只反映实际发生的事，不会因为预期完成就标为完成。"
+      },
+      "routing": {
+        "title": "受控的流转",
+        "body": "工作按固定路径在智能体之间流转，每次交接都有记录。"
+      },
+      "shared_knowledge": {
+        "title": "共享的操作说明",
+        "body": "智能体为同一类工作加载同一套已保存的技能和说明，因此每次的做法一致。"
+      },
+      "bounded_permissions": {
+        "title": "有限的权限",
+        "body": "智能体只获得当前任务所需的权限，且仅在任务期间有效。"
+      },
+      "independent_review": {
+        "title": "独立审查",
+        "body": "在计为完成之前，由另一位审查者检查完成的工作。"
+      },
+      "release_verification": {
+        "title": "发布与运行校验",
+        "body": "发布会与已审查的构建比对，并在启动后确认运行正常。"
+      },
+      "recovery": {
+        "title": "恢复与回滚",
+        "body": "备份会预先还原并演练，因此出错的变更可以撤回。"
+      },
+      "owner_inbox": {
+        "title": "你的收件箱",
+        "body": "需要你定夺的事项会连同选项和后果一起送达。"
+      },
+      "usage": {
+        "title": "用量与成本",
+        "body": "记录运行次数、令牌、耗时和成本，让你看清花费在哪里。"
+      }
+    },
+    "attribution": "基于 Multica 构建。Multica 的名称、标志和声明均原样展示。",
+    "copyright": "Multica © 2025-2026 Multica, Inc. 依据 Multica License 提供。"
+  }
+}

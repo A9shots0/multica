@@ -1,0 +1,1 @@
+ALTER TABLE guarded_task_capability_grant ADD CONSTRAINT guarded_task_capability_grant_pkey PRIMARY KEY USING INDEX guarded_task_capability_grant_pkey_idx;

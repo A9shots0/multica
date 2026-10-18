@@ -1,0 +1,252 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/url"
+	"os"
+	"strconv"
+
+	"github.com/google/uuid"
+	"github.com/multica-ai/multica/server/internal/cli"
+	"github.com/spf13/cobra"
+)
+
+var chatCmd = &cobra.Command{
+	Use:   "chat",
+	Short: "Work with the current chat conversation",
+}
+
+var chatBindCmd = &cobra.Command{
+	Use:   "bind <issue>",
+	Short: "Bind this Chat request to an existing issue and immediately queue its assigned worker",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		client, err := newAPIClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cli.APIContext(context.Background())
+		defer cancel()
+		issue, err := resolveIssueRef(ctx, client, args[0])
+		if err != nil {
+			return err
+		}
+		request, _ := cmd.Flags().GetString("request")
+		agentID, _ := cmd.Flags().GetString("agent-id")
+		payload := map[string]any{"issue_id": issue.ID, "request": request}
+		if agentID != "" {
+			payload["agent_id"] = agentID
+		}
+		var receipt map[string]any
+		if err := client.PostJSON(ctx, "/api/chat/intake", payload, &receipt); err != nil {
+			return err
+		}
+		return cli.PrintJSON(os.Stdout, receipt)
+	},
+}
+
+var chatHistoryCmd = &cobra.Command{
+	Use:   "history",
+	Short: "Overview of the channel this conversation is in (messages + thread list)",
+	Long: `Show the overview of the chat channel (e.g. Slack) this conversation is in: the
+recent top-level messages, and for each thread its thread_id, reply_count, and
+latest_reply. It does NOT expand thread contents — it is the table of contents.
+
+To read a specific thread's messages, take a thread_id from here and run
+"multica chat thread <thread_id>".
+
+It is the SAME command regardless of which channel the conversation came from,
+and it reads only the conversation you are currently running for — it cannot
+read any other session or channel.`,
+	Args: cobra.NoArgs,
+	RunE: runChatHistory,
+}
+
+var chatThreadCmd = &cobra.Command{
+	Use:   "thread [id]",
+	Short: "Read one thread's messages (the current thread, or a specific id)",
+	Long: `Read the messages of a single thread.
+
+With no id, read the thread you are currently in (the one you were @mentioned in).
+With an id — a thread_id from "multica chat history" — read that specific thread.
+Either way the thread is within the channel you are in; you cannot read another
+channel.`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: runChatThread,
+}
+
+func init() {
+	library := &cobra.Command{Use: "organize [action]", Short: "Read or organize the owner's saved conversation groups", Args: cobra.MaximumNArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		client, err := newAPIClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cli.APIContext(context.Background())
+		defer cancel()
+		var result map[string]any
+		if len(args) == 0 {
+			if err = client.GetJSON(ctx, "/api/chat/library", &result); err != nil {
+				return err
+			}
+		} else {
+			id, _ := cmd.Flags().GetString("id")
+			name, _ := cmd.Flags().GetString("name")
+			session, _ := cmd.Flags().GetString("session")
+			value, _ := cmd.Flags().GetString("value")
+			if args[0] == "create_group" && id == "" {
+				id = uuid.NewString()
+			}
+			if err = client.PatchJSON(ctx, "/api/chat/library", map[string]string{"action": args[0], "id": id, "name": name, "session_id": session, "value": value}, &result); err != nil {
+				return err
+			}
+		}
+		return cli.PrintJSON(os.Stdout, result)
+	}}
+	library.Flags().String("id", "", "Group identity; omit for a new group or ungrouping")
+	library.Flags().String("name", "", "Group name for create_group or rename_group")
+	library.Flags().String("session", "", "Conversation identity for move_chat")
+	library.Flags().String("value", "", "Grouping (recent/project/custom) or filter (all/unread/working/needs_you)")
+	chatCmd.AddCommand(library)
+	var responseID string
+	respond := &cobra.Command{Use: "respond <action>", Short: "Submit an owner-composed answer for its guarded Chat target", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+		client, err := newAPIClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cli.APIContext(context.Background())
+		defer cancel()
+		var receipt map[string]any
+		body := map[string]any{"action": args[0]}
+		if responseID != "" {
+			body["response_id"] = responseID
+		}
+		if err := client.PostJSON(ctx, "/api/chat/work/respond", body, &receipt); err != nil {
+			return err
+		}
+		return cli.PrintJSON(os.Stdout, receipt)
+	}}
+	respond.Flags().StringVar(&responseID, "response", "", "Response id from the current Chat work snapshot when the turn contains several answers")
+	chatCmd.AddCommand(respond)
+	chatCmd.AddCommand(&cobra.Command{Use: "work", Short: "Read this conversation's linked issues, current evidence and durable progress", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error {
+		client, err := newAPIClient(cmd)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := cli.APIContext(context.Background())
+		defer cancel()
+		var work map[string]any
+		if err := client.GetJSON(ctx, "/api/chat/work", &work); err != nil {
+			return err
+		}
+		return cli.PrintJSON(os.Stdout, work)
+	}})
+	chatBindCmd.Flags().String("request", "", "The bounded owner request to bind and execute")
+	chatBindCmd.Flags().String("agent-id", "", "Explicit worker for an unassigned issue; cannot replace an existing assignee")
+	_ = chatBindCmd.MarkFlagRequired("request")
+	chatCmd.AddCommand(chatBindCmd)
+	for _, c := range []*cobra.Command{chatHistoryCmd, chatThreadCmd} {
+		c.Flags().Int("limit", 0, "Maximum number of messages to return (the server clamps the range)")
+		c.Flags().String("before", "", "Opaque cursor (a next_cursor from a prior page) to read older messages")
+		c.Flags().String("output", "json", "Output format: table or json")
+	}
+	chatCmd.AddCommand(chatHistoryCmd)
+	chatCmd.AddCommand(chatThreadCmd)
+}
+
+func runChatHistory(cmd *cobra.Command, _ []string) error {
+	resp, err := fetchChatRead(cmd, "/api/chat/history", "")
+	if err != nil {
+		return err
+	}
+	return renderChatRead(cmd, resp, true)
+}
+
+func runChatThread(cmd *cobra.Command, args []string) error {
+	threadID := ""
+	if len(args) == 1 {
+		threadID = args[0]
+	}
+	resp, err := fetchChatRead(cmd, "/api/chat/thread", threadID)
+	if err != nil {
+		return err
+	}
+	return renderChatRead(cmd, resp, false)
+}
+
+// fetchChatRead builds the request (shared --limit/--before paging, plus the
+// optional thread id) and decodes the response.
+func fetchChatRead(cmd *cobra.Command, basePath, threadID string) (map[string]any, error) {
+	client, err := newAPIClient(cmd)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := cli.APIContext(context.Background())
+	defer cancel()
+
+	limit, _ := cmd.Flags().GetInt("limit")
+	before, _ := cmd.Flags().GetString("before")
+
+	q := url.Values{}
+	if threadID != "" {
+		q.Set("id", threadID)
+	}
+	if limit > 0 {
+		q.Set("limit", strconv.Itoa(limit))
+	}
+	if before != "" {
+		q.Set("before", before)
+	}
+	path := basePath
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+
+	var resp map[string]any
+	if err := client.GetJSON(ctx, path, &resp); err != nil {
+		return nil, fmt.Errorf("read chat: %w", err)
+	}
+	return resp, nil
+}
+
+// renderChatRead prints the response as JSON (default) or a table. The overview
+// table adds the thread columns so the agent can pick a thread_id to drill into.
+func renderChatRead(cmd *cobra.Command, resp map[string]any, overview bool) error {
+	output, _ := cmd.Flags().GetString("output")
+	if output != "table" {
+		return cli.PrintJSON(os.Stdout, resp)
+	}
+	if note := strVal(resp, "note"); note != "" {
+		fmt.Fprintln(os.Stdout, note)
+		return nil
+	}
+	msgs, _ := resp["messages"].([]any)
+	var headers []string
+	if overview {
+		headers = []string{"TS", "ROLE", "AUTHOR", "THREAD_ID", "REPLIES", "TEXT"}
+	} else {
+		headers = []string{"TS", "ROLE", "AUTHOR", "TEXT"}
+	}
+	rows := make([][]string, 0, len(msgs))
+	for _, mi := range msgs {
+		m, ok := mi.(map[string]any)
+		if !ok {
+			continue
+		}
+		if overview {
+			rows = append(rows, []string{strVal(m, "ts"), strVal(m, "role"), strVal(m, "author"), strVal(m, "thread_id"), numVal(m, "reply_count"), strVal(m, "text")})
+		} else {
+			rows = append(rows, []string{strVal(m, "ts"), strVal(m, "role"), strVal(m, "author"), strVal(m, "text")})
+		}
+	}
+	cli.PrintTable(os.Stdout, headers, rows)
+	return nil
+}
+
+// numVal renders a numeric JSON field as a string, blank when zero/absent.
+func numVal(m map[string]any, key string) string {
+	if v, ok := m[key].(float64); ok && v != 0 {
+		return strconv.Itoa(int(v))
+	}
+	return ""
+}

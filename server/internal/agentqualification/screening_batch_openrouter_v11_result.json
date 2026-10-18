@@ -1,0 +1,35 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-owner-anchoring-t11-corrected-openrouter-v11",
+  "status": "halted_budget_breach",
+  "purpose": "One corrected T11 v4 owner-anchoring observation for each T12 survivor after independent model-blind calibration.",
+  "test_validity": "valid_until_required_halt",
+  "observations": 5,
+  "retries": 0,
+  "tool_events": 0,
+  "owner_interventions": 0,
+  "account_usage_before_usd": 102.104668103,
+  "account_usage_after_usd": 102.105879252,
+  "account_usage_delta_usd": 0.001211149,
+  "rounded_receipt_cost_usd": 0.002917,
+  "total_provider_export_tokens": 22052,
+  "normalized_component_sum_tokens": 23449,
+  "results": [
+    {"model":"openrouter/qwen/qwen3-coder-flash","effort":"screening_default","serving_provider":"alibaba","result":"PASS_PRE_HALT","failure_reason":"","input_tokens":2285,"reasoning_tokens":0,"output_tokens":203,"total_tokens":2488,"cost_usd":0.000644,"provider_event_time_seconds":1.816,"advances":true},
+    {"model":"openrouter/inclusionai/ling-3.0-flash","effort":"medium","serving_provider":"novita","result":"PASS_PRE_HALT","failure_reason":"","input_tokens":2447,"reasoning_tokens":988,"output_tokens":136,"total_tokens":3571,"cost_usd":0.000123,"provider_event_time_seconds":8.738,"advances":true},
+    {"model":"openrouter/z-ai/glm-5.3-flash","effort":"low","serving_provider":"z-ai","result":"PASS_PRE_HALT","failure_reason":"","input_tokens":2273,"reasoning_tokens":50,"output_tokens":159,"total_tokens":2482,"cost_usd":0.000446,"provider_event_time_seconds":0.646,"advances":true},
+    {"model":"openrouter/nvidia/nemotron-3-super-120b-a12b:free","effort":"low","serving_provider":"nvidia","result":"FAIL","failure_reason":"invalid_response_format: emitted an extended reasoning essay instead of the exact bare JSON contract","input_tokens":2401,"reasoning_tokens":9397,"output_tokens":0,"total_tokens":11798,"cost_usd":0.0,"provider_event_time_seconds":74.665,"advances":false},
+    {"model":"openrouter/minimax/minimax-m2.7","effort":"screening_default","serving_provider":"minimax","result":"NOT_SCORED_POST_HALT","failure_reason":"launched after Nemotron exceeded the batch generated-token ceiling","input_tokens":2254,"reasoning_tokens":650,"output_tokens":206,"total_tokens":3110,"cost_usd":0.001704,"provider_event_time_seconds":17.535,"advances":false}
+  ],
+  "advancement": "Qwen3 Coder Flash, Ling 3.0 Flash, and GLM 5.3 Flash have valid pre-halt PASS observations and advance. Nemotron is eliminated by response-contract noncompliance. MiniMax is not scored because its call occurred after the required halt and must be screened in a new batch. No candidate is qualified for a production role.",
+  "evidence_root": ".qualification-evidence/openrouter-v11",
+  "notes": [
+    "T11 v4 and its typed-only grader were independently accepted before this batch was run.",
+    "Each provider-call grant is generic to exactly one admitted observation and bound to the exact reservation; no stale T12 scope remains.",
+    "Nemotron's completed provider call was closed offline without normalizing its text or retrying, but its 9397 generated-token component sum exceeded the declared 8000-token hard cap.",
+    "The controller incorrectly launched MiniMax after that batch-fatal budget breach; MiniMax is retained only as post-halt cost and transport evidence.",
+    "OpenRouter export total fields sum to 22052 tokens while receipt components sum to 23449; both are retained and distinctly labelled.",
+    "The authoritative account delta and the sum of rounded provider receipts differ; both are retained rather than forcing reconciliation. Account usage is the spend-ceiling authority.",
+    "Provider event time is not full application latency."
+  ]
+}

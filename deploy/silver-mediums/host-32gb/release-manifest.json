@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "release": "multica-32gb-host-20261005-owner-chat-v29",
+  "source_revision": "d97b28019c60c3521936b3d0649ed24af132b1db",
+  "candidate_build": {
+    "built_at": "2026-10-05T04:47:29Z",
+    "host": "alienware",
+    "backend_embedded_commit": "d97b28019c60c3521936b3d0649ed24af132b1db"
+  },
+  "observed_runtime": {
+    "host": "32gb-mac-mini",
+    "observed_at": "2026-10-05T04:10:00Z",
+    "backend_health_commit": "163ed055a9acc9a0f328336dcbfd69ef4855de5c",
+    "schema_migration_count": 638
+  },
+  "images": {
+    "backend": "sha256:59229cb8c665c75b334b1c5dee0cdacfb9370a181e5b0d9fb2dd561f8dd6cc60",
+    "frontend": "sha256:b1fa0575c44d441ddd3088d547c6b562f2a55f70c138264d9598d48bc3c59547",
+    "postgres": "sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f"
+  },
+  "target": {
+    "os": "darwin",
+    "architecture": "x86_64",
+    "container_runtime": "colima",
+    "network_exposure": "loopback_only"
+  },
+  "data_included": false,
+  "credentials_included": false,
+  "acceptance": "package_preparation_only"
+}

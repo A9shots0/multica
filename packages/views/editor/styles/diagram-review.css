@@ -1,0 +1,18 @@
+.diagram-review-toolbar {
+  container-type: inline-size;
+}
+
+.diagram-review-tool-picker {
+  display: none;
+}
+
+@container (max-width: 340px) {
+  .diagram-review-tools,
+  .diagram-review-fit {
+    display: none;
+  }
+
+  .diagram-review-tool-picker {
+    display: block;
+  }
+}

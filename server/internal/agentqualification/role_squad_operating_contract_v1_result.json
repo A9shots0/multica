@@ -1,0 +1,21 @@
+{
+  "schema_version": "silver-mediums.role-squad-operating-validation.v1",
+  "run_id": "item-14-role-squad-provider-free-validation-20260914",
+  "execution_mode": "deterministic_provider_free",
+  "review_outcome": "self_adversarial_revise_p1_no_p0",
+  "consolidated_corrections": 1,
+  "contract_sha256": "b3f88549e6a92df5708c7a89c53cb31b0b034cfbf7639f52c96e76659ae8fe09",
+  "roles_covered": 21,
+  "outcome_identities_covered": 10,
+  "squads_covered": 3,
+  "system_journeys_covered": 13,
+  "locked_cases_covered": 19,
+  "ui_routing_rules_covered": 3,
+  "adversarial_denials_covered": 8,
+  "provider_requests": 0,
+  "credential_reads": 0,
+  "production_actions": 0,
+  "permanent_seat_selections": 0,
+  "model_selections": 0,
+  "valid": true
+}

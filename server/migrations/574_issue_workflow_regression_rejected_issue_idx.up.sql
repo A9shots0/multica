@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY issue_workflow_regression_rejected_issue_idx ON issue_workflow_regression_rejected_attempt (workspace_id, source_issue_id, attempted_at, id);

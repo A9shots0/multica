@@ -1,0 +1,32 @@
+{
+  "schema_version": "silver-mediums.item14-stewardship.v2",
+  "manifest_id": "item-14-role-squad-successor-authority-20260914",
+  "status": "accepted_provider_free_successor_chain",
+  "predecessor_manifest_sha256": "d651e725f3912c6fbed8cffd118e3eb2a718941faa40c6ccb4113af121ce513d",
+  "provider_calls_allowed": false,
+  "credential_reads_allowed": false,
+  "production_actions_allowed": false,
+  "model_or_seat_selection_allowed": false,
+  "automatic_dispatch_allowed": false,
+  "phone_farm_windows_access_allowed": false,
+  "retries": 0,
+  "fallbacks": false,
+  "sources": [
+    {"id":"current-continuation","path":"docs/silver-mediums/CURRENT-CONTINUATION.md","sha256":"083433f263d1697ac9076ca94ef3f04b2d0e15fab188effa97c4e975f5b335ca","evidence_class":"current_status","mutable":true},
+    {"id":"documentation-stewardship-v2","path":"docs/silver-mediums/ITEM-14-DOCUMENTATION-STEWARDSHIP-V2.md","sha256":"e8f4dba5f856224b84ca456fcb256accb693e34eda9ae22745b2154072a3351a","evidence_class":"accepted_evidence","mutable":false},
+    {"id":"primary-reliability-authority-v2","path":"docs/silver-mediums/ITEM-14-PRIMARY-SUBSCRIPTION-RELIABILITY-TRIAL-V2-AUTHORITY.md","sha256":"47bafd3f91b1c63205cee15d055b9618b7611425ae62972fd3cd85d217cc87aa","evidence_class":"frozen_authority","mutable":false},
+    {"id":"primary-reliability-definition-v2","path":"server/internal/agentqualification/primary_subscription_reliability_trial_v2.json","sha256":"d8bed64fa40603089e532224b98085e8c3410edc1f2069127341cf5be44db693","evidence_class":"machine_contract","mutable":false},
+    {"id":"primary-reliability-result-doc-v2","path":"docs/silver-mediums/ITEM-14-PRIMARY-SUBSCRIPTION-RELIABILITY-TRIAL-V2-RESULT.md","sha256":"6d4d65f6cbc4f4e5d95ec164800d8d0eb06a4e631c0b0e58608321ec9b8b90cc","evidence_class":"accepted_evidence","mutable":false},
+    {"id":"primary-reliability-result-machine-v2","path":"server/internal/agentqualification/primary_subscription_reliability_trial_result_v2.json","sha256":"9f99664568ff701cadddbac537a7548cebfd88fbd2bc7d3d1415176ddb1f1f1a","evidence_class":"machine_contract","mutable":false},
+    {"id":"product-ui-r02-contract-v3","path":"server/internal/agentqualification/product_ui_r02_action_contract_v3.json","sha256":"9816381e4916d76cd6f6faf295ee41cd921ffd2f29926ed1097cbb8d2bb9e309","evidence_class":"machine_contract","mutable":false},
+    {"id":"product-ui-r02-correction-doc-v3","path":"docs/silver-mediums/ITEM-14-PRODUCT-UI-R02-CORRECTION-CANDIDATE-V3.md","sha256":"62a86362465944c167dfdb7d33c73edc027455501511c8fa18f413afc847f290","evidence_class":"accepted_evidence","mutable":false},
+    {"id":"product-ui-r02-executor-overlay-v3","path":"server/internal/agentqualification/role_artifacts/v3/shared_windows_executor_r02.instructions.md","sha256":"5da1e406d7ec0a7711756b53e2e3e224828449e8f44e9dcbf53bfcec80266ca3","evidence_class":"machine_contract","mutable":false},
+    {"id":"product-ui-r02-skill-v3","path":"server/internal/agentqualification/role_artifacts/v3/product_ui_r02.skill.md","sha256":"028c928114ba31d84429c28520b0be5daf83944af8c0e601a0575573cd7ff87c","evidence_class":"machine_contract","mutable":false},
+    {"id":"provisional-configuration-doc-v1","path":"docs/silver-mediums/ITEM-14-PROVISIONAL-ROLE-CONFIGURATION-V1.md","sha256":"570d23e74764230fac3f0ee55cbe0a49b1eba2a76b0e3b9f7ff2ae083e57d77f","evidence_class":"accepted_evidence","mutable":false},
+    {"id":"provisional-configuration-v1","path":"server/internal/agentqualification/provisional_role_configuration_v1.json","sha256":"017408d91dbe84c9bb8c966b179ff2e66bb390115865905da732b2188f3ad991","evidence_class":"machine_contract","mutable":false},
+    {"id":"provisional-rehearsal-v1","path":"server/internal/agentqualification/provisional_role_configuration_rehearsal_v1_result.json","sha256":"2e84fb129e5ddac47762511d29ff02b7ee5ec582a35f092e2df23f38ebbd9176","evidence_class":"machine_contract","mutable":false},
+    {"id":"role-build-progress","path":"docs/silver-mediums/ITEM-14-ROLE-BUILD-PROGRESS.md","sha256":"7e7750b68494104a1504f68bfc256d893f3589189edbb1e774726f111b89ae6d","evidence_class":"current_status","mutable":true},
+    {"id":"role-squad-readiness-v2","path":"server/internal/agentqualification/role_squad_readiness_matrix_v2.json","sha256":"4116a6d8b0b026d313dfe205d4cb62f8b7c0cf63a9532e2ba98b704483f43c8f","evidence_class":"machine_contract","mutable":false},
+    {"id":"run-journal","path":"docs/silver-mediums/RUN-JOURNAL.md","sha256":"c515718f23727499cd87e5a1520c16966d831bf1a9c96c472497d86be3932501","evidence_class":"current_status","mutable":true}
+  ]
+}

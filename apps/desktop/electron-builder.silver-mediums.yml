@@ -1,0 +1,30 @@
+# Silver Mediums self-hosted desktop build.
+#
+# Same application as electron-builder.yml, packaged under the owner's own
+# identity and with no publish target, so electron-builder emits no
+# app-update.yml and the installed app never looks for vendor releases. The
+# server it talks to comes from ~/.multica/desktop.json, not from this file.
+extends: electron-builder.yml
+appId: net.silvermediums.agentcontrolplane
+productName: Silver Mediums Agent Control Plane
+publish: null
+win:
+  target:
+    - nsis
+  artifactName: silver-mediums-agent-control-plane-${version}-windows-${arch}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Silver Mediums Agent Control Plane
+linux:
+  target:
+    - AppImage
+  executableName: silver-mediums-agent-control-plane
+  category: Development
+  artifactName: silver-mediums-agent-control-plane-${version}-linux-${arch}.${ext}
+  desktop:
+    entry:
+      StartupWMClass: Silver Mediums Agent Control Plane

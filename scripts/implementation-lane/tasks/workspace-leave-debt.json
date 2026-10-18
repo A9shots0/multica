@@ -1,0 +1,24 @@
+{
+  "task_id": "workspace-leave-debt",
+  "title": "Resolve the recorded workspace-leave known debt",
+  "recorded_defect": "CLAUDE.md:179 records: 'Workspace delete must await the server before navigation/cleanup. Workspace leave currently clears/navigates before mutation only to avoid the member:removed realtime race; treat that as known debt, not a reusable pattern.' No test anywhere references leaveWorkspace, so nothing in the repository defines what correct behaviour is.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "packages/core/",
+    "packages/views/"
+  ],
+  "verification_command": [
+    "npx",
+    "vitest",
+    "run",
+    "workspace/leave-workspace.test.ts",
+    "--passWithNoTests=false"
+  ],
+  "verification_cwd": "packages/core",
+  "verification_note": "Targets a test file that does not exist yet, so the baseline legitimately fails: the test encoding correct behaviour is what is missing. The harness runs this itself. LIMITATION, recorded rather than engineered away: this proves the test exists and passes, NOT that it would have failed against the original implementation. Only the reviewer, reading the full diff, can judge whether the test genuinely encodes a behaviour change rather than asserting what the code already did.",
+  "max_turns": 60,
+  "trial_role": "Task 3 of the repeatability trial, and the first judgment task. Tasks 1 and 2 were graded by a test somebody else had already written. Here nothing defines correct: the executor must decide what correct behaviour is, write the test that encodes that decision, then make it pass. The reviewer's opinion is the only real check.",
+  "objective": "packages/core/CLAUDE.md-level guidance records a known debt: workspace leave clears client state and navigates away BEFORE the server mutation completes, purely to dodge a `member:removed` realtime race. Workspace delete, by contrast, awaits the server and only then navigates, and it suppresses its own realtime race with a pending-delete guard (see markWorkspaceDeletePending and pending-delete.ts). Leave has no equivalent guard.\n\nDecide what correct behaviour for leave should be, then implement it. You must justify the decision, not merely mirror delete: explain in your summary why your chosen approach is right for leave specifically, including what happens if the server call fails and what prevents the realtime race you are no longer dodging.\n\nWrite your test at exactly packages/core/workspace/leave-workspace.test.ts. It must encode the behaviour you decided on and must genuinely fail against the current implementation - a test that merely asserts what the code already does is a failed task, and the reviewer will be checking for that specifically. Keep the change minimal and reversible. Do not modify unrelated files, and do not weaken or delete existing tests.",
+  "install_scope": "@multica/core...",
+  "install_scope_note": "The verification runs only in packages/core, so only that workspace and its dependencies are installed. Tasks 1 and 2 installed all workspaces; this narrowing is setup scope, not a change to what the agent may do."
+}

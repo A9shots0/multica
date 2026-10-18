@@ -1,0 +1,24 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-static-antecedents.v35",
+  "batch_id": "claude-subscription-static-reliability-repeat-v35",
+  "prior_batch_id": "claude-subscription-static-breadth-reliability-v34",
+  "prior_definition_sha256": "ef4df685412808704f8b5ed1adaf64f1dcdaaf7ec26f38914a31111f6e9fd05c",
+  "prior_freeze_sha256": "424041cd761a56b72db4bb92c48f7518901f0975f608d37e3cb687ba0a92f9a3",
+  "prior_ledger_sha256": "21c3089b90b841513d3107477df339fe874aec9c93d71e3d8fbe37aac8207163",
+  "prior_evidence_root": ".qualification-evidence/claude-subscription-static-v34",
+  "prior_status": "complete",
+  "prior_global_halt": false,
+  "prior_candidate_eliminated": false,
+  "prior_provider_invocations": 6,
+  "prior_input_tokens": 35643,
+  "prior_output_tokens": 4082,
+  "prior_provider_reported_cost_micros": 253410,
+  "prior_results": [
+    {"case_id":"T12","case_version":"v4","result":"pass","receipt_sha256":"13a00111be96a284220325e7d2c2ec73ffcbe879b1f5b04d018afb8d0e5c25fc","grade_sha256":"0131ddfdcce83683ad9dfd61ef3e1a080a55add8af9dc7c2b318e9f5021452a2"},
+    {"case_id":"T11","case_version":"v4","result":"pass","receipt_sha256":"588b2407ac5a03fe2bb2b6ac763a431e4e428e862de326c3b252c0f884f8f951","grade_sha256":"dfd3469326447ea1774af14b4ad14fdc156dae9ac070100ccf1e820dad8225cf"},
+    {"case_id":"T08","case_version":"v3","result":"pass","receipt_sha256":"8106171d1f33187b94a2814fab1dda602ec19b2f27673eac95212c9f33bbaef0","grade_sha256":"9620f639605d3af8896f1f41818d8f36ceb7b65c335679567e41a3b072c1c4b6"},
+    {"case_id":"T16","case_version":"v3","result":"pass","receipt_sha256":"47fe8b6e5d81847e62e502b6f09b351e82f7841465874308f7190c12976d9806","grade_sha256":"50951a332aff79e4864e94167d7e90cc4dd136c2ed97015ee308903b1bedd800"},
+    {"case_id":"T04","case_version":"v1","result":"pass","receipt_sha256":"00e2d8b57d10ef1869bf165e0e60eb550a09f9982f3da83941a43736496ff803","grade_sha256":"285b2a87efa82eb289d7078e45f4c4ded9f33929fa72e37d7b71f31ecfd6e613"},
+    {"case_id":"T09","case_version":"v2","result":"pass","receipt_sha256":"27f45e0d9a47fec769c6a91bc24e15a62a8f574d0807fda17399f784908250ea","grade_sha256":"2c27c6b2a1986b3b76de1b0a6deeb5333c37b0b242f5af95fb9bb0550019ab87"}
+  ]
+}

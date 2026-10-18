@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS uq_issue_external_work_receipt_revision;

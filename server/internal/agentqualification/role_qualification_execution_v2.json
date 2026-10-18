@@ -1,0 +1,19 @@
+{
+  "schema_version":"silver-mediums.role-qualification-execution.v2",
+  "execution_id":"role-qualification-comparison-v2",
+  "status":"frozen_provider_locked",
+  "v1_freeze_sha256":"b047faaec585beee2cf00640f53e35d2b09b54618c6923c6b9458d2851d1b2e4",
+  "provider_calls_allowed":false,
+  "runtime_wiring":"none",
+  "fresh_preflight_required":true,
+  "retries":0,
+  "fallbacks":false,
+  "per_observation":{"max_calls":1,"max_input_tokens":20000,"max_output_tokens":4000,"max_total_tokens":24000,"max_wall_seconds":180},
+  "campaign":{"max_calls":36,"max_input_tokens":720000,"max_output_tokens":144000,"max_total_tokens":864000,"max_wall_seconds":5400,"max_openrouter_cash_micros":10000000},
+  "claude_subscription_accounting":"provider_cost_equivalent_micros_separate_not_marginal_cash",
+  "order_policy":"three_class_four_role_counterbalance_with_rotated_three_case_order",
+  "provider_gate":"disabled_until_exact_v2_freeze_and_fresh_transport_preflight_validate",
+  "role_model_selection_allowed":false,
+  "production_allowed":false,
+  "external_side_effects_allowed":false
+}

@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS trg_guarded_execution_launch_consumption_append_only ON guarded_execution_launch_consumption;
+DROP TABLE IF EXISTS guarded_execution_launch_consumption;

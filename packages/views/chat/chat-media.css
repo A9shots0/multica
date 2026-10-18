@@ -1,0 +1,61 @@
+/* Chat-only density: retain the shared editor/viewer and the Multica theme. */
+.chat-message-media p:has(> .image-node:only-child),
+.chat-composer-media p:has(> .image-node:only-child) {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  vertical-align: top;
+}
+.chat-message-media .image-node,
+.chat-composer-media .image-node { display: inline-block; max-width: 100%; }
+.chat-message-media .image-figure {
+  max-width: min(100%, 22rem);
+  margin: .5rem .5rem .5rem 0;
+}
+.chat-message-media .image-content {
+  width: auto;
+  max-width: 100%;
+  max-height: 13rem;
+  object-fit: contain;
+}
+.chat-composer-media .image-figure {
+  width: auto;
+  max-width: 7rem;
+  margin: .25rem .5rem .25rem 0;
+  vertical-align: top;
+}
+.chat-composer-media .image-content {
+  width: auto;
+  max-width: 7rem;
+  height: 4.5rem;
+  object-fit: contain;
+}
+.chat-composer-media .image-toolbar {
+  top: .125rem;
+  right: .125rem;
+}
+@media (max-width: 640px) {
+  .chat-message-media .image-content { max-height: 10rem; }
+  .chat-composer-media .image-content { max-width: 5rem; height: 3.5rem; }
+}
+
+/* Keep references readable in prose; full details remain in the existing hover card. */
+.chat-message-media span.issue-mention {
+  border: 0;
+  padding: 0 .1rem;
+  margin: 0;
+  border-radius: 0;
+  font-size: inherit;
+  gap: 0;
+  vertical-align: baseline;
+}
+.chat-message-media span.issue-mention > svg,
+.chat-message-media [data-issue-part="identifier"] { display: none; }
+.chat-message-media [data-issue-part="title"] {
+  font-weight: inherit;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+  text-decoration-color: var(--border);
+}
+.chat-message-media [data-slot="html-attachment-preview"] > :first-child { height: 13rem; }
+.chat-composer-media [data-slot="html-attachment-preview"] > :first-child { height: 6rem; }

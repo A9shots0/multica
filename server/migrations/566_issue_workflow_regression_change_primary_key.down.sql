@@ -1,0 +1,1 @@
+ALTER TABLE issue_workflow_regression_change_record DROP CONSTRAINT IF EXISTS issue_workflow_regression_change_record_pkey;

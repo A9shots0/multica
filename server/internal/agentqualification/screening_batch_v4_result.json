@@ -1,0 +1,53 @@
+{
+  "schema_version": "silver-mediums.agent-screening-result.v1",
+  "batch_id": "screen-blast-radius-t12-codex-v4",
+  "status": "stopped_invalid_harness",
+  "grader_configuration_id": "deterministic-t12.v1",
+  "capacity": {
+    "provider": "codex",
+    "limit_id": "codex",
+    "account_lane": "primary_subscription",
+    "baseline_used_percent": 54,
+    "final_used_percent": 54
+  },
+  "observations": [
+    {
+      "candidate_id": "screen.generalist.luna.medium.v4",
+      "issue_identifier": "SILV-37",
+      "issue_id": "01a092a5-3650-770b-badc-5828686c43fe",
+      "trigger_comment_id": "01a092a5-5f05-7ce6-a1fb-3c746b14153f",
+      "run_id": "01a092a5-5f12-7a8f-8c17-e51f0090719c",
+      "session_id": "01a092a5-6970-7bd2-b6b7-767783cd4267",
+      "started_at": "2026-09-11T22:45:07Z",
+      "completed_at": "2026-09-11T22:46:06Z",
+      "output_sha256": "f642717808b38d9e309fcaeef78b419216b317173819ee7fca199d8c395c2088",
+      "verdict": "INVALID",
+      "failed_checks": [
+        "execution_contract_required_tool_free_but_runtime_used_tools",
+        "per_launch_token_reservation_exceeded"
+      ],
+      "input_tokens": 173766,
+      "cached_input_tokens": 153856,
+      "fresh_input_tokens": 19910,
+      "output_tokens": 2617,
+      "total_tokens": 176383,
+      "retries": 0,
+      "owner_interventions": 0,
+      "tool_calls": 7,
+      "executed_tools": ["exec_command", "patch_apply"],
+      "blind_grade_verdict": "FAIL",
+      "blind_grade_failures": ["owner_outcome"]
+    }
+  ],
+  "totals": {
+    "fresh_input_tokens": 19910,
+    "cached_input_tokens": 153856,
+    "output_tokens": 2617,
+    "total_tokens": 176383,
+    "runs": 1,
+    "retries": 0,
+    "owner_interventions": 0
+  },
+  "stop_reason": "token_ceiling_exceeded_and_execution_contract_violated",
+  "planned_observations": 2
+}

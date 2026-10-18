@@ -1,0 +1,1 @@
+CREATE INDEX CONCURRENTLY issue_workflow_execution_checkpoint_snapshot_task_idx ON issue_workflow_execution_checkpoint_snapshot (workspace_id, issue_id, task_id, execution_revision DESC) WHERE task_id IS NOT NULL;

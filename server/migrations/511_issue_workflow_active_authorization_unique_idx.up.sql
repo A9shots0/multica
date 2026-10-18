@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX CONCURRENTLY uq_issue_workflow_active_authorization ON issue_workflow_decision (workspace_id, issue_id) WHERE decision_type = 'authorization' AND superseded_at IS NULL AND (state = 'unanswered' OR resolution_state = 'resuming');

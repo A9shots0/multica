@@ -1,0 +1,27 @@
+{
+  "schema_version": "silver-mediums.claude-subscription-calibration-result.v1",
+  "calibration_id": "claude-subscription-transport-v29",
+  "definition_sha256": "b9c299879022a62fcca627464c628e45709ae88b4b6f07249e8560cc5d2c5976",
+  "status": "invalid_transport_harness",
+  "test_validity": "invalid",
+  "process_launch_attempts": 1,
+  "provider_calls": 0,
+  "retries": 0,
+  "tokens": 0,
+  "cost_usd": 0,
+  "wall_milliseconds": 284,
+  "failure_reason": "The Windows command wrapper rejected the oversized argument vector before Node, Claude Code, authentication, or a provider request started: The command line is too long.",
+  "candidate_advances": false,
+  "transport_qualified": false,
+  "production_role_selected": false,
+  "evidence_root": ".qualification-evidence/claude-subscription-v29/f0bcf5256786d96aa08c676b98ea86c61b593fc623feb02d8494e1716b1bfa1a",
+  "raw_result_sha256": "880cf27d8e72f69e112d935ea1ab2ad62dfe4ad12db847879d296396b751ae6b",
+  "stderr_sha256": "712f89f4976302078a5046faca78c00b32aaf1aa6c5f6455945d776ff60eafb5",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "post_batch_correction": "Future executions feed the 6,794-byte prompt on stdin instead of the Windows command line. The correction is tested but was not rerun in v29.",
+  "notes": [
+    "The raw executor result called this one provider invocation because the provider-call grant had been consumed; post-batch adjudication separates the one local process launch attempt from the exact zero provider calls proven by the local command-wrapper error and empty stdout.",
+    "The frozen no-retry policy was honored. The owner-reported usage reset was not treated as authoritative quota telemetry.",
+    "No model response, grade, API-equivalent receipt, external action, repository access, Browser action, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

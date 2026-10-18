@@ -1,0 +1,12 @@
+{
+  "candidate": "CRM-ENGINEERING-HANDOFF-v2.md",
+  "candidate_sha256": "2df9d83d52cf882f7b399b4b823d6d0cc975d41be6856b8838b276d6f494541c",
+  "captured_evidence_sha256": "e30635c38babc2424631cad865e251be0673b14445e9e71482296bb5dc6b070b",
+  "kind": "review",
+  "recorded_at": "2026-09-16T00:53:47.6165199Z",
+  "result": {
+    "summary": "All material numeric claims (6 tracked, 110 untracked, 285 worktrees all present, 6 detached, 4-ahead/674-behind, HEAD SHA, cached-origin SHA) match the captured evidence JSON; snapshot boundary, owner-work preservation, and next-step guidance are accurately reproduced from AGENTS.md and CONTEXT.md.",
+    "verdict": "pass",
+    "findings": []
+  }
+}

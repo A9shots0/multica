@@ -1,0 +1,55 @@
+{
+  "task_id": "crm-pulse-impersonation-exclusion-v2",
+  "title": "Turn off CRM Pulse collection while an admin is impersonating, and prove nothing is stored",
+  "repository": "C:/Users/a9sho/.claude/jobs/79575380/tmp/crm-pulse/crm",
+  "recorded_defect": "Owner decision 2026-09-17: activity while an admin is impersonating someone must not be recorded, the same as employee preview (b9b780d). The first attempt (run crm-pulse-impersonation-exclusion) showed that main.py enforce_impersonation_read_only already answers 403 to every non-read request while session['impersonator_id'] is set, so impersonated Pulse events are rejected before ingest and never stored. The remaining gap is on the page: templates/base.html still sets data-crm-telemetry to 'on' while impersonating, so the collector keeps sending events that are refused. Nothing proves impersonated activity stays out of Pulse.",
+  "base_ref": "HEAD",
+  "allowed_paths": [
+    "templates/base.html",
+    "tests/test_crm_pulse_impersonation.py"
+  ],
+  "verification_command": [
+    "C:/Dev/CRM/.venv/Scripts/python.exe",
+    "-m",
+    "pytest",
+    "tests/test_crm_pulse_impersonation.py",
+    "-q",
+    "-p",
+    "no:cacheprovider"
+  ],
+  "verification_cwd": ".",
+  "dependencies": "none",
+  "max_turns": 50,
+  "objective": "CRM Pulse must record nothing while an admin is impersonating another user, as it already records nothing during employee preview. A session is impersonating when session.get('impersonator_id') is not None; blueprints/auth.py sets it when an admin starts viewing as another user.\n\nThe server side already holds: main.py enforce_impersonation_read_only answers 403 to POST /api/owner-pulse/events while impersonating, so events are never stored. Do not change that, and do not change main.py, blueprints/crm_pulse.py, services/crm_pulse.py, blueprints/auth.py or any other file except the two below.\n\n1. templates/base.html: make the body attribute data-crm-telemetry 'off' while impersonating, using session.get('impersonator_id') is not none (Jinja spelling), in addition to the existing employee_preview condition. Keep everything else byte-identical, including the literal text data-crm-telemetry-endpoint=\"/api/owner-pulse/events\" and data-crm-page-key=\"{{ request.endpoint or '' }}\", which tests assert. Do not change script tags.\n\n2. Write tests/test_crm_pulse_impersonation.py (pytest, with the fixtures in tests/conftest.py). The impersonating session must be a real admin impersonating a DIFFERENT, non-admin user: look both users up from the conftest fixture data (for example the admin and an employee such as va@test.local), set session['_user_id'] to the employee's id and session['impersonator_id'] to the admin's id through client.session_transaction(), as tests/test_gallery_sources_grant_workspace.py does. Use a same-origin Referer such as http://localhost/accounts and pageKey employees.accounts, matching tests/test_crm_pulse.py. Show:\n(a) a valid events batch posted by the impersonating session is not stored: the response is not 2xx and no CRMPulseEvent rows exist afterwards for either the employee or the admin;\n(b) the same batch posted by a normal, non-impersonating session of the same employee returns 201 and stores the events for that employee;\n(c) a rendered authenticated page that returns 200 for that employee (try /dashboard, then /accounts) contains data-crm-telemetry=\"off\" while impersonating and data-crm-telemetry=\"on\" in the normal session.\nClear CRMPulseEvent rows at the start of each test. You cannot run pytest yourself; the harness runs it.",
+  "regression_commands": [
+    {
+      "command": [
+        "C:/Dev/CRM/.venv/Scripts/python.exe",
+        "-m",
+        "pytest",
+        "tests/test_crm_pulse.py",
+        "tests/test_crm_pulse_batch_integrity.py",
+        "tests/test_crm_pulse_telemetry_assets.py",
+        "tests/test_partial_navigation_session_identity.py",
+        "tests/test_employee_preview.py",
+        "tests/test_impersonation_view_cycle.py",
+        "tests/test_mobile_shell_accessibility.py",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "cwd": "."
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/crm_telemetry_collector.test.mjs",
+        "tests/crm_pulse_navigation_flush.test.mjs",
+        "tests/partial_navigation_lifecycle.test.mjs"
+      ],
+      "cwd": "."
+    }
+  ],
+  "verification_note": "Replaces crm-pulse-impersonation-exclusion, whose objective assumed ingest could return 202 while impersonating; the global read-only guard answers 403 first. Known residual, out of scope: impersonation still refreshes the impersonated user's users.last_activity (the session idle timeout reads it), so Pulse's session-based people list can show that user as connected."
+}

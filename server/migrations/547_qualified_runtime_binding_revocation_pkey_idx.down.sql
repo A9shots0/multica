@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS qualified_runtime_binding_revocation_pkey_idx;

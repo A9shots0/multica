@@ -1,0 +1,52 @@
+{
+  "schema_version":"silver-mediums.screening-batch-result.v1",
+  "batch_id":"screen-valid-coverage-closure-openrouter-v18",
+  "status":"complete_no_survivor_with_one_invalid_observation",
+  "purpose":"Close valid competence coverage for the two exact cheap configurations whose only prior T12 v3 records were invalid calibration evidence.",
+  "frozen_cases":["T12:v4","T11:v4","T08:v3","T16:v3","T04:v1","T09:v1"],
+  "results":[
+    {
+      "model":"openrouter/deepseek/deepseek-v4-flash",
+      "candidate_id":"screen.generalist.deepseekv4flash.high.openrouter.v18",
+      "effort":"high",
+      "serving_provider":"deepinfra",
+      "result":"FAIL",
+      "failure_reason":"T12 invalid_response_format",
+      "input_tokens":2422,
+      "cached_input_tokens":0,
+      "output_tokens":217,
+      "reasoning_tokens":664,
+      "total_tokens":3303,
+      "cost_usd":0.000275,
+      "provider_event_time_seconds":21.535,
+      "advances":false
+    },
+    {
+      "model":"openrouter/qwen/qwen3.7-flash",
+      "candidate_id":"screen.generalist.qwen37flash.high.openrouter.v18",
+      "effort":"high",
+      "serving_provider":"alibaba",
+      "result":"INVALID",
+      "failure_reason":"Pre-generation configuration incompatibility: max_completion_tokens 8000 was below thinking_budget 16000",
+      "input_tokens":0,
+      "cached_input_tokens":0,
+      "output_tokens":0,
+      "reasoning_tokens":0,
+      "total_tokens":0,
+      "cost_usd":0.0,
+      "provider_event_time_seconds":72.59,
+      "advances":false
+    }
+  ],
+  "provider_calls":2,
+  "valid_calls":1,
+  "invalid_calls":1,
+  "receipt_attributed_tokens":3303,
+  "receipt_attributed_cost_usd":0.000275,
+  "authoritative_account_usage_before_usd":106.250792781,
+  "authoritative_account_usage_after_usd":106.253409941,
+  "authoritative_account_delta_usd":0.00261716,
+  "account_delta_note":"The account delta is preserved but not forced onto either observation because concurrent or delayed account posting cannot be excluded. The per-observation provider receipt is authoritative for the DeepSeek row; Alibaba rejected Qwen before generation and exposed no token or cost receipt.",
+  "post_batch_correction_list":["Make high-effort OpenCode output-token and thinking-budget caps mutually compatible before any future Qwen3.7 high observation; do not retry this observation."],
+  "advancement":"No candidate advances. DeepSeek is eliminated by a valid candidate-local protocol failure. Qwen remains unscored because its sole v18 observation is invalid. No breadth, reliability, realistic, role, or production promotion occurs."
+}

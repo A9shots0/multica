@@ -1,0 +1,4 @@
+services:
+  backend:
+    image: sha256:9abf7361c75cbcf2061dee395db165363abe7b33486d5b83601627b26ef788ac
+    pull_policy: never

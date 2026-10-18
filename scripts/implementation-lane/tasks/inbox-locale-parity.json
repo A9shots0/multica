@@ -1,0 +1,13 @@
+{
+  "task_id": "inbox-locale-parity",
+  "title": "Add the 180 missing inbox owner-control translation keys",
+  "recorded_defect": "packages/views/locales/parity.test.ts fails: en/inbox.json defines an owner_control section whose keys have no counterpart in ja, ko or zh-Hans. 60 keys are missing from each of the three locales, so those languages silently fall back to English across the whole owner-control surface.",
+  "base_ref": "HEAD",
+  "allowed_paths": ["packages/views/locales/"],
+  "verification_command": ["npx", "vitest", "run", "locales/parity.test.ts", "-t", "inbox:"],
+  "verification_cwd": "packages/views",
+  "verification_note": "Scoped to the inbox namespace with -t so the command matches the task exactly.",
+  "max_turns": 60,
+  "trial_role": "Task 2 of the repeatability trial. Same shape as task 1 - a failing test already defines correct - but roughly thirty times the volume. It tests volume and long-context behaviour, not judgment.",
+  "objective": "The locale bundle parity test in packages/views is failing for the inbox namespace. packages/views/locales/en/inbox.json defines a large \"owner_control\" section; every key under it is missing from packages/views/locales/ja/inbox.json, packages/views/locales/ko/inbox.json and packages/views/locales/zh-Hans/inbox.json - 60 keys in each file. Add an accurate translation of every missing key to each of those three files, matching the tone, terminology and formatting already used in that file's other entries, and preserving any {{placeholder}} tokens exactly as they appear in English. Add nothing else: do not touch the English bundle, any other namespace, or any test. Keep each file's existing key order and JSON formatting, and place owner_control in the same position it occupies in the English bundle."
+}

@@ -1,0 +1,64 @@
+{
+  "version": "silver-mediums.configuration-artifacts.v1",
+  "role_catalog_version": "silver-mediums.roles.v1",
+  "role_catalog_sha256": "c89c5f619c5f1a724e255b9014bfc882295a2c00504191bfc48569a5bbcc63e2",
+  "bindings": [
+    {
+      "configuration_id": "mika.owner_interface.luna.medium.v1",
+      "role_id": "mika_owner_interface",
+      "instruction_version": "owner-interface.v1",
+      "instruction": {
+        "path": "role_artifacts/v1/mika_owner_interface.instructions.md",
+        "sha256": "19b57802d948faa326a44292a51529c7072444741bbf00c54aa02f18c5fe5f8c"
+      },
+      "skills": [
+        {
+          "name": "owner_interface",
+          "version": "v1",
+          "path": "role_artifacts/v1/mika_owner_interface.skill.md",
+          "sha256": "6bff178295d90e62a7278acea2afbb1234aacce866b7907acb4f34daaa3eb9b9"
+        }
+      ],
+      "permission_version": "owner-interface-read-route.v1",
+      "status": "provisional_shadow_only"
+    },
+    {
+      "configuration_id": "quality_checker.terra.xhigh.v1",
+      "role_id": "quality_checker",
+      "instruction_version": "quality-checker.v1",
+      "instruction": {
+        "path": "role_artifacts/v1/quality_checker.instructions.md",
+        "sha256": "b66719ae6a344ad00352c32dfce94d9e8b2979b9a3b41cacc08168d6a56aa814"
+      },
+      "skills": [
+        {
+          "name": "quality_checker",
+          "version": "v1",
+          "path": "role_artifacts/v1/quality_checker.skill.md",
+          "sha256": "9e4ab086030e9f7c032fab59c650510bd2f59d04b1ba92b222b8a6e10e5dfd13"
+        }
+      ],
+      "permission_version": "independent-read-verdict.v1",
+      "status": "provisional_shadow_only"
+    },
+    {
+      "configuration_id": "product_ui.sol.high.v1",
+      "role_id": "product_ui",
+      "instruction_version": "product-ui.v1",
+      "instruction": {
+        "path": "role_artifacts/v1/product_ui.instructions.md",
+        "sha256": "4c91cd080f987411e9709e1462d6b4e5cd144ba324836de322a44f49013b0faf"
+      },
+      "skills": [
+        {
+          "name": "product_ui",
+          "version": "v1",
+          "path": "role_artifacts/v1/product_ui.skill.md",
+          "sha256": "5bf6c432d0592d1e60dfeda28c5d85f8c613787fed7d971d6b2d0cca90634eea"
+        }
+      ],
+      "permission_version": "product-ui-local.v1",
+      "status": "provisional_shadow_only"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS guarded_task_capability_revocation_pkey_idx;

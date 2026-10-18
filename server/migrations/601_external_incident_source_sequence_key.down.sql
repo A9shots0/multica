@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS external_incident_source_sequence_key;

@@ -1,0 +1,9 @@
+# Last-known running image bytes. Keep the upgraded database and uploads intact.
+# Requires quiescent dispatch and the recorded application compatibility proof.
+services:
+  backend:
+    image: sha256:86f1a85c653eaeaee899a60c30f6a8de1f5d6e179fe5197b2820630207b98798
+    pull_policy: never
+  frontend:
+    image: sha256:c1325230449adb7f4e7a27311f8b0caea9f9881e9d1f0a51431d78b95fe80387
+    pull_policy: never

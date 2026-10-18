@@ -1,0 +1,395 @@
+-- Migration 465 shipped before the repository's FK-free and concurrent-index
+-- rules were applied to the pilot. Remove its relationship constraints
+-- additively; application services validate these identifiers and own cleanup.
+-- The squad_id primary key from applied migration 465 is grandfathered. A
+-- primary-key backing index cannot be replaced concurrently in place without
+-- changing the existing ON CONFLICT contract, so this migration leaves that
+-- immutable constraint intact and repairs only relationships and the explicit
+-- workspace lookup index.
+ALTER TABLE squad_workflow_template
+    DROP CONSTRAINT IF EXISTS squad_workflow_template_squad_id_fkey,
+    DROP CONSTRAINT IF EXISTS squad_workflow_template_workspace_id_fkey,
+    DROP CONSTRAINT IF EXISTS squad_workflow_template_implementer_id_fkey,
+    DROP CONSTRAINT IF EXISTS squad_workflow_template_reviewer_id_fkey,
+    DROP CONSTRAINT IF EXISTS squad_workflow_template_release_agent_id_fkey,
+    DROP CONSTRAINT IF EXISTS squad_workflow_template_verifier_id_fkey;
+
+CREATE TABLE issue_workflow_scope (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    revision BIGINT NOT NULL,
+    acceptance_version BIGINT NOT NULL,
+    state TEXT NOT NULL,
+    parent_scope_id UUID,
+    owner_evidence_id UUID NOT NULL,
+    created_by UUID NOT NULL,
+    statement JSONB NOT NULL,
+    impact JSONB NOT NULL DEFAULT '{}'::jsonb,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_outcome (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    state TEXT NOT NULL,
+    acceptance_version BIGINT NOT NULL,
+    completion_evidence_id UUID,
+    terminal_reason TEXT NOT NULL DEFAULT '',
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_authority (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    revision BIGINT NOT NULL,
+    scope_id UUID NOT NULL,
+    scope_revision BIGINT NOT NULL,
+    owner_evidence_id UUID NOT NULL,
+    state TEXT NOT NULL,
+    envelope JSONB NOT NULL,
+    valid_until TIMESTAMPTZ,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    revoked_by UUID,
+    revoked_at TIMESTAMPTZ,
+    created_by UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_execution (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    branch_key TEXT NOT NULL,
+    operation_type TEXT NOT NULL,
+    state TEXT NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    scope_id UUID NOT NULL,
+    scope_revision BIGINT NOT NULL,
+    authority_id UUID,
+    authority_revision BIGINT,
+    candidate_id UUID,
+    target_key TEXT,
+    actor_type TEXT,
+    actor_id UUID,
+    task_id UUID,
+    checkpoint JSONB NOT NULL DEFAULT '{}'::jsonb,
+    expected_event JSONB NOT NULL DEFAULT '{}'::jsonb,
+    wait_reason JSONB NOT NULL DEFAULT '{}'::jsonb,
+    lease_token UUID,
+    lease_expires_at TIMESTAMPTZ,
+    next_action_at TIMESTAMPTZ,
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    terminal_reason TEXT NOT NULL DEFAULT '',
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_decision (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    scope_id UUID NOT NULL,
+    scope_revision BIGINT NOT NULL,
+    authority_id UUID,
+    authority_revision BIGINT,
+    candidate_id UUID,
+    target_key TEXT,
+    decision_type TEXT NOT NULL,
+    state TEXT NOT NULL,
+    resolution_state TEXT NOT NULL,
+    question TEXT NOT NULL,
+    recommendation TEXT NOT NULL DEFAULT '',
+    consequence TEXT NOT NULL DEFAULT '',
+    options JSONB NOT NULL DEFAULT '[]'::jsonb,
+    response_schema JSONB NOT NULL DEFAULT '{}'::jsonb,
+    authority_gap JSONB NOT NULL DEFAULT '{}'::jsonb,
+    requester_id UUID NOT NULL,
+    accountable_owner_id UUID NOT NULL,
+    suspended_operation_id UUID NOT NULL,
+    expires_at TIMESTAMPTZ,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    resolved_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_decision_response (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    decision_id UUID NOT NULL,
+    decision_revision BIGINT NOT NULL,
+    response_type TEXT NOT NULL,
+    actor_id UUID NOT NULL,
+    idempotency_key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    selected_options JSONB NOT NULL DEFAULT '[]'::jsonb,
+    content JSONB NOT NULL DEFAULT '{}'::jsonb,
+    scope_change JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_candidate (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    scope_id UUID NOT NULL,
+    scope_revision BIGINT NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    candidate_type TEXT NOT NULL,
+    state TEXT NOT NULL,
+    source_revision TEXT NOT NULL DEFAULT '',
+    artifact JSONB NOT NULL,
+    build_contract JSONB NOT NULL DEFAULT '{}'::jsonb,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_by UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_review (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    candidate_id UUID NOT NULL,
+    candidate_revision BIGINT NOT NULL,
+    scope_id UUID NOT NULL,
+    scope_revision BIGINT NOT NULL,
+    reviewer_id UUID NOT NULL,
+    outcome TEXT NOT NULL,
+    criteria JSONB NOT NULL DEFAULT '[]'::jsonb,
+    coverage JSONB NOT NULL DEFAULT '{}'::jsonb,
+    evidence_refs JSONB NOT NULL DEFAULT '[]'::jsonb,
+    gaps JSONB NOT NULL DEFAULT '[]'::jsonb,
+    correction_packet JSONB NOT NULL DEFAULT '{}'::jsonb,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_release (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    candidate_id UUID NOT NULL,
+    candidate_revision BIGINT NOT NULL,
+    scope_id UUID NOT NULL,
+    scope_revision BIGINT NOT NULL,
+    authority_id UUID NOT NULL,
+    authority_revision BIGINT NOT NULL,
+    target_key TEXT NOT NULL,
+    target_generation BIGINT NOT NULL,
+    state TEXT NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    facets JSONB NOT NULL DEFAULT '{}'::jsonb,
+    recovery_policy JSONB NOT NULL DEFAULT '{}'::jsonb,
+    exposed_population JSONB NOT NULL DEFAULT '{}'::jsonb,
+    started_at TIMESTAMPTZ,
+    deployed_at TIMESTAMPTZ,
+    restored_at TIMESTAMPTZ,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_evidence (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    concern_type TEXT NOT NULL,
+    concern_id UUID,
+    concern_revision BIGINT,
+    evidence_type TEXT NOT NULL,
+    level TEXT NOT NULL,
+    source TEXT NOT NULL,
+    producer_type TEXT NOT NULL,
+    producer_id UUID,
+    candidate_id UUID,
+    target_key TEXT,
+    observed_at TIMESTAMPTZ NOT NULL,
+    valid_until TIMESTAMPTZ,
+    coverage JSONB NOT NULL DEFAULT '{}'::jsonb,
+    limitations JSONB NOT NULL DEFAULT '[]'::jsonb,
+    contradictions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    payload JSONB NOT NULL,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_incident (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    release_id UUID,
+    target_key TEXT,
+    incident_type TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    state TEXT NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    consequence JSONB NOT NULL DEFAULT '{}'::jsonb,
+    recovery JSONB NOT NULL DEFAULT '{}'::jsonb,
+    acknowledged_at TIMESTAMPTZ,
+    resolved_at TIMESTAMPTZ,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_command (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    command_key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    command_type TEXT NOT NULL,
+    actor_type TEXT NOT NULL,
+    actor_id UUID,
+    scope_id UUID,
+    scope_revision BIGINT,
+    authority_id UUID,
+    authority_revision BIGINT,
+    candidate_id UUID,
+    target_key TEXT,
+    expected_revisions JSONB NOT NULL DEFAULT '{}'::jsonb,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    state TEXT NOT NULL DEFAULT 'received',
+    result JSONB NOT NULL DEFAULT '{}'::jsonb,
+    error TEXT NOT NULL DEFAULT '',
+    processed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_action_receipt (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    action_key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    command_id UUID NOT NULL,
+    action_type TEXT NOT NULL,
+    state TEXT NOT NULL DEFAULT 'admitted',
+    revision BIGINT NOT NULL DEFAULT 1,
+    operation_id UUID,
+    decision_id UUID,
+    release_id UUID,
+    notification_id UUID,
+    target_key TEXT,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    not_before TIMESTAMPTZ NOT NULL DEFAULT now(),
+    lease_token UUID,
+    lease_expires_at TIMESTAMPTZ,
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    max_attempts INTEGER NOT NULL DEFAULT 1,
+    committed_at TIMESTAMPTZ,
+    settled_at TIMESTAMPTZ,
+    last_error TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_budget (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    scope_id UUID NOT NULL,
+    concern_type TEXT NOT NULL,
+    concern_id UUID,
+    revision BIGINT NOT NULL DEFAULT 1,
+    state TEXT NOT NULL DEFAULT 'active',
+    limits JSONB NOT NULL,
+    consumption JSONB NOT NULL DEFAULT '{}'::jsonb,
+    exhausted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_attention (
+    id UUID NOT NULL,
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    attention_type TEXT NOT NULL,
+    decision_id UUID,
+    incident_id UUID,
+    consequence JSONB NOT NULL DEFAULT '{}'::jsonb,
+    recommendation JSONB NOT NULL DEFAULT '{}'::jsonb,
+    context JSONB NOT NULL DEFAULT '{}'::jsonb,
+    next_action JSONB NOT NULL DEFAULT '{}'::jsonb,
+    read_state TEXT NOT NULL,
+    acknowledged BOOLEAN NOT NULL DEFAULT FALSE,
+    resolution_state TEXT NOT NULL,
+    action_receipt_id UUID,
+    snoozed_until TIMESTAMPTZ,
+    resolved_at TIMESTAMPTZ,
+    superseded_by UUID,
+    superseded_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_workflow_target_head (
+    workspace_id UUID NOT NULL,
+    target_key TEXT NOT NULL,
+    revision BIGINT NOT NULL DEFAULT 1,
+    generation BIGINT NOT NULL,
+    release_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    candidate_id UUID NOT NULL,
+    state TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE issue_current_picture (
+    workspace_id UUID NOT NULL,
+    issue_id UUID NOT NULL,
+    contract_version INTEGER NOT NULL,
+    revision BIGINT NOT NULL,
+    scope_revision BIGINT,
+    authority_revision BIGINT,
+    outcome_state TEXT NOT NULL,
+    outcome_open BOOLEAN NOT NULL,
+    execution_state TEXT NOT NULL,
+    release_state TEXT NOT NULL,
+    health_state TEXT NOT NULL,
+    attention_state TEXT NOT NULL,
+    current_milestone TEXT NOT NULL DEFAULT '',
+    latest_meaningful_change JSONB NOT NULL DEFAULT '{}'::jsonb,
+    next_automatic_action JSONB NOT NULL DEFAULT '{}'::jsonb,
+    active_actor JSONB NOT NULL DEFAULT '{}'::jsonb,
+    wait_reason JSONB NOT NULL DEFAULT '{}'::jsonb,
+    candidate JSONB NOT NULL DEFAULT '{}'::jsonb,
+    target JSONB NOT NULL DEFAULT '{}'::jsonb,
+    evidence_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    authority_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    unresolved_decisions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    unresolved_incidents JSONB NOT NULL DEFAULT '[]'::jsonb,
+    unresolved_dependencies JSONB NOT NULL DEFAULT '[]'::jsonb,
+    budget_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    supersession_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    terminal_reason TEXT NOT NULL DEFAULT '',
+    next_actor JSONB NOT NULL DEFAULT '{}'::jsonb,
+    source_revisions JSONB NOT NULL,
+    document JSONB NOT NULL,
+    generated_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -1,0 +1,10 @@
+{
+  "summary": "Prepare a useful CRM engineering handoff from the fresh read-only evidence, then independently verify its facts and scope.",
+  "plan": [
+    "State the captured UTC time, owner checkout branch and exact HEAD, tracked-change records and untracked-file counts with their definitions.",
+    "Explain cached upstream ref and SHA plus ahead/behind counts as local cached evidence; no fetch or remote-current claim.",
+    "Summarize the complete worktree and path-presence totals, give representative locations and link the complete captured inventory; preserve every dirty, missing or occupied worktree.",
+    "Prioritize safe isolated future work and the separate remote Git, paired SMCrm and SMCrm-Jobs deployment, health and authenticated business checks still needed.",
+    "Have the separate reviewer verify important factual claims, evidence boundaries, preservation and usefulness against this exact snapshot."
+  ]
+}

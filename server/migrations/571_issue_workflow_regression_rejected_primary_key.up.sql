@@ -1,0 +1,1 @@
+ALTER TABLE issue_workflow_regression_rejected_attempt ADD CONSTRAINT issue_workflow_regression_rejected_attempt_pkey PRIMARY KEY USING INDEX issue_workflow_regression_rejected_pkey_idx;

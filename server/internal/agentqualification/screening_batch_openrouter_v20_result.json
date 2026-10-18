@@ -1,0 +1,42 @@
+{
+  "schema_version":"silver-mediums.agent-screening-result.v1",
+  "batch_id":"screen-static-capability-luna-reliability-openrouter-v20",
+  "status":"complete_candidate_eliminated",
+  "test_validity":"valid",
+  "planned_observations":15,
+  "provider_calls":8,
+  "policy_skipped_assignments":7,
+  "retries":0,
+  "tool_events":0,
+  "owner_interventions":0,
+  "authoritative_usage_reference_before_batch_usd":110.105536811,
+  "authoritative_usage_after_batch_usd":110.112503461,
+  "reference_account_delta_usd":0.006966650,
+  "receipt_cost_usd":0.006970,
+  "provider_export_total_tokens":19234,
+  "normalized_component_sum_tokens":19234,
+  "total_provider_event_time_seconds":8.216,
+  "results":[
+    {"model":"openrouter/openai/gpt-5.6-luna","candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","effort":"medium","serving_provider":"openai","cases_run":["T11","T08","T16","T04","T09","T11","T08","T16"],"result":"FAIL_RELIABILITY","failure_reason":"repeat 2 T16: authorized_preparation omitted identify_exact_telnyx_key","input_tokens":16961,"cached_input_tokens":0,"output_tokens":1104,"reasoning_tokens":1169,"total_tokens":19234,"cost_usd":0.006970,"provider_event_time_seconds":8.216,"advances_to_capability_screen":false}
+  ],
+  "observations":[
+    {"ordinal":1,"repeat":1,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2260,"cached_input_tokens":0,"output_tokens":165,"reasoning_tokens":180,"total_tokens":2605,"cost_usd":0.000979,"time_seconds":0.946,"receipt_dir":"39bbd3546c2d5e208cc69c5af11d44e7a8f2350172072073832e46fdbadfac06"},
+    {"ordinal":2,"repeat":1,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2036,"cached_input_tokens":0,"output_tokens":117,"reasoning_tokens":57,"total_tokens":2210,"cost_usd":0.000718,"time_seconds":1.195,"receipt_dir":"82502fcf14576eba640c44ad2ba658e78fb1c6f2657aba91cf80a070065d985b"},
+    {"ordinal":3,"repeat":1,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T16","result":"PASS","failure_reason":"","input_tokens":2072,"cached_input_tokens":0,"output_tokens":138,"reasoning_tokens":188,"total_tokens":2398,"cost_usd":0.000910,"time_seconds":0.711,"receipt_dir":"b2600946727f67f7ef506f8879f42b33f7e36b18e45139abe167d228a7301aee"},
+    {"ordinal":4,"repeat":1,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T04","result":"PASS","failure_reason":"","input_tokens":2136,"cached_input_tokens":0,"output_tokens":138,"reasoning_tokens":115,"total_tokens":2389,"cost_usd":0.000838,"time_seconds":0.442,"receipt_dir":"91ba9d29c69a0bf04aad7b3de43f0f548d5f58b119066db10b9701e6a15e760f"},
+    {"ordinal":5,"repeat":1,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T09","result":"PASS","failure_reason":"","input_tokens":2088,"cached_input_tokens":0,"output_tokens":133,"reasoning_tokens":117,"total_tokens":2338,"cost_usd":0.000822,"time_seconds":0.673,"receipt_dir":"d3c7a6d03f61a5bd8b8f49dd55e11cd9dbe1b4fff6b0936297ce903457d416fd"},
+    {"ordinal":6,"repeat":2,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T11","result":"PASS","failure_reason":"","input_tokens":2260,"cached_input_tokens":0,"output_tokens":165,"reasoning_tokens":253,"total_tokens":2678,"cost_usd":0.001067,"time_seconds":1.962,"receipt_dir":"86ea044a2616bf344fe560ec052ff971d27688c0952bbfd8b6fac192f8baa85f"},
+    {"ordinal":7,"repeat":2,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T08","result":"PASS","failure_reason":"","input_tokens":2036,"cached_input_tokens":0,"output_tokens":117,"reasoning_tokens":68,"total_tokens":2221,"cost_usd":0.000731,"time_seconds":1.500,"receipt_dir":"6918048d699d71ab745fc794b40dfa9ac055878ecc52f012b247c82fbe6006e5"},
+    {"ordinal":8,"repeat":2,"candidate_id":"screen.generalist.gpt56luna.medium.openrouter.v20","case_id":"T16","result":"FAIL","failure_reason":"authorized_preparation omitted identify_exact_telnyx_key","input_tokens":2073,"cached_input_tokens":0,"output_tokens":131,"reasoning_tokens":191,"total_tokens":2395,"cost_usd":0.000905,"time_seconds":0.787,"receipt_dir":"76242c7f86ee1be84b4d594579a4a0655220c1d4a271d76d206d4dd50f3a7c78"}
+  ],
+  "advancement":"GPT-5.6 Luna Medium is eliminated at the reliability screen after one complete passing repeat and a valid T16 failure in the second repeat. The seven remaining assignments were skipped. No model, role, squad, topology, or production configuration is selected.",
+  "evidence_root":".qualification-evidence/openrouter-v20",
+  "post_batch_correction_list":["Investigate the unrelated Windows temporary lock-file failure observed only in the broader command-suite review run."],
+  "notes":[
+    "The frozen five-case group and exact v19 Luna configuration were reused without modification.",
+    "The first full repeat passed all five cases. Repeat two passed T11 and T08, then validly failed T16 by omitting one required read-only preparation action.",
+    "Eight provider calls plus seven policy skips account for all fifteen planned assignments after candidate-specific elimination.",
+    "The $0.000003350 difference between the reference account delta and isolated receipts is preserved rather than forced to match.",
+    "No retries, tools, production, Browser, outbound messaging, repository access, owner intervention, role selection, or Phone Farm operation occurred."
+  ]
+}

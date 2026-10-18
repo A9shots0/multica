@@ -1,0 +1,48 @@
+{
+  "page": {
+    "title": "知识库",
+    "tab_hub": "公司知识",
+    "tab_intelligence": "数据与指标"
+  },
+  "hub": {
+    "not_configured": "此部署尚未连接知识库。",
+    "no_files": "未找到文档。",
+    "select_prompt": "选择一个文档以查看内容。",
+    "loading": "加载中…",
+    "load_failed": "无法加载此文档。",
+    "untitled": "无标题",
+    "projects_loading": "正在加载项目…",
+    "no_projects": "尚未注册任何项目。",
+    "no_summary": "暂无摘要 — 打开查看详情。",
+    "browse_all_files": "浏览所有文件",
+    "back_to_projects": "全部项目",
+    "tab_overview": "概览",
+    "tab_changelog": "最新动态",
+    "tab_technical": "技术文档",
+    "no_changelog": "该项目暂无更新日志。",
+    "recent_activity": "最近动态",
+    "view_all_activity": "查看全部"
+  },
+  "intelligence": {
+    "not_configured": "此部署尚未连接 Silver Mediums Intelligence。",
+    "unavailable": "暂时无法连接 Intelligence 数据库。",
+    "no_events": "尚无已记录的事件。",
+    "total_events": "事件总数",
+    "table_producer": "来源",
+    "table_event_type": "事件类型",
+    "event_type_count": "种事件类型",
+    "total_followers": "粉丝总数",
+    "across_accounts": "覆盖 {count} 个追踪账号",
+    "active_clients": "活跃客户",
+    "active_accounts": "活跃社交账号",
+    "new_subscribers_7d": "新增订阅者(近7天)",
+    "sync_health": "数据同步状态",
+    "raw_ledger": "原始事件台账",
+    "table_count": "数量",
+    "table_latest": "最近同步",
+    "table_earliest": "首次出现"
+  },
+  "operational_copy": {
+    "accepted": "已接受"
+  }
+}
