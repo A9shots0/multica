@@ -83,10 +83,14 @@ func buildRestrictedClaudeArgs(opts ExecOptions) ([]string, error) {
 	if opts.ExecutionPolicy == nil {
 		return nil, errors.New("restricted Claude execution policy is required")
 	}
+	prompt := "Use only the configured Brain MCP tools. Do not use local files, shell commands, or any other tools. Return no source bodies or private prose."
+	if opts.EvaluateBrainAcceptance != nil {
+		prompt += "\n" + brainAcceptanceAnswerInstruction
+	}
 	agents, err := json.Marshal(map[string]restrictedClaudeAgent{
 		restrictedClaudeAgentName: {
 			Description: "Retrieve only the explicitly authorized Brain MCP sources and return verified, minimal receipts.",
-			Prompt:      "Use only the configured Brain MCP tools. Do not use local files, shell commands, or any other tools. Return no source bodies or private prose.",
+			Prompt:      prompt,
 			Tools:       append([]string(nil), opts.ExecutionPolicy.Tools...),
 		},
 	})
@@ -192,6 +196,7 @@ const (
 type restrictedClaudeReceiptBudget struct {
 	count         int
 	evidenceBytes int
+	evaluation    *brainAcceptanceCollector
 }
 
 func (b *claudeBackend) handleRestrictedUser(ctx context.Context, msg claudeSDKMessage, ch chan<- Message, policy *taskpolicy.ExecutionPolicy, calls map[string]restrictedClaudeCall, hooks *restrictedClaudeHooks, budget *restrictedClaudeReceiptBudget) (string, []json.RawMessage, bool) {
@@ -230,6 +235,17 @@ func (b *claudeBackend) handleRestrictedUser(ctx context.Context, msg claudeSDKM
 		}
 		budget.count++
 		budget.evidenceBytes += len(evidence)
+		if verified && budget.evaluation != nil {
+			var metadata *BrainAcceptanceReadMetadata
+			if call.tool == "brain_read" {
+				var ok bool
+				metadata, ok = restrictedBrainReadMetadata(block.Content)
+				if !ok {
+					return "restricted Brain acceptance read metadata was missing or unsupported", receipts, true
+				}
+			}
+			budget.evaluation.addEvidence(call.tool, evidence, call.input, metadata)
+		}
 		status := "verified"
 		if !verified {
 			status = "unverified"

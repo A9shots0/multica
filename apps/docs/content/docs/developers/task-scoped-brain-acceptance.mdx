@@ -27,7 +27,7 @@ The policy permits only Claude and the named MCP server. Its tool input gate is 
 
 Claude must support the fail-closed task-local hook configuration (minimum CLI version `2.1.295`). The hook is configured to deny out-of-scope tool names and inputs before dispatch and correlate completed calls for receipt verification. A failed or unavailable hook, incompatible CLI, unmanaged server configuration, unsupported daemon, or missing verification evidence fails the restricted task; it does not silently downgrade to unrestricted execution.
 
-Current automated protocol tests use synthetic events and a fake CLI. They do not establish compatibility with an installed Claude CLI; verify the supported CLI hook protocol before calling a runtime ready for this mode.
+Default protocol tests use synthetic events and a fake CLI. A separate opt-in installed-CLI fixture exercises the same invocation and HTTP hook configuration using a scripted, loopback-only Anthropic API and synthetic MCP server. This fixture proves dispatch behavior, not model quality, account readiness, live Brain acceptance, or runtime activation.
 
 ## Receipt limits and evidence boundaries
 
@@ -36,3 +36,39 @@ Receipts are bounded by task-level call, count, and byte limits. Durable task hi
 A successful receipt proves that the configured tool returned data matching the checked selector and response shape, and that the local hook observed the correlated call. It does not prove the underlying Brain record is true, complete, fresh beyond its reported metadata, or authoritative. The expected fixed HTTP 404 refusal is accepted only for its exact correlated request and response; it cannot distinguish a nonexistent resource from one hidden by access controls. Historical document reads are verified against the requested immutable revision and body hash, not against the current revision pointer.
 
 The acceptance fixtures and selectors are versioned test contracts. They are not live Brain receipts, and accepting them does not authorize production execution or runtime activation.
+
+## Transient answer evaluation
+
+Standalone harnesses can set `ExecOptions.EvaluateBrainAcceptance` on a restricted Claude execution. This synchronous callback is separate from `Session.Messages` and `Session.Result`; the daemon does not register it, and it is not serialized in execution options. It receives four bounded, structured answers and the correlated sanitized receipts only after successful retrieval and hook verification. Callback rejection fails the task with a fixed error; callback error text is withheld.
+
+Answers use a finite set of conclusion and uncertainty labels, plus project/document/revision citations correlated to both the exact scoped context question and a verified full immutable read. Unknown fields, arbitrary prose, reasoning, source bodies, uncited documents, wrong projects, and oversized answers are rejected before delivery. Wrong semantic choices are distinguishable from verified retrieval: the consumer must evaluate the answers against the frozen rubric, not grade the run from operational statuses. The callback must consume its argument in memory and must not log, serialize, or persist it. No retention permission is implied.
+
+Transient read metadata is limited to the source-defined tier (`truth`, `working`, `history`), reference status (`reference_only`, `superseded_reference`, `superseded_revision`), freshness (`unverified`, `superseded`), `assured: false`, and an optional validated `recordedAt` timestamp. Missing or unsupported required metadata fails evaluation rather than granting assurance. A historical revision does not automatically change freshness, and a `truth` tier does not make a claim authoritative.
+
+The synthetic, no-account evaluation invocation is:
+
+```bash
+cd server
+go test ./pkg/agent -run '^TestClaudeRestrictedTransientEvaluation$' -count=1
+```
+
+That test exercises answer/citation delivery and evaluator rejection while checking that neither answers nor source identifiers/bodies escape into durable messages, results, or logs. It is not a live semantic score. The event receipt currently validates only row identity and bounds, not canonical page/payload hashes. Hook timing is not connector-internal timing, so the original per-connector three-second requirement remains unverified.
+
+## Installed-CLI synthetic dispatch fixture
+
+`TestClaudeRestrictedInstalledSyntheticDispatch` is behind `agentintegration`, `MULTICA_RUN_REAL_AGENT_SMOKE=1`, and `MULTICA_CLAUDE_SYNTHETIC_FIXTURE=1`. Supply an explicit task-local CLI path with `MULTICA_CLAUDE_FIXTURE_EXECUTABLE`. The fixture never discovers an installed agent or loads account credentials. It creates fresh HOME/config/work directories, uses a synthetic token and loopback API/MCP/hooks, and has no upstream forwarding.
+
+**Fence the entire test process first.** `ANTHROPIC_BASE_URL` is routing, not network isolation. On Linux, run the compiled test binary inside a disposable container with `--network none` and read-only mounts of only the test binary and the task-local official CLI. On macOS, use a separately qualified process-local network sandbox inherited by the test and all children; do not change a shared firewall. The fixture additionally requires immediate denial of IPv4/IPv6 documentation-range sockets before starting the CLI. It is not itself a sandbox.
+
+```bash
+cd server
+go test -c -tags=agentintegration -o /tmp/multica-claude-synthetic.test ./pkg/agent
+# Inside the qualified network fence, with the explicit fixture path:
+MULTICA_RUN_REAL_AGENT_SMOKE=1 \
+MULTICA_CLAUDE_SYNTHETIC_FIXTURE=1 \
+MULTICA_CLAUDE_FIXTURE_EXECUTABLE=/fixture/claude \
+/fixture/test -test.run '^TestClaudeRestrictedInstalledSyntheticDispatch$' \
+  -test.v -test.timeout=4m
+```
+
+The allowed case must dispatch exactly once with correlated pre/post hooks. Denied arguments, refused hook connection, timeout, and malformed hook JSON must dispatch zero times. Native tools must not appear in API tool definitions. Scratch inspection rejects persisted conversation JSONL and prompt/source/final-answer canaries; operational MCP JSONL may still be created by Claude, so `--no-session-persistence` must not be described as disabling all CLI logs. Scratch directories and listeners are cleaned up. None of this authorizes production calls, provider spend, a shared CLI upgrade, or daemon activation.

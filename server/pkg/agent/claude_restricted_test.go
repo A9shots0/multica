@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -526,13 +527,51 @@ func TestRestrictedClaudeReadHookCorrelatesCitationProject(t *testing.T) {
 		authorizedDocs: map[string]string{"doc-1\x00" + revision: "brain"},
 	}
 	input := map[string]any{"id": "doc-1", "revision": revision}
-	if !hooks.matchesAuthorizedRead(response, input) {
+	if !hooks.matchesAuthorizedReadLocked(response, input) {
 		t.Fatal("cited document from its authorized project was rejected")
 	}
 	wrongProjectPayload := strings.Replace(payload, `"project":"brain"`, `"project":"multica"`, 1)
 	wrongProjectResponse := json.RawMessage(fmt.Sprintf(`{"content":[{"type":"text","text":%q}],"isError":false}`, wrongProjectPayload))
-	if hooks.matchesAuthorizedRead(wrongProjectResponse, input) {
+	if hooks.matchesAuthorizedReadLocked(wrongProjectResponse, input) {
 		t.Fatal("valid self-hashed read from a different project was accepted")
+	}
+}
+
+func TestRestrictedClaudeHookWaitRequiresCompletedVerification(t *testing.T) {
+	done := make(chan struct{})
+	close(done)
+	hooks := &restrictedClaudeHooks{calls: map[string]*restrictedClaudeHookCall{
+		"call": {tool: "brain_context", duration: time.Millisecond, done: done},
+	}}
+	if _, measured := hooks.WaitDuration(t.Context(), "call", "brain_context"); measured {
+		t.Fatal("a duration assigned before verification completed was accepted")
+	}
+}
+
+func TestRestrictedClaudeConcurrentHookResultWaitsForVerification(t *testing.T) {
+	for i := 0; i < 50; i++ {
+		hooks := &restrictedClaudeHooks{
+			policy: brainAcceptancePolicy(t),
+			calls: map[string]*restrictedClaudeHookCall{
+				"call": {
+					tool: "brain_context", input: map[string]any{"project": "brain"},
+					startedAt: time.Now().Add(-time.Millisecond), done: make(chan struct{}),
+				},
+			},
+			authorizedDocs: make(map[string]string),
+		}
+		waited := make(chan bool, 1)
+		go func() {
+			_, measured := hooks.WaitDuration(t.Context(), "call", "brain_context")
+			waited <- measured
+		}()
+		hooks.handlePostToolUse(httptest.NewRecorder(), restrictedClaudeHookEvent{
+			EventName: "PostToolUse", ToolName: "mcp__brain__brain_context", ToolUseID: "call",
+			ToolResponse: json.RawMessage(`{"content":[{"type":"text","text":"invalid context"}],"isError":false}`),
+		})
+		if <-waited || hooks.Failure() == "" {
+			t.Fatal("concurrent stream result escaped failed hook verification")
+		}
 	}
 }
 
@@ -946,25 +985,49 @@ func TestRestrictedClaudeFakeCLIHelper(t *testing.T) {
 	body := "SENSITIVE_DOCUMENT_BODY"
 	documentRevision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
 	readPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"document":{"id":"doc-1","project":"brain","revision":%q,"body":%q,"bytes":%d,"truncated":false,"currentRevision":%q,"available":true}}`, documentRevision, body, len([]byte(body)), strings.Repeat("e", 64))
-	toolCall := func(name, id string, input any, text string) {
+	toolCall := func(name, id string, input any, text string, failed ...bool) {
+		isError := len(failed) > 0 && failed[0]
 		send(restrictedClaudeHookEvent{EventName: "PreToolUse", ToolName: "mcp__brain__" + name, ToolInput: input.(map[string]any), ToolUseID: id})
-		response := map[string]any{"content": []any{map[string]any{"type": "text", "text": text}}}
+		response := map[string]any{"content": []any{map[string]any{"type": "text", "text": text}}, "isError": isError}
 		send(restrictedClaudeHookEvent{EventName: "PostToolUse", ToolName: "mcp__brain__" + name, ToolResponse: mustMarshal(t, response), ToolUseID: id})
 		emit(map[string]any{"type": "assistant", "message": map[string]any{"content": []any{
 			map[string]any{"type": "tool_use", "id": id, "name": "mcp__brain__" + name, "input": input},
 		}}})
 		emit(map[string]any{"type": "user", "message": map[string]any{"content": []any{
-			map[string]any{"type": "tool_result", "tool_use_id": id, "content": []any{map[string]any{"type": "text", "text": text}}},
+			map[string]any{"type": "tool_result", "tool_use_id": id, "is_error": isError, "content": []any{map[string]any{"type": "text", "text": text}}},
 		}}})
 	}
 	emit(map[string]any{"type": "system", "subtype": "init", "session_id": "SENSITIVE_SESSION"})
-	toolCall("brain_context", "context-call", map[string]any{"project": "brain", "q": "How do I retrieve evidence beyond the short search excerpt?"}, contextPayload)
-	toolCall("brain_read", "read-call", map[string]any{"id": "doc-1", "revision": documentRevision}, readPayload)
+	evaluating := os.Getenv("MULTICA_RESTRICTED_CLAUDE_EVALUATION") == "1"
+	if evaluating {
+		for index, item := range []struct{ project, question string }{
+			{"brain", "How do I retrieve evidence beyond the short search excerpt?"},
+			{"brain", taskpolicy.BrainAuthorityQuestion},
+			{"multica", "A worker completed its task. Has the owner accepted the issue?"},
+		} {
+			doc := item.project + "-doc"
+			scopedContext := strings.ReplaceAll(strings.ReplaceAll(contextPayload, `"id":"brain"`, `"id":"`+item.project+`"`), "doc-1", doc)
+			scopedRead := strings.ReplaceAll(strings.ReplaceAll(readPayload, `"project":"brain"`, `"project":"`+item.project+`"`), "doc-1", doc)
+			scopedRead = strings.Replace(scopedRead, `"available":true`, `"available":true,"tier":"working","status":"superseded_revision","freshness":"unverified","assured":false,"recordedAt":"2000-01-01T00:00:00Z"`, 1)
+			toolCall("brain_context", fmt.Sprintf("context-%d", index), map[string]any{"project": item.project, "q": item.question}, scopedContext)
+			toolCall("brain_read", fmt.Sprintf("read-%d", index), map[string]any{"id": doc, "revision": documentRevision}, scopedRead)
+		}
+		toolCall("brain_resolve", "refusal", map[string]any{"identity": "not-an-enrolled-project"}, "brain request rejected (HTTP 404)", true)
+		event := `{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"items":[{"id":199901,"evidence_ref":"source_event:199901","producer":"synthetic","event_type":"synthetic","payload_schema_version":1,"observed_at":"2000-01-01T00:00:00Z","received_at":"2000-01-01T00:00:00Z","complete":true,"scope":{},"payload_sha256":"` + strings.Repeat("a", 64) + `","payload":{}}],"has_more":false,"next_after_id":199901,"snapshot_through_id":199901}`
+		toolCall("company_events", "event", map[string]any{"afterId": float64(199900), "throughId": float64(199901), "limit": float64(1)}, event)
+	} else {
+		toolCall("brain_context", "context-call", map[string]any{"project": "brain", "q": "How do I retrieve evidence beyond the short search excerpt?"}, contextPayload)
+		toolCall("brain_read", "read-call", map[string]any{"id": "doc-1", "revision": documentRevision}, readPayload)
+	}
 	emit(map[string]any{"type": "assistant", "message": map[string]any{"content": []any{
 		map[string]any{"type": "text", "text": "SENSITIVE_ASSISTANT_TEXT"},
 		map[string]any{"type": "thinking", "thinking": "SENSITIVE_THINKING"},
 	}}})
-	emit(map[string]any{"type": "result", "subtype": "success", "is_error": false, "session_id": "SENSITIVE_SESSION", "result": "SENSITIVE_FINAL_OUTPUT"})
+	final := "SENSITIVE_FINAL_OUTPUT"
+	if evaluating {
+		final = syntheticBrainAcceptanceAnswers()
+	}
+	emit(map[string]any{"type": "result", "subtype": "success", "is_error": false, "session_id": "SENSITIVE_SESSION", "result": final})
 }
 
 func revisionHashFixture() string {

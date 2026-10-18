@@ -205,37 +205,28 @@ func (hooks *restrictedClaudeHooks) handlePreToolUse(w http.ResponseWriter, even
 
 func (hooks *restrictedClaudeHooks) handlePostToolUse(w http.ResponseWriter, event restrictedClaudeHookEvent) {
 	hooks.mu.Lock()
+	defer hooks.mu.Unlock()
 	call, exists := hooks.calls[event.ToolUseID]
 	if event.ToolUseID == "" || !exists || call.completed || call.tool != toolNameFromMCPID(hooks.policy, event.ToolName) {
 		hooks.failure = "restricted Claude policy hook could not correlate a completed MCP call"
-		hooks.mu.Unlock()
 		hooks.writeDecision(w, "")
 		return
 	}
+	call.duration = time.Since(call.startedAt)
 	if event.EventName == "PostToolUseFailure" {
 		if !restrictedClaudeExpectedResolveFailure(event, call) {
 			hooks.failure = "restricted Claude Brain MCP call failed"
 		}
-		call.duration = time.Since(call.startedAt)
-		call.completed = true
-		close(call.done)
-		hooks.mu.Unlock()
-		hooks.writeDecision(w, "")
-		return
+	} else if call.tool == "brain_context" {
+		project, _ := call.input["project"].(string)
+		if !hooks.captureContextDocumentsLocked(event.ToolResponse, project) {
+			hooks.failure = "restricted Claude could not verify the scoped Brain context response"
+		}
+	} else if call.tool == "brain_read" && !hooks.matchesAuthorizedReadLocked(event.ToolResponse, call.input) {
+		hooks.failure = "restricted Claude Brain read did not match its authorized context citation"
 	}
-
-	call.duration = time.Since(call.startedAt)
 	call.completed = true
 	close(call.done)
-	hooks.mu.Unlock()
-	if call.tool == "brain_context" {
-		project, _ := call.input["project"].(string)
-		if !hooks.captureContextDocuments(event.ToolResponse, project) {
-			hooks.setFailure("restricted Claude could not verify the scoped Brain context response")
-		}
-	} else if call.tool == "brain_read" && !hooks.matchesAuthorizedRead(event.ToolResponse, call.input) {
-		hooks.setFailure("restricted Claude Brain read did not match its authorized context citation")
-	}
 	hooks.writeDecision(w, "")
 }
 
@@ -269,7 +260,7 @@ func (hooks *restrictedClaudeHooks) allowsToolInput(tool string, input map[strin
 	return authorized
 }
 
-func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage, requestedProject string) bool {
+func (hooks *restrictedClaudeHooks) captureContextDocumentsLocked(raw json.RawMessage, requestedProject string) bool {
 	blocks, ok := restrictedClaudeHookResponseBlocks(raw)
 	if !ok {
 		return false
@@ -305,8 +296,6 @@ func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage,
 		}
 		authorized[id+"\x00"+revision] = requestedProject
 	}
-	hooks.mu.Lock()
-	defer hooks.mu.Unlock()
 	for key, project := range authorized {
 		if existing, exists := hooks.authorizedDocs[key]; exists && existing != project {
 			return false
@@ -318,15 +307,13 @@ func (hooks *restrictedClaudeHooks) captureContextDocuments(raw json.RawMessage,
 	return true
 }
 
-func (hooks *restrictedClaudeHooks) matchesAuthorizedRead(raw json.RawMessage, input map[string]any) bool {
+func (hooks *restrictedClaudeHooks) matchesAuthorizedReadLocked(raw json.RawMessage, input map[string]any) bool {
 	id, idOK := input["id"].(string)
 	revision, revisionOK := input["revision"].(string)
 	if !idOK || !revisionOK {
 		return false
 	}
-	hooks.mu.Lock()
 	requestedProject, authorized := hooks.authorizedDocs[id+"\x00"+revision]
-	hooks.mu.Unlock()
 	if !authorized {
 		return false
 	}
@@ -389,13 +376,14 @@ func (hooks *restrictedClaudeHooks) WaitDuration(ctx context.Context, toolUseID,
 	select {
 	case <-done:
 	case <-timer.C:
+		return 0, false
 	case <-ctx.Done():
 		return 0, false
 	}
 
 	hooks.mu.Lock()
 	defer hooks.mu.Unlock()
-	if hooks.failure != "" || hooks.calls[toolUseID] != call || call.duration == 0 {
+	if hooks.failure != "" || hooks.calls[toolUseID] != call || !call.completed || call.duration == 0 {
 		return 0, false
 	}
 	delete(hooks.calls, toolUseID)

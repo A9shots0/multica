@@ -129,6 +129,10 @@ type ExecOptions struct {
 	// ExecutionPolicy opts one task into a provider-enforced restricted mode.
 	// Only backends that explicitly implement the policy may accept it.
 	ExecutionPolicy *taskpolicy.ExecutionPolicy
+	// EvaluateBrainAcceptance is a synchronous, in-memory consumer for the
+	// restricted acceptance harness. It never uses Messages, Result, or task
+	// history. The consumer must not persist its argument.
+	EvaluateBrainAcceptance func(BrainAcceptanceEvaluation) error `json:"-"`
 }
 
 // runContext derives the execution context for an agent subprocess from the

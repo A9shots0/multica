@@ -44,6 +44,9 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 		execPath = "claude"
 	}
 	restricted := opts.ExecutionPolicy != nil
+	if opts.EvaluateBrainAcceptance != nil && !restricted {
+		return nil, errors.New("Brain acceptance evaluation requires the restricted task policy")
+	}
 	if restricted {
 		if opts.ResumeSessionID != "" {
 			return nil, errors.New("restricted Claude execution cannot resume a provider session")
@@ -239,6 +242,10 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 		restrictedCalls := make(map[string]restrictedClaudeCall)
 		var restrictedReceipts []json.RawMessage
 		restrictedReceiptBudget := &restrictedClaudeReceiptBudget{}
+		if restricted && opts.EvaluateBrainAcceptance != nil {
+			restrictedReceiptBudget.evaluation = &brainAcceptanceCollector{}
+		}
+		var acceptanceAnswer string
 		restrictedFailure := ""
 		unverifiableRestrictedResult := false
 		sawAsyncLaunch := false
@@ -335,6 +342,13 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 				sawResult = true
 				if !restricted {
 					finalResultText = msg.ResultText
+				} else if opts.EvaluateBrainAcceptance != nil {
+					if len(msg.ResultText) > brainAcceptanceAnswerLimit {
+						restrictedFailure = "restricted Brain acceptance answer exceeded the byte limit"
+						cancel()
+					} else {
+						acceptanceAnswer = msg.ResultText
+					}
 				}
 				resultIsError = msg.IsError
 				if !restricted {
@@ -437,6 +451,16 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 			if restrictedFailure == "" && finalStatus == "completed" && len(restrictedReceipts) == 0 {
 				restrictedFailure = "restricted Brain MCP execution completed without a verifiable Brain receipt"
 			}
+			if restrictedFailure == "" && finalStatus == "completed" && opts.EvaluateBrainAcceptance != nil {
+				evaluation, err := restrictedReceiptBudget.evaluation.evaluation(acceptanceAnswer)
+				if err != nil {
+					restrictedFailure = err.Error()
+				} else if opts.EvaluateBrainAcceptance(evaluation) != nil {
+					restrictedFailure = "restricted Brain acceptance evaluator rejected the answers or evidence"
+				}
+			}
+			acceptanceAnswer = ""
+			restrictedReceiptBudget.evaluation = nil
 			safeOutput, outputErr := json.Marshal(map[string]any{
 				"policy":   opts.ExecutionPolicy.Mode,
 				"receipts": restrictedReceipts,
