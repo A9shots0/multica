@@ -308,8 +308,10 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 				assistantEventCount++
 				var turn assistantTurn
 				if restricted {
-					turn, restrictedFailure = b.handleRestrictedAssistant(msg, msgCh, usage, opts.ExecutionPolicy, restrictedCalls)
-					if restrictedFailure != "" {
+					var eventFailure string
+					turn, eventFailure = b.handleRestrictedAssistant(msg, msgCh, usage, opts.ExecutionPolicy, restrictedCalls)
+					restrictedFailure = retainRestrictedClaudeFailure(restrictedFailure, eventFailure)
+					if eventFailure != "" {
 						cancel()
 					}
 				} else {
@@ -324,10 +326,11 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 				if restricted {
 					var newReceipts []json.RawMessage
 					var unverifiable bool
-					restrictedFailure, newReceipts, unverifiable = b.handleRestrictedUser(runCtx, msg, msgCh, opts.ExecutionPolicy, restrictedCalls, restrictedHooks, restrictedReceiptBudget)
+					eventFailure, newReceipts, unverifiable := b.handleRestrictedUser(runCtx, msg, msgCh, opts.ExecutionPolicy, restrictedCalls, restrictedHooks, restrictedReceiptBudget)
+					restrictedFailure = retainRestrictedClaudeFailure(restrictedFailure, eventFailure)
 					restrictedReceipts = append(restrictedReceipts, newReceipts...)
 					unverifiableRestrictedResult = unverifiableRestrictedResult || unverifiable
-					if restrictedFailure != "" {
+					if eventFailure != "" {
 						cancel()
 					}
 				} else if b.handleUser(msg, msgCh) {
@@ -344,7 +347,7 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 					finalResultText = msg.ResultText
 				} else if opts.EvaluateBrainAcceptance != nil {
 					if len(msg.ResultText) > brainAcceptanceAnswerLimit {
-						restrictedFailure = "restricted Brain acceptance answer exceeded the byte limit"
+						restrictedFailure = retainRestrictedClaudeFailure(restrictedFailure, "restricted Brain acceptance answer exceeded the byte limit")
 						cancel()
 					} else {
 						acceptanceAnswer = msg.ResultText
@@ -370,7 +373,7 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 			case "control_request":
 				if restricted {
 					if controlFailure := b.handleRestrictedControlRequest(msg, stdin, restrictedHooks); controlFailure != "" {
-						restrictedFailure = controlFailure
+						restrictedFailure = retainRestrictedClaudeFailure(restrictedFailure, controlFailure)
 						cancel()
 					}
 				} else {

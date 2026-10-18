@@ -16,16 +16,31 @@ import (
 const (
 	// HTTP hook failures must block tool execution in this version. --tools ""
 	// is still required because restricted mode alone leaves file tools enabled.
-	minRestrictedClaudeVersion = "2.1.295"
-	restrictedClaudeAgentName  = "brain-reader"
+	minRestrictedClaudeVersion     = "2.1.295"
+	restrictedClaudeAgentName      = "brain-reader"
+	restrictedClaudeMaxCallIDBytes = 128
 )
 
-var claudeVersionPattern = regexp.MustCompile(`(?:^|[^0-9])([0-9]+)\.([0-9]+)\.([0-9]+)(?:$|[ )])`)
+var (
+	claudeVersionPattern          = regexp.MustCompile(`(?:^|[^0-9])([0-9]+)\.([0-9]+)\.([0-9]+)(?:$|[ )])`)
+	restrictedClaudeCallIDPattern = regexp.MustCompile(`^[A-Za-z0-9._:-]+$`)
+)
 
 type restrictedClaudeAgent struct {
 	Description string   `json:"description"`
 	Prompt      string   `json:"prompt"`
 	Tools       []string `json:"tools"`
+}
+
+func retainRestrictedClaudeFailure(current, next string) string {
+	if current != "" {
+		return current
+	}
+	return next
+}
+
+func validRestrictedClaudeCallID(value string) bool {
+	return len(value) > 0 && len(value) <= restrictedClaudeMaxCallIDBytes && restrictedClaudeCallIDPattern.MatchString(value)
 }
 
 func validateRestrictedClaudeConfig(cfg Config, opts ExecOptions) (json.RawMessage, error) {
@@ -163,6 +178,9 @@ func (b *claudeBackend) handleRestrictedAssistant(msg claudeSDKMessage, ch chan<
 		// It cannot read/write data and is never emitted as a receipt.
 		if block.Name == "EndConversation" {
 			if block.ID != "" {
+				if !validRestrictedClaudeCallID(block.ID) {
+					return turn, "restricted Claude emitted an invalid tool call identifier"
+				}
 				if _, exists := calls[block.ID]; exists {
 					return turn, "restricted Claude emitted a duplicate tool call identifier"
 				}
@@ -171,7 +189,7 @@ func (b *claudeBackend) handleRestrictedAssistant(msg claudeSDKMessage, ch chan<
 			continue
 		}
 		tool, allowed := restrictedClaudeToolName(policy, block.Name)
-		if !allowed || block.ID == "" {
+		if !allowed || !validRestrictedClaudeCallID(block.ID) {
 			return turn, "restricted Claude attempted an unauthorized or uncorrelated tool call"
 		}
 		input := make(map[string]any)
@@ -209,6 +227,9 @@ func (b *claudeBackend) handleRestrictedUser(ctx context.Context, msg claudeSDKM
 	for _, block := range content.Content {
 		if block.Type != "tool_result" {
 			continue
+		}
+		if !validRestrictedClaudeCallID(block.ToolUseID) {
+			return "restricted Claude emitted an invalid tool result identifier", receipts, true
 		}
 		call, ok := calls[block.ToolUseID]
 		if !ok {

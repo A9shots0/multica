@@ -172,7 +172,7 @@ func (hooks *restrictedClaudeHooks) serveHTTP(w http.ResponseWriter, r *http.Req
 
 func (hooks *restrictedClaudeHooks) handlePreToolUse(w http.ResponseWriter, event restrictedClaudeHookEvent) {
 	tool, allowed := restrictedClaudeToolName(hooks.policy, event.ToolName)
-	if !allowed || event.ToolUseID == "" || !hooks.allowsToolInput(tool, event.ToolInput) {
+	if !allowed || !validRestrictedClaudeCallID(event.ToolUseID) || !hooks.allowsToolInput(tool, event.ToolInput) {
 		hooks.setFailure("restricted Claude attempted an out-of-scope tool call")
 		hooks.writeDecision(w, "deny")
 		return
@@ -207,7 +207,7 @@ func (hooks *restrictedClaudeHooks) handlePostToolUse(w http.ResponseWriter, eve
 	hooks.mu.Lock()
 	defer hooks.mu.Unlock()
 	call, exists := hooks.calls[event.ToolUseID]
-	if event.ToolUseID == "" || !exists || call.completed || call.tool != toolNameFromMCPID(hooks.policy, event.ToolName) {
+	if !validRestrictedClaudeCallID(event.ToolUseID) || !exists || call.completed || call.tool != toolNameFromMCPID(hooks.policy, event.ToolName) {
 		hooks.failure = "restricted Claude policy hook could not correlate a completed MCP call"
 		hooks.writeDecision(w, "")
 		return

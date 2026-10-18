@@ -390,7 +390,8 @@ func runClaudeSyntheticDispatch(t *testing.T, executable, mode string) {
 			}
 		}
 		result := <-session.Result
-		rejectedTool := result.Error == "restricted Claude attempted a tool call outside the authorized read scope" ||
+		rejectedTool := result.Error == "restricted Claude attempted an unauthorized or uncorrelated tool call" ||
+			result.Error == "restricted Claude attempted a tool call outside the authorized read scope" ||
 			result.Error == "restricted Brain MCP execution returned an unverifiable tool result"
 		if result.Status != "failed" || !rejectedTool {
 			t.Fatalf("actual backend did not fail injected native action: status=%s error=%s", result.Status, result.Error)

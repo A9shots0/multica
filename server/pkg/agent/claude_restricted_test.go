@@ -369,6 +369,60 @@ func TestRestrictedClaudeAssistantDeniesLocalAndUnknownTools(t *testing.T) {
 	}
 }
 
+func TestRestrictedClaudeRejectsUnsafeToolCallIdentifiers(t *testing.T) {
+	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
+	policy := brainAcceptancePolicy(t)
+	for _, callID := range []string{
+		"private prompt fragment\nsecond line",
+		strings.Repeat("x", restrictedClaudeMaxCallIDBytes+1),
+	} {
+		ch := make(chan Message, 1)
+		msg := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
+			Content: []claudeContentBlock{{
+				Type:  "tool_use",
+				ID:    callID,
+				Name:  "mcp__brain__brain_projects",
+				Input: mustMarshal(t, map[string]any{}),
+			}},
+		})}
+		_, failure := b.handleRestrictedAssistant(msg, ch, map[string]TokenUsage{}, policy, map[string]restrictedClaudeCall{})
+		if failure == "" || len(ch) != 0 {
+			t.Fatalf("unsafe call identifier was retained: failure=%q messages=%d", failure, len(ch))
+		}
+	}
+}
+
+func TestRestrictedClaudeHookRejectsUnsafeToolCallIdentifier(t *testing.T) {
+	policy := brainAcceptancePolicy(t)
+	hooks, hookURL, err := startRestrictedClaudeHooks(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer hooks.Close()
+	decision := postRestrictedHook(t, hookURL, restrictedClaudeHookEvent{
+		EventName: "PreToolUse",
+		ToolName:  "mcp__brain__brain_projects",
+		ToolInput: map[string]any{},
+		ToolUseID: strings.Repeat("x", restrictedClaudeMaxCallIDBytes+1),
+	})
+	if decision != "deny" || hooks.Failure() == "" {
+		t.Fatalf("unsafe hook call identifier decision=%q failure=%q", decision, hooks.Failure())
+	}
+}
+
+func TestRestrictedClaudeFailureIsMonotonic(t *testing.T) {
+	const first = "restricted Claude attempted an unauthorized or uncorrelated tool call"
+	if got := retainRestrictedClaudeFailure(first, ""); got != first {
+		t.Fatalf("later successful event cleared restricted failure: got %q, want %q", got, first)
+	}
+	if got := retainRestrictedClaudeFailure(first, "later failure"); got != first {
+		t.Fatalf("later event replaced first restricted failure: got %q, want %q", got, first)
+	}
+	if got := retainRestrictedClaudeFailure("", first); got != first {
+		t.Fatalf("first restricted failure was not recorded: got %q, want %q", got, first)
+	}
+}
+
 func TestRestrictedClaudeEndConversationIsHarmlessAndNeverAReceipt(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
 	policy := brainAcceptancePolicy(t)
