@@ -6,14 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 const (
-	BrainMCPReadOnlyMode     = "brain_mcp_read_only"
-	BrainMCPReadOnlyProvider = "claude"
+	BrainMCPAcceptanceMode     = "brain_mcp_acceptance_v1"
+	BrainMCPReadOnlyProvider   = "claude"
+	FrozenCompanyEventsAfter   = int64(199900)
+	FrozenCompanyEventsThrough = int64(199901)
+	FrozenCompanyEventsLimit   = int64(1)
 )
 
 var brainMCPServerNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`)
+var brainMCPRevisionPattern = regexp.MustCompile(`^[a-fA-F0-9]{64}$`)
 
 var brainMCPToolNames = [...]string{
 	"brain_resolve",
@@ -29,28 +34,46 @@ var brainMCPToolNames = [...]string{
 type Request struct {
 	Mode      string `json:"mode"`
 	MCPServer string `json:"mcp_server"`
+	ProjectID string `json:"project_id"`
+}
+
+type CompanyEventsSelector struct {
+	AfterID   int64 `json:"afterId"`
+	ThroughID int64 `json:"throughId"`
+	Limit     int64 `json:"limit"`
 }
 
 // ExecutionPolicy is persisted with a single task and echoed in its claim.
 type ExecutionPolicy struct {
-	Mode      string   `json:"mode"`
-	Provider  string   `json:"provider"`
-	MCPServer string   `json:"mcp_server"`
-	Tools     []string `json:"tools"`
+	Mode                  string                `json:"mode"`
+	Provider              string                `json:"provider"`
+	MCPServer             string                `json:"mcp_server"`
+	ProjectID             string                `json:"project_id"`
+	Tools                 []string              `json:"tools"`
+	CompanyEventsSelector CompanyEventsSelector `json:"company_events_selector"`
 }
 
-func NewBrainMCPReadOnly(request Request) (*ExecutionPolicy, error) {
-	if request.Mode != BrainMCPReadOnlyMode {
+func NewBrainMCPAcceptance(request Request) (*ExecutionPolicy, error) {
+	if request.Mode != BrainMCPAcceptanceMode {
 		return nil, fmt.Errorf("unsupported task execution policy mode %q", request.Mode)
 	}
 	if !brainMCPServerNamePattern.MatchString(request.MCPServer) {
 		return nil, errors.New("task execution policy requires a valid MCP server name")
 	}
+	if !validBrainProjectID(request.ProjectID) {
+		return nil, errors.New("task execution policy requires an exact Brain project id")
+	}
 	return &ExecutionPolicy{
-		Mode:      BrainMCPReadOnlyMode,
+		Mode:      BrainMCPAcceptanceMode,
 		Provider:  BrainMCPReadOnlyProvider,
 		MCPServer: request.MCPServer,
+		ProjectID: request.ProjectID,
 		Tools:     BrainMCPToolIDs(request.MCPServer),
+		CompanyEventsSelector: CompanyEventsSelector{
+			AfterID:   FrozenCompanyEventsAfter,
+			ThroughID: FrozenCompanyEventsThrough,
+			Limit:     FrozenCompanyEventsLimit,
+		},
 	}, nil
 }
 
@@ -58,7 +81,7 @@ func Validate(policy *ExecutionPolicy) error {
 	if policy == nil {
 		return nil
 	}
-	if policy.Mode != BrainMCPReadOnlyMode {
+	if policy.Mode != BrainMCPAcceptanceMode {
 		return fmt.Errorf("unsupported task execution policy mode %q", policy.Mode)
 	}
 	if policy.Provider != BrainMCPReadOnlyProvider {
@@ -66,6 +89,9 @@ func Validate(policy *ExecutionPolicy) error {
 	}
 	if !brainMCPServerNamePattern.MatchString(policy.MCPServer) {
 		return errors.New("task execution policy requires a valid MCP server name")
+	}
+	if !validBrainProjectID(policy.ProjectID) {
+		return errors.New("task execution policy requires an exact Brain project id")
 	}
 	expected := BrainMCPToolIDs(policy.MCPServer)
 	if len(policy.Tools) != len(expected) {
@@ -83,7 +109,66 @@ func Validate(policy *ExecutionPolicy) error {
 			return errors.New("task execution policy must contain the exact Brain MCP tool allowlist")
 		}
 	}
+	if policy.CompanyEventsSelector != (CompanyEventsSelector{
+		AfterID:   FrozenCompanyEventsAfter,
+		ThroughID: FrozenCompanyEventsThrough,
+		Limit:     FrozenCompanyEventsLimit,
+	}) {
+		return errors.New("task execution policy must contain the frozen company_events selector")
+	}
 	return nil
+}
+
+// AllowsToolInput enforces exact, versioned acceptance selectors before Claude
+// calls the MCP server. It does not by itself authorize brain_read documents;
+// callers must also correlate those IDs and revisions to a verified context.
+func AllowsToolInput(policy *ExecutionPolicy, tool string, input map[string]any) bool {
+	if policy == nil || !IsBrainMCPReadOnlyTool(policy, "mcp__"+policy.MCPServer+"__"+tool) || input == nil {
+		return false
+	}
+	switch tool {
+	case "brain_resolve":
+		identity, ok := input["identity"].(string)
+		return len(input) == 1 && ok && identity == "not-an-enrolled-project"
+	case "brain_context":
+		project, ok := input["project"].(string)
+		return len(input) == 1 && ok && project == policy.ProjectID
+	case "brain_read":
+		id, idOK := input["id"].(string)
+		revision, revisionOK := input["revision"].(string)
+		return len(input) == 2 && idOK && validBrainProjectID(id) &&
+			revisionOK && brainMCPRevisionPattern.MatchString(revision)
+	case "brain_company_projects", "brain_projects":
+		return len(input) == 0
+	case "company_events":
+		return allowsCompanyEventsInput(policy, input)
+	default:
+		return false
+	}
+}
+
+func allowsCompanyEventsInput(policy *ExecutionPolicy, input map[string]any) bool {
+	if policy == nil || len(input) != 3 {
+		return false
+	}
+	afterID, afterOK := input["afterId"].(float64)
+	throughID, throughOK := input["throughId"].(float64)
+	limit, limitOK := input["limit"].(float64)
+	return afterOK && afterID == float64(policy.CompanyEventsSelector.AfterID) &&
+		throughOK && throughID == float64(policy.CompanyEventsSelector.ThroughID) &&
+		limitOK && limit == float64(policy.CompanyEventsSelector.Limit)
+}
+
+func validBrainProjectID(value string) bool {
+	if value == "" || len(value) > 256 || strings.TrimSpace(value) != value {
+		return false
+	}
+	for _, r := range value {
+		if r < 0x20 || r == 0x7f {
+			return false
+		}
+	}
+	return true
 }
 
 func BrainMCPToolIDs(serverName string) []string {

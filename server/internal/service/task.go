@@ -5626,14 +5626,14 @@ func (s *TaskService) RerunIssueWithExecutionPolicy(ctx context.Context, issueID
 		}
 		if executionPolicy != nil {
 			if !targetAgent.RuntimeID.Valid {
-				return nil, errors.New("Brain MCP read-only task policy requires an assigned Claude runtime")
+				return nil, errors.New("Brain MCP acceptance requires an assigned Claude runtime")
 			}
 			targetRuntime, err := s.Queries.GetAgentRuntime(ctx, targetAgent.RuntimeID)
 			if err != nil {
 				return nil, fmt.Errorf("load target runtime for task execution policy: %w", err)
 			}
 			if targetRuntime.Provider != taskpolicy.BrainMCPReadOnlyProvider {
-				return nil, fmt.Errorf("Brain MCP read-only task policy requires a Claude runtime, got %q", targetRuntime.Provider)
+				return nil, fmt.Errorf("Brain MCP acceptance requires a Claude runtime, got %q", targetRuntime.Provider)
 			}
 		}
 		if canInvoke != nil && !canInvoke(targetAgent) {

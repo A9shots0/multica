@@ -2123,7 +2123,7 @@ func (h *Handler) buildClaimedTaskResponse(r *http.Request, task *db.AgentTaskQu
 			"task_id", uuidToString(task.ID), "error", policyErr)
 		return resp, deliveredCommentIDs, agentSkillCount, builtinSkillCount, h.failClaimedTaskBeforeLaunch(
 			r.Context(), task,
-			"The task's restricted execution policy is invalid. Retry without that policy or correct the task.",
+			"The task's restricted execution policy is invalid. Assign it to a policy-capable Claude runtime and correct the task policy before retrying.",
 			taskfailure.ReasonInvalidTaskIdentity,
 			"error_invalid_task_execution_policy", http.StatusConflict, "invalid task execution policy",
 		)
@@ -2719,7 +2719,7 @@ func (h *Handler) buildClaimedTaskResponse(r *http.Request, task *db.AgentTaskQu
 				if src.WorkDir.Valid {
 					resp.PriorWorkDir = src.WorkDir.String
 				}
-				if !service.ResumeUnsafeFailure(src.FailureReason.String, src.Error.String) &&
+				if executionPolicy == nil && !service.ResumeUnsafeFailure(src.FailureReason.String, src.Error.String) &&
 					src.SessionID.Valid && src.RuntimeID == task.RuntimeID {
 					resp.PriorSessionID = src.SessionID.String
 				}

@@ -1,0 +1,38 @@
+---
+title: Task-scoped Brain MCP acceptance
+description: How the opt-in Brain MCP acceptance policy scopes one task and what its receipts prove.
+---
+
+The `brain_mcp_acceptance_v1` execution policy is a versioned, opt-in mode for one issue rerun. It is not a general Brain reader and does not change shared agent, provider, MCP, or daemon defaults. An ordinary rerun remains unchanged.
+
+## Opting in
+
+Send the policy on `POST /api/issues/{id}/rerun`:
+
+```json
+{
+  "execution_policy": {
+    "mode": "brain_mcp_acceptance_v1",
+    "mcp_server": "brain",
+    "project_id": "exact-enrolled-project-id"
+  }
+}
+```
+
+The mode and provider are fixed. `mcp_server` must name an already configured managed MCP server, and `project_id` must be the exact project identity selected for this task. The daemon accepts the task only when it supports execution policies. Policy-bearing reruns and retries start without a prior provider session; they must not be retried without the policy as an equivalent fallback.
+
+## Fixed acceptance scope
+
+The policy permits only Claude and the named MCP server. Its tool input gate is fixed to the versioned acceptance checks: resolve one fixed unknown identity; read context for the selected project; read an immutable cited document revision; list the caller's company projects and projects; and fetch the one frozen `company_events` range. Other tool names, selectors, and inputs are denied before MCP dispatch. A cited document ID and revision must come from the verified context for the selected project.
+
+Claude must support the fail-closed task-local hook configuration (minimum CLI version `2.1.295`). The hook is configured to deny out-of-scope tool names and inputs before dispatch and correlate completed calls for receipt verification. A failed or unavailable hook, incompatible CLI, unmanaged server configuration, unsupported daemon, or missing verification evidence fails the restricted task; it does not silently downgrade to unrestricted execution.
+
+Current automated protocol tests use synthetic events and a fake CLI. They do not establish compatibility with an installed Claude CLI; verify the supported CLI hook protocol before calling a runtime ready for this mode.
+
+## Receipt limits and evidence boundaries
+
+Receipts are bounded by task-level call, count, and byte limits. Durable task history records only minimal operational metadata: server, tool, call ID, status, measured PreToolUse-to-PostToolUse hook interval, and result byte count. This hook interval is not a measurement from inside the MCP connector. Sanitized source identifiers, hashes, and revisions are transient verification evidence and are not persisted in task output.
+
+A successful receipt proves that the configured tool returned data matching the checked selector and response shape, and that the local hook observed the correlated call. It does not prove the underlying Brain record is true, complete, fresh beyond its reported metadata, or authoritative. The expected fixed HTTP 404 refusal is accepted only for its exact correlated request and response; it cannot distinguish a nonexistent resource from one hidden by access controls. Historical document reads are verified against the requested immutable revision and body hash, not against the current revision pointer.
+
+The acceptance fixtures and selectors are versioned test contracts. They are not live Brain receipts, and accepting them does not authorize production execution or runtime activation.

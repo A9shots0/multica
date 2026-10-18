@@ -1,11 +1,14 @@
 package agent
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -16,11 +19,12 @@ import (
 	"github.com/multica-ai/multica/server/pkg/taskpolicy"
 )
 
-func brainReadOnlyPolicy(t *testing.T) *taskpolicy.ExecutionPolicy {
+func brainAcceptancePolicy(t *testing.T) *taskpolicy.ExecutionPolicy {
 	t.Helper()
-	policy, err := taskpolicy.NewBrainMCPReadOnly(taskpolicy.Request{
-		Mode:      taskpolicy.BrainMCPReadOnlyMode,
+	policy, err := taskpolicy.NewBrainMCPAcceptance(taskpolicy.Request{
+		Mode:      taskpolicy.BrainMCPAcceptanceMode,
 		MCPServer: "brain",
+		ProjectID: "project-1",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -33,11 +37,11 @@ func TestClaudeVersionAtLeast(t *testing.T) {
 		value string
 		want  bool
 	}{
-		{"2.1.247", false},
-		{"2.1.248", true},
-		{"Claude Code 2.1.273", true},
-		{"2.1.248-beta", false},
-		{"2.1.273.4", false},
+		{"2.1.294", false},
+		{"2.1.295", true},
+		{"Claude Code 2.1.300", true},
+		{"2.1.295-beta", false},
+		{"2.1.300.4", false},
 		{"unknown", false},
 		{"", false},
 	} {
@@ -48,7 +52,7 @@ func TestClaudeVersionAtLeast(t *testing.T) {
 }
 
 func TestBuildRestrictedClaudeArgsExposeOnlyExactMCPTools(t *testing.T) {
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	args, err := buildRestrictedClaudeArgs(ExecOptions{
 		ExecutionPolicy:    policy,
 		Model:              "claude-sonnet",
@@ -92,17 +96,17 @@ func TestBuildRestrictedClaudeArgsExposeOnlyExactMCPTools(t *testing.T) {
 }
 
 func TestValidateRestrictedClaudeConfigFailsClosed(t *testing.T) {
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	config := json.RawMessage(`{"mcpServers":{"brain":{"type":"http","url":"https://brain.invalid/mcp"},"other":{"type":"http","url":"https://other.invalid/mcp"}}}`)
 	for _, tc := range []struct {
 		name string
 		cfg  Config
 		opts ExecOptions
 	}{
-		{name: "unsupported version", cfg: Config{BuiltinRuntime: true, CLIVersion: "2.1.247"}, opts: ExecOptions{ExecutionPolicy: policy, McpConfig: config}},
+		{name: "unsupported version", cfg: Config{BuiltinRuntime: true, CLIVersion: "2.1.294"}, opts: ExecOptions{ExecutionPolicy: policy, McpConfig: config}},
 		{name: "unknown version", cfg: Config{BuiltinRuntime: true}, opts: ExecOptions{ExecutionPolicy: policy, McpConfig: config}},
-		{name: "custom runtime", cfg: Config{CLIVersion: "2.1.273"}, opts: ExecOptions{ExecutionPolicy: policy, McpConfig: config}},
-		{name: "missing server", cfg: Config{BuiltinRuntime: true, CLIVersion: "2.1.273"}, opts: ExecOptions{ExecutionPolicy: policy, McpConfig: json.RawMessage(`{"mcpServers":{"other":{"type":"http","url":"https://other.invalid/mcp"}}}`)}},
+		{name: "custom runtime", cfg: Config{CLIVersion: "2.1.300"}, opts: ExecOptions{ExecutionPolicy: policy, McpConfig: config}},
+		{name: "missing server", cfg: Config{BuiltinRuntime: true, CLIVersion: "2.1.300"}, opts: ExecOptions{ExecutionPolicy: policy, McpConfig: json.RawMessage(`{"mcpServers":{"other":{"type":"http","url":"https://other.invalid/mcp"}}}`)}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, err := validateRestrictedClaudeConfig(tc.cfg, tc.opts); err == nil {
@@ -112,15 +116,173 @@ func TestValidateRestrictedClaudeConfigFailsClosed(t *testing.T) {
 	}
 }
 
+func TestRestrictedClaudeHooksBlockOutOfScopeCallsBeforeDispatch(t *testing.T) {
+	policy := brainAcceptancePolicy(t)
+	hooks, hookURL, err := startRestrictedClaudeHooks(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer hooks.Close()
+
+	settings, err := hooks.settingsJSON(hookURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range []string{`"PreToolUse"`, `"PostToolUse"`, `"PostToolUseFailure"`, `"onFailure":"block"`} {
+		if !strings.Contains(string(settings), value) {
+			t.Fatalf("hook settings omit %s: %s", value, settings)
+		}
+	}
+
+	revision := strings.Repeat("a", 64)
+	contextPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":"project-1"},"documents":[{"id":"doc-1","revision":%q}]}`, revision)
+	contextResponse := map[string]any{"content": []any{map[string]any{"type": "text", "text": contextPayload}}}
+	preContext := restrictedClaudeHookEvent{
+		EventName: "PreToolUse", ToolName: "mcp__brain__brain_context",
+		ToolInput: map[string]any{"project": "project-1"}, ToolUseID: "ctx-call",
+	}
+	if decision := postRestrictedHook(t, hookURL, preContext); decision != "allow" {
+		t.Fatalf("exact context request decision = %q, want allow", decision)
+	}
+	postContext := restrictedClaudeHookEvent{
+		EventName: "PostToolUse", ToolName: "mcp__brain__brain_context",
+		ToolResponse: mustMarshal(t, contextResponse), ToolUseID: "ctx-call",
+	}
+	if decision := postRestrictedHook(t, hookURL, postContext); decision != "" {
+		t.Fatalf("context completion returned a permission decision: %q", decision)
+	}
+	if len(hooks.authorizedDocs) != 1 || hooks.authorizedDocs["doc-1"] != revision {
+		t.Fatalf("hook retained unexpected context state: %#v", hooks.authorizedDocs)
+	}
+
+	readInput := map[string]any{"id": "doc-1", "revision": revision}
+	if decision := postRestrictedHook(t, hookURL, restrictedClaudeHookEvent{
+		EventName: "PreToolUse", ToolName: "mcp__brain__brain_read",
+		ToolInput: readInput, ToolUseID: "read-call",
+	}); decision != "allow" {
+		t.Fatalf("cited immutable read decision = %q, want allow", decision)
+	}
+	for _, denied := range []struct {
+		name  string
+		tool  string
+		input map[string]any
+	}{
+		{"uncited document", "mcp__brain__brain_read", map[string]any{"id": "other", "revision": revision}},
+		{"wrong revision", "mcp__brain__brain_read", map[string]any{"id": "doc-1", "revision": strings.Repeat("b", 64)}},
+		{"query broadening", "mcp__brain__brain_context", map[string]any{"project": "project-1", "q": "everything"}},
+		{"broader event range", "mcp__brain__company_events", map[string]any{"afterId": float64(1), "throughId": float64(199901), "limit": float64(1)}},
+	} {
+		t.Run(denied.name, func(t *testing.T) {
+			if hooks.allowsToolInput(strings.TrimPrefix(denied.tool, "mcp__brain__"), denied.input) {
+				t.Fatalf("out-of-scope request was authorized: %s", denied.name)
+			}
+			decision := postRestrictedHook(t, hookURL, restrictedClaudeHookEvent{
+				EventName: "PreToolUse", ToolName: denied.tool,
+				ToolInput: denied.input, ToolUseID: "denied-" + strings.ReplaceAll(denied.name, " ", "-"),
+			})
+			if decision != "deny" {
+				t.Fatalf("out-of-scope request decision = %q, want deny", decision)
+			}
+		})
+	}
+	if hooks.Failure() == "" {
+		t.Fatal("an out-of-scope tool attempt did not fail the restricted task")
+	}
+}
+
+func TestRestrictedClaudeHookEnforcesTaskCallLimit(t *testing.T) {
+	policy := brainAcceptancePolicy(t)
+	hooks, hookURL, err := startRestrictedClaudeHooks(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer hooks.Close()
+	for i := 0; i < restrictedClaudeMaxToolCalls; i++ {
+		decision := postRestrictedHook(t, hookURL, restrictedClaudeHookEvent{
+			EventName: "PreToolUse", ToolName: "mcp__brain__brain_projects",
+			ToolInput: map[string]any{}, ToolUseID: fmt.Sprintf("call-%d", i),
+		})
+		if decision != "allow" {
+			t.Fatalf("tool call %d was denied before the limit: %q", i+1, decision)
+		}
+	}
+	decision := postRestrictedHook(t, hookURL, restrictedClaudeHookEvent{
+		EventName: "PreToolUse", ToolName: "mcp__brain__brain_projects",
+		ToolInput: map[string]any{}, ToolUseID: "call-over-limit",
+	})
+	if decision != "deny" || hooks.Failure() == "" {
+		t.Fatalf("over-limit tool call decision=%q failure=%q", decision, hooks.Failure())
+	}
+}
+
+func TestRestrictedClaudeReceiptBudgetFailsOnAggregateCountAndBytes(t *testing.T) {
+	policy := brainAcceptancePolicy(t)
+	content := json.RawMessage(`[{"type":"text","text":"brain request rejected (HTTP 404)"}]`)
+	input := map[string]any{"identity": "not-an-enrolled-project"}
+	for _, tc := range []struct {
+		name   string
+		budget restrictedClaudeReceiptBudget
+		want   string
+	}{
+		{"count", restrictedClaudeReceiptBudget{count: restrictedClaudeMaxReceipts}, "receipt count limit"},
+		{"aggregate bytes", restrictedClaudeReceiptBudget{evidenceBytes: restrictedClaudeMaxEvidenceBytes - 1}, "receipt byte limit"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			calls := map[string]restrictedClaudeCall{
+				"resolve-call": {tool: "brain_resolve", input: input},
+			}
+			hooks := completedRestrictedHooks(policy, "brain_resolve", "resolve-call", time.Millisecond)
+			user := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
+				Content: []claudeContentBlock{{Type: "tool_result", ToolUseID: "resolve-call", Content: content, IsError: true}},
+			})}
+			failure, receipts, unverifiable := (&claudeBackend{}).handleRestrictedUser(
+				t.Context(), user, make(chan Message, 1), policy, calls, hooks, &tc.budget,
+			)
+			if failure == "" || !strings.Contains(failure, tc.want) || len(receipts) != 0 || !unverifiable {
+				t.Fatalf("budget failure=%q unverifiable=%t receipts=%s", failure, unverifiable, receipts)
+			}
+		})
+	}
+}
+
+func postRestrictedHook(t *testing.T, url string, event restrictedClaudeHookEvent) string {
+	t.Helper()
+	body, err := json.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var result struct {
+		HookSpecificOutput struct {
+			PermissionDecision string `json:"permissionDecision"`
+		} `json:"hookSpecificOutput"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("hook status = %d", resp.StatusCode)
+	}
+	return result.HookSpecificOutput.PermissionDecision
+}
+
 func TestRestrictedClaudeExecuteRejectsUnsupportedVersionBeforeStartingCLI(t *testing.T) {
 	b := &claudeBackend{cfg: Config{
 		ExecutablePath: "/nonexistent/claude",
 		BuiltinRuntime: true,
-		CLIVersion:     "2.1.247",
+		CLIVersion:     "2.1.294",
 		Logger:         slog.Default(),
 	}}
 	_, err := b.Execute(t.Context(), "private task prompt", ExecOptions{
-		ExecutionPolicy: brainReadOnlyPolicy(t),
+		ExecutionPolicy: brainAcceptancePolicy(t),
 		McpConfig:       json.RawMessage(`{"mcpServers":{"brain":{"type":"http","url":"https://brain.invalid/mcp"}}}`),
 	})
 	if err == nil || !strings.Contains(err.Error(), minRestrictedClaudeVersion) {
@@ -129,10 +291,10 @@ func TestRestrictedClaudeExecuteRejectsUnsupportedVersionBeforeStartingCLI(t *te
 }
 
 func TestValidateRestrictedClaudeConfigFiltersServersWithoutMutatingInput(t *testing.T) {
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	config := json.RawMessage(`{"mcpServers":{"brain":{"type":"http","url":"https://brain.invalid/mcp"},"other":{"type":"http","url":"https://other.invalid/mcp"}}}`)
 	before := append(json.RawMessage(nil), config...)
-	filtered, err := validateRestrictedClaudeConfig(Config{BuiltinRuntime: true, CLIVersion: "2.1.273"}, ExecOptions{
+	filtered, err := validateRestrictedClaudeConfig(Config{BuiltinRuntime: true, CLIVersion: "2.1.300"}, ExecOptions{
 		ExecutionPolicy: policy,
 		McpConfig:       config,
 	})
@@ -155,7 +317,7 @@ func TestValidateRestrictedClaudeConfigFiltersServersWithoutMutatingInput(t *tes
 
 func TestRestrictedClaudeAssistantDeniesLocalAndUnknownTools(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	for _, tool := range []string{"Bash", "Read", "Write", "Edit", "mcp__other__brain_read", "mcp__brain__unknown"} {
 		ch := make(chan Message, 2)
 		msg := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
@@ -173,7 +335,7 @@ func TestRestrictedClaudeAssistantDeniesLocalAndUnknownTools(t *testing.T) {
 
 func TestRestrictedClaudeEndConversationIsHarmlessAndNeverAReceipt(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	calls := map[string]restrictedClaudeCall{}
 	assistant := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
 		Content: []claudeContentBlock{{Type: "tool_use", ID: "end-1", Name: "EndConversation"}},
@@ -187,7 +349,7 @@ func TestRestrictedClaudeEndConversationIsHarmlessAndNeverAReceipt(t *testing.T)
 		Content: []claudeContentBlock{{Type: "tool_result", ToolUseID: "end-1", Content: json.RawMessage(`"private control result"`)}},
 	})}
 	output := make(chan Message, 1)
-	failure, receipts, unverifiable := b.handleRestrictedUser(user, output, policy, calls)
+	failure, receipts, unverifiable := b.handleRestrictedUser(t.Context(), user, output, policy, calls, nil, &restrictedClaudeReceiptBudget{})
 	if failure != "" || unverifiable || len(receipts) != 0 || len(output) != 0 || len(calls) != 0 {
 		t.Fatalf("EndConversation result affected task evidence: failure=%q unverifiable=%t receipts=%s messages=%d calls=%+v", failure, unverifiable, receipts, len(output), calls)
 	}
@@ -195,13 +357,13 @@ func TestRestrictedClaudeEndConversationIsHarmlessAndNeverAReceipt(t *testing.T)
 
 func TestRestrictedClaudeAssistantDoesNotExposeToolInput(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	ch := make(chan Message, 1)
 	calls := map[string]restrictedClaudeCall{}
 	msg := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
 		Content: []claudeContentBlock{{
 			Type: "tool_use", ID: "call-1", Name: "mcp__brain__brain_read",
-			Input: mustMarshal(t, map[string]any{"documentId": "private-doc-id", "query": "private query"}),
+			Input: mustMarshal(t, map[string]any{"id": "private-doc-id", "revision": strings.Repeat("a", 64)}),
 		}},
 	})}
 	turn, failure := b.handleRestrictedAssistant(msg, ch, map[string]TokenUsage{}, policy, calls)
@@ -219,7 +381,7 @@ func TestRestrictedClaudeAssistantDoesNotExposeToolInput(t *testing.T) {
 
 func TestRestrictedClaudeEventToolUsesExactFrozenRange(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	for _, tc := range []struct {
 		name  string
 		input map[string]any
@@ -250,16 +412,19 @@ func TestRestrictedClaudeEventToolUsesExactFrozenRange(t *testing.T) {
 	}
 }
 
-func TestRestrictedClaudeReceiptOmitsDocumentBodyAndMeasuresDuration(t *testing.T) {
+func TestRestrictedClaudeReceiptOmitsDocumentBodyAndAcceptsHistoricalRevision(t *testing.T) {
 	body := "private document body"
 	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
-	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-04-01T12:00:00Z","dataPolicy":"authorized","document":{"id":"doc-1","project":"project-1","revision":"%s","body":%q,"bytes":%d,"truncated":false,"currentRevision":"%s","available":true}}`, revision, body, len(body), revision)
+	currentRevision := strings.Repeat("e", 64)
+	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-04-01T12:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-04-01T12:00:00Z"},"document":{"id":"doc-1","project":"project-1","revision":"%s","body":%q,"bytes":%d,"truncated":false,"currentRevision":"%s","available":true}}`, revision, body, len(body), currentRevision)
 	content := json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
-	got, verified := restrictedClaudeReceipt("brain_read", "call-1", content, false, 1500*time.Millisecond)
+	policy := brainAcceptancePolicy(t)
+	input := map[string]any{"id": "doc-1", "revision": revision}
+	got, verified := restrictedClaudeReceiptWithInput("brain_read", "call-1", content, false, 1500*time.Millisecond, input, policy)
 	if !verified {
 		t.Fatalf("Brain read receipt not verified: %s", got)
 	}
-	for _, want := range []string{`"documentId":"doc-1"`, `"projectId":"project-1"`, `"bodySha256Verified":true`, `"byteLengthVerified":true`, `"durationMs":1500`, `"durationSource":"caller_monotonic"`} {
+	for _, want := range []string{`"documentId":"doc-1"`, `"projectId":"project-1"`, `"revision":"` + revision + `"`, `"currentRevision":"` + currentRevision + `"`, `"bodySha256Verified":true`, `"byteLengthVerified":true`, `"durationMs":1500`, `"durationSource":"pre_post_tool_hook_monotonic"`} {
 		if !strings.Contains(got, want) {
 			t.Errorf("receipt omits %s: %s", want, got)
 		}
@@ -269,9 +434,92 @@ func TestRestrictedClaudeReceiptOmitsDocumentBodyAndMeasuresDuration(t *testing.
 	}
 }
 
+func TestRestrictedClaudeReadReceiptCorrelatesRequestedDocumentAndRevision(t *testing.T) {
+	body := "synthetic body"
+	documentID := "docs/synthetic report.md"
+	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+	payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-04-01T12:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-04-01T12:00:00Z"},"document":{"id":%q,"project":"project-1","revision":"%s","body":%q,"bytes":%d,"truncated":false,"currentRevision":"%s","available":true}}`, documentID, revision, body, len(body), strings.Repeat("e", 64))
+	content := json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
+	policy := brainAcceptancePolicy(t)
+	for _, input := range []map[string]any{
+		{"id": "other-doc", "revision": revision},
+		{"id": documentID, "revision": strings.Repeat("f", 64)},
+	} {
+		got, verified := restrictedClaudeReceiptWithInput("brain_read", "call-1", content, false, time.Second, input, policy)
+		if verified || !strings.Contains(got, `"receiptVerified":false`) {
+			t.Fatalf("mismatched requested read was accepted: input=%v receipt=%s", input, got)
+		}
+	}
+	got, verified := restrictedClaudeReceiptWithInput("brain_read", "call-1", content, false, time.Second,
+		map[string]any{"id": documentID, "revision": revision}, policy)
+	if !verified || !strings.Contains(got, `"documentId":"docs/synthetic report.md"`) {
+		t.Fatalf("valid path-based document ID was rejected: verified=%t receipt=%s", verified, got)
+	}
+}
+
+func TestRestrictedClaudeExpectedUnknownProject404IsVerifiedWithoutErrorText(t *testing.T) {
+	policy := brainAcceptancePolicy(t)
+	content := json.RawMessage(`[{"type":"text","text":"brain request rejected (HTTP 404)"}]`)
+	input := map[string]any{"identity": "not-an-enrolled-project"}
+	got, verified := restrictedClaudeReceiptWithInput("brain_resolve", "resolve-call", content, true, time.Second, input, policy)
+	if !verified {
+		t.Fatalf("expected exact 404 refusal was rejected: %s", got)
+	}
+	for _, want := range []string{`"expectedRefusal":true`, `"httpStatus":404`, `"requestedIdentity":"not-an-enrolled-project"`, `"receiptVerified":true`} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("expected refusal receipt omitted %s: %s", want, got)
+		}
+	}
+	if strings.Contains(got, "brain request rejected") {
+		t.Fatalf("raw refusal prose escaped: %s", got)
+	}
+	success := json.RawMessage(`[{"type":"text","text":"{\"schemaVersion\":\"silvermediums.brain.v2\",\"servedAt\":\"2000-01-01T00:00:00Z\",\"dataPolicy\":\"reference-only\",\"connection\":{\"state\":\"online\",\"checkedAt\":\"2000-01-01T00:00:00Z\"},\"project\":{\"id\":\"alpha\"}}"}]`)
+	if got, verified := restrictedClaudeReceiptWithInput("brain_resolve", "resolve-call", success, false, time.Second, input, policy); verified {
+		t.Fatalf("successful resolution incorrectly satisfied the fixed unknown-project refusal: %s", got)
+	}
+	for _, tc := range []struct {
+		name  string
+		input map[string]any
+		text  string
+	}{
+		{"wrong identity", map[string]any{"identity": "another-project"}, "brain request rejected (HTTP 404)"},
+		{"auth failure", input, "brain request rejected (HTTP 401)"},
+		{"server failure", input, "brain request rejected (HTTP 500)"},
+		{"unstructured failure", input, "not found"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			raw := json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, tc.text))
+			got, verified := restrictedClaudeReceiptWithInput("brain_resolve", "resolve-call", raw, true, time.Second, tc.input, policy)
+			if verified || strings.Contains(got, tc.text) {
+				t.Fatalf("unexpected refusal accepted or raw error retained: verified=%t receipt=%s", verified, got)
+			}
+		})
+	}
+}
+
+func TestRestrictedClaudeContextReceiptCorrelatesProjectAndOnlineState(t *testing.T) {
+	policy := brainAcceptancePolicy(t)
+	revision := strings.Repeat("a", 64)
+	makeContent := func(project string, state string) json.RawMessage {
+		payload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":%q,"checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":%q},"documents":[{"id":"doc-1","revision":%q}]}`, state, project, revision)
+		return json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
+	}
+	input := map[string]any{"project": "project-1"}
+	got, verified := restrictedClaudeReceiptWithInput("brain_context", "context-call", makeContent("project-1", "online"), false, time.Second, input, policy)
+	if !verified || !strings.Contains(got, `"projectId":"project-1"`) {
+		t.Fatalf("exact online context was rejected: verified=%t receipt=%s", verified, got)
+	}
+	for _, content := range []json.RawMessage{makeContent("different-project", "online"), makeContent("project-1", "offline")} {
+		if got, verified := restrictedClaudeReceiptWithInput("brain_context", "context-call", content, false, time.Second, input, policy); verified {
+			t.Fatalf("mismatched context was accepted: %s", got)
+		}
+	}
+}
+
 func TestRestrictedClaudeReceiptFailsClosedForUnknownCompanyEventSchema(t *testing.T) {
 	content := json.RawMessage(`[{"type":"text","text":"{\"event_id\":\"199901\",\"citation\":\"citation\"}"}]`)
-	got, verified := restrictedClaudeReceipt("company_events", "call-1", content, false, time.Second)
+	got, verified := restrictedClaudeReceiptWithInput("company_events", "call-1", content, false, time.Second,
+		map[string]any{"afterId": float64(199900), "throughId": float64(199901), "limit": float64(1)}, brainAcceptancePolicy(t))
 	if verified || strings.Contains(got, "199901") || strings.Contains(got, "citation") {
 		t.Fatalf("unknown company event response was treated as verified: verified=%t receipt=%s", verified, got)
 	}
@@ -280,8 +528,8 @@ func TestRestrictedClaudeReceiptFailsClosedForUnknownCompanyEventSchema(t *testi
 func TestRestrictedClaudeCompanyEventsReceiptKeepsKnownEnvelopeUnverified(t *testing.T) {
 	content := json.RawMessage(`[{"type":"text","text":"{\"schemaVersion\":\"silvermediums.brain.v2\",\"servedAt\":\"2026-10-18T01:00:00Z\",\"dataPolicy\":\"authorized\",\"items\":[{}],\"next_after_id\":199901,\"snapshot_through_id\":199901}"}]`)
 	input := map[string]any{"afterId": float64(199900), "throughId": float64(199901), "limit": float64(1)}
-	got, verified := restrictedClaudeReceiptWithInput("company_events", "call-1", content, false, 1500*time.Millisecond, input)
-	for _, want := range []string{`"eventSelector":{"afterId":199900,"limit":1,"throughId":199901}`, `"eventItemsTotal":1`, `"nextAfterId":199901`, `"snapshotThroughId":199901`, `"eventRowReceipt":"unavailable"`, `"receiptVerified":false`, `"durationMs":1500`, `"durationSource":"caller_monotonic"`} {
+	got, verified := restrictedClaudeReceiptWithInput("company_events", "call-1", content, false, 1500*time.Millisecond, input, brainAcceptancePolicy(t))
+	for _, want := range []string{`"receiptVerified":false`} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("unverified event receipt omitted %s: %s", want, got)
 		}
@@ -291,9 +539,9 @@ func TestRestrictedClaudeCompanyEventsReceiptKeepsKnownEnvelopeUnverified(t *tes
 	}
 }
 
-func TestRestrictedClaudeCompanyEventsResultIsPersistedAsUnverifiedSafeSummary(t *testing.T) {
+func TestRestrictedClaudeCompanyEventsResultPersistsOnlyOperationalSummary(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
 	input := map[string]any{"afterId": float64(199900), "throughId": float64(199901), "limit": float64(1)}
 	calls := map[string]restrictedClaudeCall{}
 	assistant := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
@@ -305,24 +553,25 @@ func TestRestrictedClaudeCompanyEventsResultIsPersistedAsUnverifiedSafeSummary(t
 	if _, failure := b.handleRestrictedAssistant(assistant, make(chan Message, 1), map[string]TokenUsage{}, policy, calls); failure != "" {
 		t.Fatalf("exact event selector was rejected: %s", failure)
 	}
-	payload := `{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-10-18T01:00:00Z","dataPolicy":"authorized","items":[{"id":"199901","citation":"SENSITIVE_CITATION","body":"SENSITIVE_EVENT_BODY"}],"next_after_id":199901,"snapshot_through_id":199901}`
+	payload := `{"schemaVersion":"silvermediums.brain.v2","servedAt":"2026-10-18T01:00:00Z","dataPolicy":"authorized","connection":{"state":"online","checkedAt":"2026-10-18T01:00:00Z"},"items":[{"id":199901,"evidence_ref":"source_event:199901","producer":"synthetic_test","event_type":"watcher.status","payload_schema_version":1,"observed_at":"2026-10-18T00:00:00Z","received_at":"2026-10-18T00:00:01Z","complete":true,"scope":{"record_id":199901},"payload_sha256":"39f618e2cc21a328899a316380c29da2298b6ab9d94b71af2c3402595dd9ea92","payload":{"body":"SENSITIVE_EVENT_BODY"}}],"has_more":false,"next_after_id":199901,"snapshot_through_id":199901}`
 	content := json.RawMessage(fmt.Sprintf(`[{"type":"text","text":%q}]`, payload))
 	user := claudeSDKMessage{Message: mustMarshal(t, claudeMessageContent{
 		Content: []claudeContentBlock{{Type: "tool_result", ToolUseID: "event-call", Content: content}},
 	})}
 	output := make(chan Message, 1)
-	failure, receipts, unverifiable := b.handleRestrictedUser(user, output, policy, calls)
-	if failure != "" || !unverifiable || len(receipts) != 1 {
+	hooks := completedRestrictedHooks(policy, "company_events", "event-call", 1500*time.Millisecond)
+	failure, receipts, unverifiable := b.handleRestrictedUser(t.Context(), user, output, policy, calls, hooks, &restrictedClaudeReceiptBudget{})
+	if failure != "" || unverifiable || len(receipts) != 1 {
 		t.Fatalf("company event result state: failure=%q unverifiable=%t receipts=%s", failure, unverifiable, receipts)
 	}
-	for _, secret := range []string{"SENSITIVE_CITATION", "SENSITIVE_EVENT_BODY", `"eventId"`, `"citation"`} {
+	for _, secret := range []string{"source_event:199901", "SENSITIVE_EVENT_BODY", `"eventRows"`, `"evidenceRef"`} {
 		if strings.Contains(string(receipts[0]), secret) {
 			t.Fatalf("unverified event summary retained %q: %s", secret, receipts[0])
 		}
 	}
-	for _, safeField := range []string{`"eventSelector"`, `"eventRowReceipt":"unavailable"`, `"receiptVerified":false`, `"durationSource":"caller_monotonic"`} {
+	for _, safeField := range []string{`"tool":"company_events"`, `"status":"verified"`, `"durationSource":"pre_post_tool_hook_monotonic"`} {
 		if !strings.Contains(string(receipts[0]), safeField) {
-			t.Fatalf("unverified event summary omitted %s: %s", safeField, receipts[0])
+			t.Fatalf("operational event summary omitted %s: %s", safeField, receipts[0])
 		}
 	}
 	resultMessage := <-output
@@ -331,8 +580,20 @@ func TestRestrictedClaudeCompanyEventsResultIsPersistedAsUnverifiedSafeSummary(t
 	}
 }
 
+func completedRestrictedHooks(policy *taskpolicy.ExecutionPolicy, tool, callID string, duration time.Duration) *restrictedClaudeHooks {
+	done := make(chan struct{})
+	close(done)
+	return &restrictedClaudeHooks{
+		policy: policy,
+		calls: map[string]*restrictedClaudeHookCall{
+			callID: {tool: tool, duration: duration, done: done, completed: true},
+		},
+	}
+}
+
 func TestRestrictedBrainReceiptRequiresCompleteEvidence(t *testing.T) {
 	validRead := map[string]any{
+		"dataPolicyPresent":  true,
 		"documentId":         "doc-1",
 		"projectId":          "project-1",
 		"revision":           strings.Repeat("a", 64),
@@ -353,8 +614,8 @@ func TestRestrictedBrainReceiptRequiresCompleteEvidence(t *testing.T) {
 		"body byte count failed": func(receipt map[string]any) {
 			receipt["byteLengthVerified"] = false
 		},
-		"revision changed": func(receipt map[string]any) { receipt["currentRevision"] = strings.Repeat("b", 64) },
-		"missing project":  func(receipt map[string]any) { receipt["projectId"] = "" },
+		"invalid current pointer": func(receipt map[string]any) { receipt["currentRevision"] = "not-a-hash" },
+		"missing project":         func(receipt map[string]any) { receipt["projectId"] = "" },
 	} {
 		t.Run(name, func(t *testing.T) {
 			receipt := make(map[string]any, len(validRead))
@@ -371,10 +632,16 @@ func TestRestrictedBrainReceiptRequiresCompleteEvidence(t *testing.T) {
 
 func TestRestrictedBrainCompanySelectorRequiresClassifiedCompleteProjects(t *testing.T) {
 	valid := map[string]any{
+		"dataPolicyPresent": true,
 		"projects": []any{map[string]any{
-			"projectId":                  "multica",
-			"portfolioClass":             "company",
-			"classificationSourceSha256": strings.Repeat("a", 64),
+			"projectId":      "multica",
+			"portfolioClass": "business_application",
+			"classificationSource": map[string]any{
+				"programId": "SYNTHETIC", "observedAt": "2000-01-01T00:00:00Z",
+				"evidenceStage": "synthetic-test-only", "sourceRepository": "example/synthetic",
+				"sourceRevision": strings.Repeat("b", 40), "sourceReference": "portfolio.json",
+				"sourceSha256": strings.Repeat("c", 64),
+			},
 		}},
 		"projectsTotal":             float64(1),
 		"projectReceiptsIncomplete": false,
@@ -387,7 +654,7 @@ func TestRestrictedBrainCompanySelectorRequiresClassifiedCompleteProjects(t *tes
 			receipt["projects"].([]any)[0].(map[string]any)["portfolioClass"] = "personal"
 		},
 		"missing source pin": func(receipt map[string]any) {
-			delete(receipt["projects"].([]any)[0].(map[string]any), "classificationSourceSha256")
+			delete(receipt["projects"].([]any)[0].(map[string]any), "classificationSource")
 		},
 		"incomplete list": func(receipt map[string]any) {
 			receipt["projectReceiptsIncomplete"] = true
@@ -398,10 +665,16 @@ func TestRestrictedBrainCompanySelectorRequiresClassifiedCompleteProjects(t *tes
 	} {
 		t.Run(name, func(t *testing.T) {
 			receipt := map[string]any{
+				"dataPolicyPresent": true,
 				"projects": []any{map[string]any{
-					"projectId":                  "multica",
-					"portfolioClass":             "company",
-					"classificationSourceSha256": strings.Repeat("a", 64),
+					"projectId":      "multica",
+					"portfolioClass": "business_application",
+					"classificationSource": map[string]any{
+						"programId": "SYNTHETIC", "observedAt": "2000-01-01T00:00:00Z",
+						"evidenceStage": "synthetic-test-only", "sourceRepository": "example/synthetic",
+						"sourceRevision": strings.Repeat("b", 40), "sourceReference": "portfolio.json",
+						"sourceSha256": strings.Repeat("c", 64),
+					},
 				}},
 				"projectsTotal":             float64(1),
 				"projectReceiptsIncomplete": false,
@@ -416,7 +689,12 @@ func TestRestrictedBrainCompanySelectorRequiresClassifiedCompleteProjects(t *tes
 
 func TestRestrictedClaudeControlRequestDeniesUnauthorizedTools(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
+	hooks, _, err := startRestrictedClaudeHooks(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer hooks.Close()
 	var output bytes.Buffer
 	msg := claudeSDKMessage{
 		RequestID: "req-1",
@@ -425,7 +703,7 @@ func TestRestrictedClaudeControlRequestDeniesUnauthorizedTools(t *testing.T) {
 			Input: mustMarshal(t, map[string]any{"command": "cat /etc/passwd"}),
 		}),
 	}
-	if failure := b.handleRestrictedControlRequest(msg, &output, policy); failure == "" {
+	if failure := b.handleRestrictedControlRequest(msg, &output, hooks); failure == "" {
 		t.Fatal("unauthorized control request was accepted")
 	}
 	if strings.Contains(output.String(), "cat /etc/passwd") {
@@ -448,7 +726,12 @@ func TestRestrictedClaudeControlRequestDeniesUnauthorizedTools(t *testing.T) {
 
 func TestRestrictedClaudeControlRequestUsesExactEventSelector(t *testing.T) {
 	b := &claudeBackend{cfg: Config{Logger: slog.Default()}}
-	policy := brainReadOnlyPolicy(t)
+	policy := brainAcceptancePolicy(t)
+	hooks, _, err := startRestrictedClaudeHooks(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer hooks.Close()
 	for _, tc := range []struct {
 		name  string
 		input map[string]any
@@ -466,7 +749,7 @@ func TestRestrictedClaudeControlRequestUsesExactEventSelector(t *testing.T) {
 					Input: mustMarshal(t, tc.input),
 				}),
 			}
-			failure := b.handleRestrictedControlRequest(msg, &output, policy)
+			failure := b.handleRestrictedControlRequest(msg, &output, hooks)
 			if (failure == "") != tc.want {
 				t.Fatalf("failure=%q, want allowed=%t", failure, tc.want)
 			}
@@ -479,6 +762,19 @@ func TestRestrictedClaudeControlRequestUsesExactEventSelector(t *testing.T) {
 			}
 		})
 	}
+
+	var output bytes.Buffer
+	msg := claudeSDKMessage{
+		RequestID: "req-uncited-read",
+		Request: mustMarshal(t, claudeControlRequestPayload{
+			Subtype: "tool_use", ToolName: "mcp__brain__brain_read",
+			Input: mustMarshal(t, map[string]any{"id": "doc-1", "revision": strings.Repeat("a", 64)}),
+		}),
+	}
+	if failure := b.handleRestrictedControlRequest(msg, &output, hooks); failure == "" ||
+		strings.Contains(output.String(), `"behavior":"allow"`) {
+		t.Fatalf("uncited read control request was not denied: failure=%q response=%s", failure, output.String())
+	}
 }
 
 func TestClaudeRestrictedExecutePersistsOnlySafeReceipt(t *testing.T) {
@@ -487,73 +783,22 @@ func TestClaudeRestrictedExecutePersistsOnlySafeReceipt(t *testing.T) {
 		t.Skip("shell-script fixture is POSIX-only")
 	}
 
-	body := "SENSITIVE_DOCUMENT_BODY"
-	revision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
-	payload, err := json.Marshal(map[string]any{
-		"schemaVersion": "silvermediums.brain.v2",
-		"servedAt":      "2026-04-01T12:00:00Z",
-		"dataPolicy":    "authorized",
-		"document": map[string]any{
-			"id": "doc-1", "project": "project-1", "revision": revision,
-			"body": body, "bytes": len(body), "truncated": false,
-			"currentRevision": revision, "available": true,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assistant, err := json.Marshal(map[string]any{
-		"role": "assistant",
-		"content": []any{
-			map[string]any{"type": "text", "text": "SENSITIVE_ASSISTANT_TEXT"},
-			map[string]any{"type": "thinking", "thinking": "SENSITIVE_THINKING"},
-			map[string]any{"type": "tool_use", "id": "call-1", "name": "mcp__brain__brain_read", "input": map[string]any{"documentId": "SENSITIVE_INPUT"}},
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	user, err := json.Marshal(map[string]any{
-		"role": "user",
-		"content": []any{
-			map[string]any{"type": "tool_result", "tool_use_id": "call-1", "content": []any{map[string]any{"type": "text", "text": string(payload)}}},
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	events := []any{
-		map[string]any{"type": "system", "subtype": "init", "session_id": "SENSITIVE_SESSION"},
-		map[string]any{"type": "assistant", "message": json.RawMessage(assistant)},
-		map[string]any{"type": "user", "message": json.RawMessage(user)},
-		map[string]any{"type": "result", "subtype": "success", "is_error": false, "session_id": "SENSITIVE_SESSION", "result": "SENSITIVE_FINAL_OUTPUT"},
-	}
-	var fixture strings.Builder
-	for _, event := range events {
-		line, marshalErr := json.Marshal(event)
-		if marshalErr != nil {
-			t.Fatal(marshalErr)
-		}
-		fixture.Write(line)
-		fixture.WriteByte('\n')
-	}
-
 	fakePath := filepath.Join(t.TempDir(), "claude")
-	script := "#!/bin/sh\nIFS= read -r _\nprintf '%s\\n' 'SENSITIVE_STDERR' >&2\ncat <<'MULTICA_EVENTS'\n" + fixture.String() + "MULTICA_EVENTS\n"
+	script := "#!/bin/sh\nexec " + shellQuote(os.Args[0]) + " -test.run=^TestRestrictedClaudeFakeCLIHelper$ -- \"$@\"\n"
 	writeTestExecutable(t, fakePath, []byte(script))
 	var logs bytes.Buffer
 	backend, err := New("claude", Config{
 		ExecutablePath: fakePath,
-		CLIVersion:     "2.1.273",
+		CLIVersion:     "2.1.300",
 		BuiltinRuntime: true,
-		Env:            map[string]string{"IS_SANDBOX": "1"},
+		Env:            map[string]string{"IS_SANDBOX": "1", "MULTICA_RESTRICTED_CLAUDE_HELPER": "1"},
 		Logger:         slog.New(slog.NewTextHandler(&logs, nil)),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	session, err := backend.Execute(t.Context(), "SENSITIVE_PROMPT", ExecOptions{
-		ExecutionPolicy: brainReadOnlyPolicy(t),
+		ExecutionPolicy: brainAcceptancePolicy(t),
 		McpConfig:       json.RawMessage(`{"mcpServers":{"brain":{"type":"http","url":"https://brain.invalid/mcp"},"other":{"type":"http","url":"https://other.invalid/mcp"}}}`),
 		Timeout:         5 * time.Second,
 	})
@@ -571,13 +816,13 @@ func TestClaudeRestrictedExecutePersistsOnlySafeReceipt(t *testing.T) {
 	if result.SessionID != "" {
 		t.Fatalf("restricted task retained session id %q", result.SessionID)
 	}
-	for _, secret := range []string{"SENSITIVE_DOCUMENT_BODY", "SENSITIVE_ASSISTANT_TEXT", "SENSITIVE_THINKING", "SENSITIVE_INPUT", "SENSITIVE_FINAL_OUTPUT", "SENSITIVE_SESSION", "SENSITIVE_STDERR", "SENSITIVE_PROMPT"} {
+	for _, secret := range []string{"SENSITIVE_DOCUMENT_BODY", "SENSITIVE_ASSISTANT_TEXT", "SENSITIVE_THINKING", "SENSITIVE_INPUT", "SENSITIVE_FINAL_OUTPUT", "SENSITIVE_SESSION", "SENSITIVE_STDERR", "SENSITIVE_PROMPT", "doc-1", revisionHashFixture()} {
 		if strings.Contains(result.Output, secret) || strings.Contains(result.Error, secret) || strings.Contains(logs.String(), secret) {
 			t.Fatalf("restricted task persisted %s", secret)
 		}
 	}
-	if !strings.Contains(result.Output, `"bodySha256Verified":true`) || !strings.Contains(result.Output, `"durationSource":"caller_monotonic"`) {
-		t.Fatalf("safe result omitted verification or timing receipt: %s", result.Output)
+	if !strings.Contains(result.Output, `"status":"verified"`) || !strings.Contains(result.Output, `"durationSource":"pre_post_tool_hook_monotonic"`) {
+		t.Fatalf("safe result omitted operational verification or hook timing: %s", result.Output)
 	}
 	for _, message := range messages {
 		if message.SessionID != "" {
@@ -587,15 +832,123 @@ func TestClaudeRestrictedExecutePersistsOnlySafeReceipt(t *testing.T) {
 		case MessageText, MessageThinking, MessageLog:
 			t.Fatalf("restricted task exposed private provider content: %+v", message)
 		case MessageToolUse:
-			if message.Input != nil || message.Tool != "mcp__brain__brain_read" {
+			if message.Input != nil || !strings.HasPrefix(message.Tool, "mcp__brain__") {
 				t.Fatalf("unsafe restricted tool-use event: %+v", message)
 			}
 		case MessageToolResult:
 			if !message.DurationMeasured || message.DurationMS < 0 {
-				t.Fatalf("restricted tool result omitted caller timing: %+v", message)
+				t.Fatalf("restricted tool result omitted hook timing: %+v", message)
+			}
+			for _, private := range []string{"doc-1", revisionHashFixture(), "SENSITIVE_DOCUMENT_BODY"} {
+				if strings.Contains(message.Output, private) {
+					t.Fatalf("restricted tool result persisted evidence field %q: %+v", private, message)
+				}
 			}
 		}
 	}
+}
+
+func TestRestrictedClaudeFakeCLIHelper(t *testing.T) {
+	if os.Getenv("MULTICA_RESTRICTED_CLAUDE_HELPER") != "1" {
+		return
+	}
+	args := os.Args
+	separator := slicesIndex(args, "--")
+	if separator < 0 {
+		t.Fatal("restricted Claude fake helper did not receive a CLI argument boundary")
+	}
+	args = args[separator+1:]
+	settingsPath := ""
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] == "--settings" {
+			settingsPath = args[index+1]
+			break
+		}
+	}
+	if settingsPath == "" {
+		t.Fatal("restricted Claude fake helper did not receive hook settings")
+	}
+	settings, err := os.ReadFile(settingsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var parsed struct {
+		Hooks map[string][]struct {
+			Hooks []struct {
+				URL string `json:"url"`
+			} `json:"hooks"`
+		} `json:"hooks"`
+	}
+	if err := json.Unmarshal(settings, &parsed); err != nil {
+		t.Fatal(err)
+	}
+	hookURL := parsed.Hooks["PreToolUse"][0].Hooks[0].URL
+	send := func(event restrictedClaudeHookEvent) {
+		body, err := json.Marshal(event)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req, err := http.NewRequest(http.MethodPost, hookURL, bytes.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("hook status = %d", resp.StatusCode)
+		}
+		var decision struct {
+			HookSpecificOutput struct {
+				PermissionDecision string `json:"permissionDecision"`
+			} `json:"hookSpecificOutput"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&decision); err != nil {
+			t.Fatal(err)
+		}
+		if event.EventName == "PreToolUse" && decision.HookSpecificOutput.PermissionDecision != "allow" {
+			t.Fatalf("fake provider tool was denied: %s", event.ToolName)
+		}
+	}
+	emit := func(event any) {
+		encoded, err := json.Marshal(event)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = fmt.Fprintln(os.Stdout, string(encoded))
+	}
+	_, _ = bufio.NewReader(os.Stdin).ReadString('\n')
+
+	revision := revisionHashFixture()
+	contextPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"project":{"id":"project-1"},"documents":[{"id":"doc-1","revision":%q}]}`, revision)
+	body := "SENSITIVE_DOCUMENT_BODY"
+	documentRevision := fmt.Sprintf("%x", sha256.Sum256([]byte(body)))
+	readPayload := fmt.Sprintf(`{"schemaVersion":"silvermediums.brain.v2","servedAt":"2000-01-01T00:00:00Z","dataPolicy":"reference-only","connection":{"state":"online","checkedAt":"2000-01-01T00:00:00Z"},"document":{"id":"doc-1","project":"project-1","revision":%q,"body":%q,"bytes":%d,"truncated":false,"currentRevision":%q,"available":true}}`, documentRevision, body, len([]byte(body)), strings.Repeat("e", 64))
+	toolCall := func(name, id string, input any, text string) {
+		send(restrictedClaudeHookEvent{EventName: "PreToolUse", ToolName: "mcp__brain__" + name, ToolInput: input.(map[string]any), ToolUseID: id})
+		response := map[string]any{"content": []any{map[string]any{"type": "text", "text": text}}}
+		send(restrictedClaudeHookEvent{EventName: "PostToolUse", ToolName: "mcp__brain__" + name, ToolResponse: mustMarshal(t, response), ToolUseID: id})
+		emit(map[string]any{"type": "assistant", "message": map[string]any{"content": []any{
+			map[string]any{"type": "tool_use", "id": id, "name": "mcp__brain__" + name, "input": input},
+		}}})
+		emit(map[string]any{"type": "user", "message": map[string]any{"content": []any{
+			map[string]any{"type": "tool_result", "tool_use_id": id, "content": []any{map[string]any{"type": "text", "text": text}}},
+		}}})
+	}
+	emit(map[string]any{"type": "system", "subtype": "init", "session_id": "SENSITIVE_SESSION"})
+	toolCall("brain_context", "context-call", map[string]any{"project": "project-1"}, contextPayload)
+	toolCall("brain_read", "read-call", map[string]any{"id": "doc-1", "revision": documentRevision}, readPayload)
+	emit(map[string]any{"type": "assistant", "message": map[string]any{"content": []any{
+		map[string]any{"type": "text", "text": "SENSITIVE_ASSISTANT_TEXT"},
+		map[string]any{"type": "thinking", "thinking": "SENSITIVE_THINKING"},
+	}}})
+	emit(map[string]any{"type": "result", "subtype": "success", "is_error": false, "session_id": "SENSITIVE_SESSION", "result": "SENSITIVE_FINAL_OUTPUT"})
+}
+
+func revisionHashFixture() string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte("SENSITIVE_DOCUMENT_BODY")))
 }
 
 func slicesIndex(values []string, target string) int {

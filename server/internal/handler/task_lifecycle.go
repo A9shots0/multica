@@ -151,8 +151,8 @@ type RerunIssueRequest struct {
 	// assignee — so clicking retry on row that belonged to a now-displaced
 	// agent re-fires that same agent, not the new assignee.
 	TaskID string `json:"task_id,omitempty"`
-	// ExecutionPolicy opts only this rerun into an explicit restricted provider
-	// policy. The server owns the provider and exact MCP tool allowlist.
+	// ExecutionPolicy opts only this rerun into the versioned Brain acceptance
+	// policy. The request selects one exact project; the server owns its tools.
 	ExecutionPolicy *taskpolicy.Request `json:"execution_policy,omitempty"`
 }
 
@@ -185,7 +185,7 @@ func (h *Handler) RerunIssue(w http.ResponseWriter, r *http.Request) {
 
 	var executionPolicy *taskpolicy.ExecutionPolicy
 	if req.ExecutionPolicy != nil {
-		policy, policyErr := taskpolicy.NewBrainMCPReadOnly(*req.ExecutionPolicy)
+		policy, policyErr := taskpolicy.NewBrainMCPAcceptance(*req.ExecutionPolicy)
 		if policyErr != nil {
 			writeError(w, http.StatusBadRequest, policyErr.Error())
 			return

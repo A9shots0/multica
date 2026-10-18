@@ -507,6 +507,8 @@ WHERE id = $1 AND issue_id IS NULL
 -- parent's complete planned comment batch and keeps the same squad-role
 -- provenance. delivered_comment_ids intentionally stays at its '{}' default:
 -- the child must earn its own delivery receipt at claim time.
+-- Restricted-policy tasks also start fresh: preserve the policy context but
+-- never inherit a provider session into another policy-bearing attempt.
 --
 -- originator_user_id is inherited so the Composio overlay decision sees the
 -- same top-of-chain human across the retry: the user behind the original
@@ -565,10 +567,16 @@ SELECT
     CASE WHEN sqlc.narg(fire_at)::timestamptz IS NOT NULL THEN 'deferred' ELSE 'queued' END,
     CASE WHEN p.chat_session_id IS NOT NULL THEN GREATEST(p.priority, 3) ELSE p.priority END,
     p.trigger_comment_id, p.coalesced_comment_ids, p.trigger_summary, p.context,
-    CASE WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity' THEN NULL ELSE p.session_id END,
+    CASE
+        WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
+          OR (p.context->'execution_policy' IS NOT NULL AND p.context->'execution_policy' <> 'null'::jsonb)
+        THEN NULL
+        ELSE p.session_id
+    END,
     CASE WHEN p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity' THEN NULL ELSE p.work_dir END,
     p.attempt + 1, COALESCE(sqlc.narg(max_attempts)::int, p.max_attempts), p.id,
-    p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity',
+    p.failure_reason IS NOT DISTINCT FROM 'codex_semantic_inactivity'
+        OR (p.context->'execution_policy' IS NOT NULL AND p.context->'execution_policy' <> 'null'::jsonb),
     p.is_leader_task,
     p.squad_id,
     p.originator_user_id,

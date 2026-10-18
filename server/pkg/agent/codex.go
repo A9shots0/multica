@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+	"unicode"
 
 	"github.com/multica-ai/multica/server/pkg/redact"
 )
@@ -3184,16 +3185,21 @@ func codexMCPBrainSafeReceipt(tool string, item map[string]any) string {
 	if !ok {
 		return ""
 	}
-	dataPolicy, ok := safeBrainReceiptToken(payload["dataPolicy"], 64)
-	if !ok {
+	dataPolicy, ok := payload["dataPolicy"].(string)
+	if !ok || strings.TrimSpace(dataPolicy) == "" || len(dataPolicy) > 512 {
 		return ""
+	}
+	for _, r := range dataPolicy {
+		if unicode.IsControl(r) {
+			return ""
+		}
 	}
 
 	receipt := map[string]any{
-		"tool":          tool,
-		"schemaVersion": schemaVersion,
-		"servedAt":      servedAt,
-		"dataPolicy":    dataPolicy,
+		"tool":              tool,
+		"schemaVersion":     schemaVersion,
+		"servedAt":          servedAt,
+		"dataPolicyPresent": true,
 	}
 	if connection, ok := payload["connection"].(map[string]any); ok {
 		if state, ok := connection["state"].(string); ok && (state == "online" || state == "offline") {
@@ -3211,7 +3217,7 @@ func codexMCPBrainSafeReceipt(tool string, item map[string]any) string {
 		}
 	case "brain_context":
 		if project, ok := payload["project"].(map[string]any); ok {
-			if id, ok := safeBrainReceiptToken(project["id"], 256); ok {
+			if id, ok := safeBrainReceiptIdentifier(project["id"], 256); ok {
 				receipt["projectId"] = id
 			}
 		}
@@ -3243,19 +3249,47 @@ func codexMCPBrainSafeReceipt(tool string, item map[string]any) string {
 		items, itemsOK := payload["items"].([]any)
 		nextAfterID, nextAfterOK := safeBrainReceiptInt(payload["next_after_id"])
 		snapshotThroughID, snapshotThroughOK := safeBrainReceiptInt(payload["snapshot_through_id"])
-		if !itemsOK || !nextAfterOK || !snapshotThroughOK {
+		hasMore, hasMoreOK := payload["has_more"].(bool)
+		if !itemsOK || !nextAfterOK || !snapshotThroughOK || !hasMoreOK {
 			return ""
 		}
 		receipt["eventItemsTotal"] = len(items)
 		receipt["nextAfterId"] = nextAfterID
 		receipt["snapshotThroughId"] = snapshotThroughID
-		receipt["eventRowReceipt"] = "unavailable"
+		receipt["hasMore"] = hasMore
+		eventRows := make([]map[string]any, 0, len(items))
+		for _, value := range items {
+			event, ok := value.(map[string]any)
+			if !ok {
+				return ""
+			}
+			id, idOK := safeBrainReceiptInt(event["id"])
+			evidenceRef, refOK := safeBrainReceiptToken(event["evidence_ref"], 256)
+			if !idOK || !refOK {
+				return ""
+			}
+			eventRows = append(eventRows, map[string]any{"id": id, "evidenceRef": evidenceRef})
+		}
+		receipt["eventRows"] = eventRows
 	}
 	encoded, err := json.Marshal(receipt)
 	if err != nil || len(encoded) > 4096 {
 		return ""
 	}
 	return string(encoded)
+}
+
+func safeBrainReceiptIdentifier(value any, maxLen int) (string, bool) {
+	text, ok := value.(string)
+	if !ok || text == "" || len(text) > maxLen {
+		return "", false
+	}
+	for _, r := range text {
+		if unicode.IsControl(r) {
+			return "", false
+		}
+	}
+	return text, true
 }
 
 func safeBrainReceiptToken(value any, maxLen int) (string, bool) {
@@ -3304,19 +3338,28 @@ func safeBrainReceiptInt(value any) (int64, bool) {
 }
 
 func addBrainProjectReceipt(receipt map[string]any, project map[string]any, includeClassificationSource bool) {
-	if id, ok := safeBrainReceiptToken(project["id"], 256); ok {
+	if id, ok := safeBrainReceiptIdentifier(project["id"], 256); ok {
 		receipt["projectId"] = id
 	}
 	if class, ok := project["portfolioClass"].(string); ok {
 		switch class {
-		case "company", "personal", "unknown":
+		case "business_application", "company_infrastructure", "personal", "unknown", "experimental", "archived":
 			receipt["portfolioClass"] = class
 		}
 	}
 	if includeClassificationSource {
 		if classification, ok := project["portfolioClassification"].(map[string]any); ok {
+			source := make(map[string]string, 7)
+			for _, key := range []string{"programId", "observedAt", "evidenceStage", "sourceRepository", "sourceRevision", "sourceReference"} {
+				if value, ok := safeBrainReceiptToken(classification[key], 256); ok {
+					source[key] = value
+				}
+			}
 			if hash, ok := safeBrainReceiptHash(classification["sourceSha256"]); ok {
-				receipt["classificationSourceSha256"] = hash
+				source["sourceSha256"] = hash
+			}
+			if len(source) > 0 {
+				receipt["classificationSource"] = source
 			}
 		}
 	}
@@ -3351,7 +3394,7 @@ func brainDocumentReceiptList(values []any) ([]map[string]any, bool) {
 			continue
 		}
 		item := make(map[string]any, 2)
-		if id, ok := safeBrainReceiptToken(document["id"], 256); ok {
+		if id, ok := safeBrainReceiptIdentifier(document["id"], 256); ok {
 			item["id"] = id
 		}
 		if revision, ok := safeBrainReceiptHash(document["revision"]); ok {
@@ -3368,10 +3411,10 @@ func brainDocumentReceiptList(values []any) ([]map[string]any, bool) {
 }
 
 func addBrainDocumentReceipt(receipt, document map[string]any) {
-	if id, ok := safeBrainReceiptToken(document["id"], 256); ok {
+	if id, ok := safeBrainReceiptIdentifier(document["id"], 256); ok {
 		receipt["documentId"] = id
 	}
-	if project, ok := safeBrainReceiptToken(document["project"], 256); ok {
+	if project, ok := safeBrainReceiptIdentifier(document["project"], 256); ok {
 		receipt["projectId"] = project
 	}
 	if revision, ok := safeBrainReceiptHash(document["revision"]); ok {
@@ -3398,10 +3441,9 @@ func addBrainDocumentReceipt(receipt, document map[string]any) {
 	}
 }
 
-// codexMCPToolResultOutput deliberately excludes result.content and
-// structuredContent. Those values can be large and may contain private data;
-// the Agent Log needs an auditable outcome, not a second copy of the provider
-// payload that Codex already consumed.
+// codexMCPToolResultOutput deliberately excludes result.content,
+// structuredContent, and source-derived receipts. Those values may contain
+// private data; the Agent Log needs an operational outcome, not provider data.
 func codexMCPToolResultOutput(item map[string]any) string {
 	status, _ := item["status"].(string)
 	status = codexNormalizePatchStatus(status)
@@ -3420,9 +3462,6 @@ func codexMCPToolResultOutput(item map[string]any) string {
 		if content, ok := result["content"].([]any); ok {
 			segments = append(segments, fmt.Sprintf("result_content_blocks: %d", len(content)))
 		}
-	}
-	if receipt := codexMCPBrainSafeReceipt(codexMCPToolName(item), item); receipt != "" {
-		segments = append(segments, "safe_result_receipt: "+receipt)
 	}
 	if errMessage := extractNestedString(item, "error", "message"); strings.TrimSpace(errMessage) != "" && !isCodexBrainReaderTool(codexMCPToolName(item)) {
 		segments = append(segments, "error: "+sanitizeCodexDiagnostic(errMessage))

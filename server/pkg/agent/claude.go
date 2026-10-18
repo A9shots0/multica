@@ -61,6 +61,13 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 
 	timeout := opts.Timeout
 	runCtx, cancel := runContext(ctx, timeout)
+	var restrictedHooks *restrictedClaudeHooks
+	restrictedHooksOwned := false
+	defer func() {
+		if restrictedHooksOwned {
+			restrictedHooks.Close()
+		}
+	}()
 
 	var args []string
 	if restricted {
@@ -70,6 +77,25 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 			cancel()
 			return nil, fmt.Errorf("build restricted Claude invocation: %w", err)
 		}
+		var hookURL string
+		restrictedHooks, hookURL, err = startRestrictedClaudeHooks(opts.ExecutionPolicy)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("start restricted Claude policy hooks: %w", err)
+		}
+		restrictedHooksOwned = true
+		settings, err := restrictedHooks.settingsJSON(hookURL)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("build restricted Claude hook settings: %w", err)
+		}
+		settingsPath, err := writeMcpConfigToTemp(settings)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("write restricted Claude hook settings: %w", err)
+		}
+		args = append(args, "--settings", settingsPath)
+		opts.ClaudeSettingsPath = settingsPath
 	} else {
 		args = buildClaudeArgs(opts, b.cfg.Logger)
 	}
@@ -78,12 +104,16 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 	// --mcp-config <path> so the agent uses a controlled set of MCP servers
 	// instead of inheriting from the outer Claude Code session.
 	var mcpConfigPath string
+	var hooksSettingsPath string
 	var mcpFileCleanup func() // non-nil while this function owns the temp file
 	if hasManagedMcpConfig(opts.McpConfig) {
 		path, err := writeMcpConfigToTemp(opts.McpConfig)
 		if err != nil {
 			cancel()
 			return nil, err
+		}
+		if restricted {
+			hooksSettingsPath = opts.ClaudeSettingsPath
 		}
 		mcpConfigPath = path
 		mcpFileCleanup = func() { cleanupMcpConfigTemp(mcpConfigPath) }
@@ -93,6 +123,9 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 	defer func() {
 		if mcpFileCleanup != nil {
 			mcpFileCleanup()
+		}
+		if hooksSettingsPath != "" {
+			cleanupMcpConfigTemp(hooksSettingsPath)
 		}
 	}()
 
@@ -149,6 +182,8 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 
 	// The process started — transfer temp file ownership to the goroutine.
 	mcpFileCleanup = nil
+	hooksSettingsPath = ""
+	restrictedHooksOwned = false
 
 	msgCh := make(chan Message, 256)
 	resCh := make(chan Result, 1)
@@ -187,6 +222,12 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 		if mcpConfigPath != "" {
 			defer cleanupMcpConfigTemp(mcpConfigPath)
 		}
+		if restricted && opts.ClaudeSettingsPath != "" {
+			defer cleanupMcpConfigTemp(opts.ClaudeSettingsPath)
+		}
+		if restrictedHooks != nil {
+			defer restrictedHooks.Close()
+		}
 
 		startTime := time.Now()
 		var lastAssistantText string
@@ -197,6 +238,7 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 		var sessionID string
 		restrictedCalls := make(map[string]restrictedClaudeCall)
 		var restrictedReceipts []json.RawMessage
+		restrictedReceiptBudget := &restrictedClaudeReceiptBudget{}
 		restrictedFailure := ""
 		unverifiableRestrictedResult := false
 		sawAsyncLaunch := false
@@ -275,7 +317,7 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 				if restricted {
 					var newReceipts []json.RawMessage
 					var unverifiable bool
-					restrictedFailure, newReceipts, unverifiable = b.handleRestrictedUser(msg, msgCh, opts.ExecutionPolicy, restrictedCalls)
+					restrictedFailure, newReceipts, unverifiable = b.handleRestrictedUser(runCtx, msg, msgCh, opts.ExecutionPolicy, restrictedCalls, restrictedHooks, restrictedReceiptBudget)
 					restrictedReceipts = append(restrictedReceipts, newReceipts...)
 					unverifiableRestrictedResult = unverifiableRestrictedResult || unverifiable
 					if restrictedFailure != "" {
@@ -313,7 +355,7 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 				}
 			case "control_request":
 				if restricted {
-					if controlFailure := b.handleRestrictedControlRequest(msg, stdin, opts.ExecutionPolicy); controlFailure != "" {
+					if controlFailure := b.handleRestrictedControlRequest(msg, stdin, restrictedHooks); controlFailure != "" {
 						restrictedFailure = controlFailure
 						cancel()
 					}
@@ -383,6 +425,12 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 			if restrictedFailure == "" && hasUnfinishedRestrictedMCPCall(restrictedCalls) {
 				restrictedFailure = "restricted Brain MCP execution ended with an unfinished tool call"
 			}
+			if restrictedFailure == "" && restrictedHooks != nil && restrictedHooks.Failure() != "" {
+				restrictedFailure = restrictedHooks.Failure()
+			}
+			if restrictedFailure == "" && restrictedHooks != nil && restrictedHooks.HasPendingCalls() {
+				restrictedFailure = "restricted Brain MCP execution ended before provider hook completion"
+			}
 			if restrictedFailure == "" && unverifiableRestrictedResult {
 				restrictedFailure = "restricted Brain MCP execution returned an unverifiable tool result"
 			}
@@ -396,7 +444,7 @@ func (b *claudeBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 			if outputErr != nil {
 				finalStatus = "failed"
 				finalError = "restricted Brain MCP receipt summary could not be encoded"
-				finalOutput = `{"policy":"brain_mcp_read_only","receipts":[]}`
+				finalOutput = `{"policy":"brain_mcp_acceptance_v1","receipts":[]}`
 			} else if restrictedFailure != "" {
 				finalStatus = "failed"
 				finalError = restrictedFailure

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,9 +14,9 @@ import (
 )
 
 const (
-	// --restricted first appeared in this supported version. --tools "" is
-	// still required because restricted mode alone leaves file tools enabled.
-	minRestrictedClaudeVersion = "2.1.248"
+	// HTTP hook failures must block tool execution in this version. --tools ""
+	// is still required because restricted mode alone leaves file tools enabled.
+	minRestrictedClaudeVersion = "2.1.295"
 	restrictedClaudeAgentName  = "brain-reader"
 )
 
@@ -120,9 +121,8 @@ func buildRestrictedClaudeArgs(opts ExecOptions) ([]string, error) {
 }
 
 type restrictedClaudeCall struct {
-	tool      string
-	startedAt time.Time
-	input     map[string]any
+	tool  string
+	input map[string]any
 }
 
 func restrictedClaudeToolName(policy *taskpolicy.ExecutionPolicy, id string) (string, bool) {
@@ -162,7 +162,7 @@ func (b *claudeBackend) handleRestrictedAssistant(msg claudeSDKMessage, ch chan<
 				if _, exists := calls[block.ID]; exists {
 					return turn, "restricted Claude emitted a duplicate tool call identifier"
 				}
-				calls[block.ID] = restrictedClaudeCall{tool: "EndConversation", startedAt: time.Now()}
+				calls[block.ID] = restrictedClaudeCall{tool: "EndConversation"}
 			}
 			continue
 		}
@@ -171,19 +171,30 @@ func (b *claudeBackend) handleRestrictedAssistant(msg claudeSDKMessage, ch chan<
 			return turn, "restricted Claude attempted an unauthorized or uncorrelated tool call"
 		}
 		input := make(map[string]any)
-		if len(block.Input) == 0 || json.Unmarshal(block.Input, &input) != nil || !restrictedClaudeToolInputAllowed(tool, input) {
+		if len(block.Input) == 0 || json.Unmarshal(block.Input, &input) != nil || !taskpolicy.AllowsToolInput(policy, tool, input) {
 			return turn, "restricted Claude attempted a tool call outside the authorized read scope"
 		}
 		if _, exists := calls[block.ID]; exists {
 			return turn, "restricted Claude emitted a duplicate tool call identifier"
 		}
-		calls[block.ID] = restrictedClaudeCall{tool: tool, startedAt: time.Now(), input: input}
+		calls[block.ID] = restrictedClaudeCall{tool: tool, input: input}
 		trySend(ch, Message{Type: MessageToolUse, Tool: block.Name, CallID: block.ID})
 	}
 	return turn, ""
 }
 
-func (b *claudeBackend) handleRestrictedUser(msg claudeSDKMessage, ch chan<- Message, policy *taskpolicy.ExecutionPolicy, calls map[string]restrictedClaudeCall) (string, []json.RawMessage, bool) {
+const (
+	restrictedClaudeMaxReceipts      = 32
+	restrictedClaudeMaxReceiptBytes  = 4096
+	restrictedClaudeMaxEvidenceBytes = 64 << 10
+)
+
+type restrictedClaudeReceiptBudget struct {
+	count         int
+	evidenceBytes int
+}
+
+func (b *claudeBackend) handleRestrictedUser(ctx context.Context, msg claudeSDKMessage, ch chan<- Message, policy *taskpolicy.ExecutionPolicy, calls map[string]restrictedClaudeCall, hooks *restrictedClaudeHooks, budget *restrictedClaudeReceiptBudget) (string, []json.RawMessage, bool) {
 	var content claudeMessageContent
 	if err := json.Unmarshal(msg.Message, &content); err != nil {
 		return "restricted Claude emitted an unreadable tool result event", nil, true
@@ -202,8 +213,39 @@ func (b *claudeBackend) handleRestrictedUser(msg claudeSDKMessage, ch chan<- Mes
 		if call.tool == "EndConversation" {
 			continue
 		}
-		duration := time.Since(call.startedAt)
-		output, verified := restrictedClaudeReceiptWithInput(call.tool, block.ToolUseID, block.Content, block.IsError, duration, call.input)
+		if hooks == nil {
+			return "restricted Claude provider hook timing is unavailable", receipts, true
+		}
+		duration, measured := hooks.WaitDuration(ctx, block.ToolUseID, call.tool)
+		if !measured {
+			return "restricted Claude provider hook timing could not be correlated", receipts, true
+		}
+		if budget == nil || budget.count >= restrictedClaudeMaxReceipts {
+			return "restricted Claude exceeded the task receipt count limit", receipts, true
+		}
+		evidence, verified := restrictedClaudeReceiptWithInput(call.tool, block.ToolUseID, block.Content, block.IsError, duration, call.input, policy)
+		if len(evidence) > restrictedClaudeMaxReceiptBytes ||
+			budget.evidenceBytes+len(evidence) > restrictedClaudeMaxEvidenceBytes {
+			return "restricted Claude exceeded the task receipt byte limit", receipts, true
+		}
+		budget.count++
+		budget.evidenceBytes += len(evidence)
+		status := "verified"
+		if !verified {
+			status = "unverified"
+		}
+		output, err := json.Marshal(map[string]any{
+			"tool":           call.tool,
+			"server":         policy.MCPServer,
+			"callId":         block.ToolUseID,
+			"status":         status,
+			"durationMs":     duration.Milliseconds(),
+			"durationSource": "pre_post_tool_hook_monotonic",
+			"resultBytes":    len(block.Content),
+		})
+		if err != nil {
+			return "restricted Claude operational receipt could not be encoded", receipts, true
+		}
 		receipts = append(receipts, json.RawMessage(output))
 		if !verified {
 			unverifiable = true
@@ -213,7 +255,7 @@ func (b *claudeBackend) handleRestrictedUser(msg claudeSDKMessage, ch chan<- Mes
 			Type:             MessageToolResult,
 			Tool:             toolID,
 			CallID:           block.ToolUseID,
-			Output:           output,
+			Output:           string(output),
 			DurationMS:       duration.Milliseconds(),
 			DurationMeasured: true,
 		})
@@ -230,11 +272,15 @@ func hasUnfinishedRestrictedMCPCall(calls map[string]restrictedClaudeCall) bool 
 	return false
 }
 
-func (b *claudeBackend) handleRestrictedControlRequest(msg claudeSDKMessage, stdin io.Writer, policy *taskpolicy.ExecutionPolicy) string {
+func (b *claudeBackend) handleRestrictedControlRequest(msg claudeSDKMessage, stdin io.Writer, hooks *restrictedClaudeHooks) string {
 	var req claudeControlRequestPayload
 	if err := json.Unmarshal(msg.Request, &req); err != nil {
 		return "restricted Claude emitted an unreadable control request"
 	}
+	if hooks == nil {
+		return "restricted Claude policy hooks are unavailable"
+	}
+	policy := hooks.policy
 	_, allowed := restrictedClaudeToolName(policy, req.ToolName)
 	behavior := map[string]any{"behavior": "deny", "message": "Task execution policy does not authorize this tool."}
 	failure := "restricted Claude rejected an unauthorized control request"
@@ -243,8 +289,8 @@ func (b *claudeBackend) handleRestrictedControlRequest(msg claudeSDKMessage, std
 			return "restricted Claude emitted an authorized tool request without input"
 		}
 		input := make(map[string]any)
-		if err := json.Unmarshal(req.Input, &input); err != nil || !restrictedClaudeToolInputAllowed(
-			strings.TrimPrefix(req.ToolName, "mcp__"+policy.MCPServer+"__"), input) {
+		tool := strings.TrimPrefix(req.ToolName, "mcp__"+policy.MCPServer+"__")
+		if err := json.Unmarshal(req.Input, &input); err != nil || !hooks.allowsToolInput(tool, input) {
 			return "restricted Claude emitted malformed authorized tool input"
 		}
 		behavior = map[string]any{
@@ -275,39 +321,38 @@ func (b *claudeBackend) handleRestrictedControlRequest(msg claudeSDKMessage, std
 	return failure
 }
 
-func restrictedClaudeToolInputAllowed(tool string, input map[string]any) bool {
-	if input == nil {
-		return false
-	}
-	if tool != "company_events" {
-		return true
-	}
-	if len(input) != 3 {
-		return false
-	}
-	afterID, afterOK := input["afterId"].(float64)
-	throughID, throughOK := input["throughId"].(float64)
-	limit, limitOK := input["limit"].(float64)
-	return afterOK && afterID == 199900 &&
-		throughOK && throughID == 199901 &&
-		limitOK && limit == 1
-}
-
-func restrictedClaudeReceipt(tool, callID string, content json.RawMessage, isError bool, duration time.Duration) (string, bool) {
-	return restrictedClaudeReceiptWithInput(tool, callID, content, isError, duration, nil)
-}
-
-func restrictedClaudeReceiptWithInput(tool, callID string, content json.RawMessage, isError bool, duration time.Duration, input map[string]any) (string, bool) {
-	if tool == "company_events" && !restrictedClaudeToolInputAllowed(tool, input) {
+func restrictedClaudeReceiptWithInput(tool, callID string, content json.RawMessage, isError bool, duration time.Duration, input map[string]any, policy *taskpolicy.ExecutionPolicy) (string, bool) {
+	if !taskpolicy.AllowsToolInput(policy, tool, input) {
 		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
 	}
 	blocks, ok := restrictedClaudeContentBlocks(content)
 	if !ok {
 		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
 	}
+	if tool == "brain_resolve" {
+		if isError && restrictedClaudeExpectedUnknownProjectRefusal(blocks, input) {
+			encoded, err := json.Marshal(map[string]any{
+				"tool":              tool,
+				"callId":            callID,
+				"expectedRefusal":   true,
+				"httpStatus":        404,
+				"requestedIdentity": input["identity"],
+				"receiptVerified":   true,
+				"durationMs":        duration.Milliseconds(),
+				"durationSource":    "pre_post_tool_hook_monotonic",
+			})
+			if err == nil && len(encoded) <= 4096 {
+				return string(encoded), true
+			}
+		}
+		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
+	}
+	if isError {
+		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
+	}
 	codexItem := map[string]any{
 		"result": map[string]any{
-			"isError": isError,
+			"isError": false,
 			"content": blocks,
 		},
 	}
@@ -319,39 +364,70 @@ func restrictedClaudeReceiptWithInput(tool, callID string, content json.RawMessa
 	if err := json.Unmarshal([]byte(receipt), &values); err != nil {
 		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
 	}
+	if values["connectionState"] != "online" || !restrictedBrainReceiptIsVerifiable(tool, values) ||
+		!restrictedBrainReceiptMatchesInput(tool, values, input, policy) {
+		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
+	}
 	if tool == "company_events" {
 		values["eventSelector"] = map[string]any{
 			"afterId": input["afterId"], "throughId": input["throughId"], "limit": input["limit"],
 		}
 	}
-	if !restrictedBrainReceiptIsVerifiable(tool, values) {
-		if tool != "company_events" {
-			return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
-		}
-		values["callId"] = callID
-		values["isError"] = isError
-		values["receiptVerified"] = false
-		values["durationMs"] = duration.Milliseconds()
-		values["durationSource"] = "caller_monotonic"
-		encoded, err := json.Marshal(values)
-		if err != nil {
-			return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
-		}
-		return string(encoded), false
-	}
 	values["callId"] = callID
 	values["isError"] = isError
 	values["receiptVerified"] = true
 	values["durationMs"] = duration.Milliseconds()
-	values["durationSource"] = "caller_monotonic"
+	values["durationSource"] = "pre_post_tool_hook_monotonic"
 	encoded, err := json.Marshal(values)
-	if err != nil {
+	if err != nil || len(encoded) > 4096 {
 		return restrictedClaudeReceiptUnavailable(tool, callID, isError, duration), false
 	}
 	return string(encoded), true
 }
 
+func restrictedClaudeExpectedUnknownProjectRefusal(blocks []any, input map[string]any) bool {
+	if len(input) != 1 || input["identity"] != "not-an-enrolled-project" || len(blocks) != 1 {
+		return false
+	}
+	block, ok := blocks[0].(map[string]any)
+	if !ok || block["type"] != "text" {
+		return false
+	}
+	text, ok := block["text"].(string)
+	return ok && text == "brain request rejected (HTTP 404)"
+}
+
+func restrictedBrainReceiptMatchesInput(tool string, receipt, input map[string]any, policy *taskpolicy.ExecutionPolicy) bool {
+	if policy == nil || input == nil {
+		return false
+	}
+	switch tool {
+	case "brain_context":
+		return receipt["projectId"] == policy.ProjectID
+	case "brain_read":
+		return receipt["documentId"] == input["id"] &&
+			receipt["revision"] == input["revision"] &&
+			receipt["projectId"] == policy.ProjectID
+	case "company_events":
+		rows, ok := receipt["eventRows"].([]any)
+		if !ok || len(rows) != 1 || receipt["eventItemsTotal"] != float64(1) ||
+			receipt["nextAfterId"] != float64(policy.CompanyEventsSelector.ThroughID) ||
+			receipt["snapshotThroughId"] != float64(policy.CompanyEventsSelector.ThroughID) ||
+			receipt["hasMore"] != false {
+			return false
+		}
+		row, ok := rows[0].(map[string]any)
+		return ok && row["id"] == float64(policy.CompanyEventsSelector.ThroughID) &&
+			row["evidenceRef"] == "source_event:199901"
+	default:
+		return true
+	}
+}
+
 func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) bool {
+	if receipt["dataPolicyPresent"] != true {
+		return false
+	}
 	hasNonEmptyString := func(key string) bool {
 		value, ok := receipt[key].(string)
 		return ok && value != ""
@@ -380,8 +456,8 @@ func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) boo
 		}
 		return true
 	case "brain_read":
-		revision, revisionOK := safeBrainReceiptHash(receipt["revision"])
-		currentRevision, currentOK := receipt["currentRevision"].(string)
+		_, revisionOK := safeBrainReceiptHash(receipt["revision"])
+		_, currentOK := safeBrainReceiptHash(receipt["currentRevision"])
 		truncated, truncatedOK := receipt["truncated"].(bool)
 		available, availableOK := receipt["available"].(bool)
 		bodyVerified, bodyVerifiedOK := receipt["bodySha256Verified"].(bool)
@@ -389,7 +465,7 @@ func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) boo
 		_, bytesOK := safeBrainReceiptInt(receipt["bytes"])
 		return hasNonEmptyString("documentId") &&
 			hasNonEmptyString("projectId") &&
-			revisionOK && currentOK && currentRevision == revision &&
+			revisionOK && currentOK &&
 			truncatedOK && !truncated &&
 			availableOK && available &&
 			bodyVerifiedOK && bodyVerified &&
@@ -404,12 +480,22 @@ func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) boo
 		}
 		for _, value := range projects {
 			project, ok := value.(map[string]any)
-			if !ok || project["portfolioClass"] != "company" {
+			if !ok || (project["portfolioClass"] != "business_application" &&
+				project["portfolioClass"] != "company_infrastructure") {
 				return false
 			}
 			projectID, idOK := project["projectId"].(string)
-			sourceHash, hashOK := safeBrainReceiptHash(project["classificationSourceSha256"])
-			if !idOK || projectID == "" || !hashOK || sourceHash == "" {
+			source, sourceOK := project["classificationSource"].(map[string]any)
+			if !idOK || projectID == "" || !sourceOK {
+				return false
+			}
+			for _, key := range []string{"programId", "observedAt", "evidenceStage", "sourceRepository", "sourceRevision", "sourceReference"} {
+				if value, ok := source[key].(string); !ok || value == "" {
+					return false
+				}
+			}
+			sourceHash, hashOK := safeBrainReceiptHash(source["sourceSha256"])
+			if !hashOK || sourceHash == "" {
 				return false
 			}
 		}
@@ -429,6 +515,15 @@ func restrictedBrainReceiptIsVerifiable(tool string, receipt map[string]any) boo
 			}
 		}
 		return true
+	case "company_events":
+		rows, rowsOK := receipt["eventRows"].([]any)
+		total, totalOK := safeBrainReceiptInt(receipt["eventItemsTotal"])
+		next, nextOK := safeBrainReceiptInt(receipt["nextAfterId"])
+		snapshot, snapshotOK := safeBrainReceiptInt(receipt["snapshotThroughId"])
+		hasMore, hasMoreOK := receipt["hasMore"].(bool)
+		return rowsOK && len(rows) == 1 && totalOK && total == 1 &&
+			nextOK && next == 199901 && snapshotOK && snapshot == 199901 &&
+			hasMoreOK && !hasMore
 	default:
 		return false
 	}
@@ -454,7 +549,7 @@ func restrictedClaudeReceiptUnavailable(tool, callID string, isError bool, durat
 		"receiptVerified": false,
 		"receipt":         "unavailable",
 		"durationMs":      duration.Milliseconds(),
-		"durationSource":  "caller_monotonic",
+		"durationSource":  "pre_post_tool_hook_monotonic",
 	})
 	return string(encoded)
 }
