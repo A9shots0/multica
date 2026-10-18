@@ -424,3 +424,72 @@ ssh -t silvers-mac-studio '"$HOME/.multica/profiles/silver-mediums/bin/claude-2.
 Complete the existing company-approved Claude subscription sign-in and report
 only that the command succeeded. The next command is the staged one-shot rerun;
 do not create, assign, or reconfigure anything else.
+
+## Live A32 acceptance completed
+
+Snapshot time: `2026-10-18T23:41:33Z`.
+
+- Claude subscription OAuth completed through the existing approved account.
+  The daemon-specific wrapper reports `loggedIn: true`, `authMethod:
+  oauth_token`, and `apiProvider: firstParty` for Claude Code `2.1.295`. The
+  wrapper reads only the access token from the protected `0600` Claude profile
+  into the child process environment; it does not log or copy the credential.
+- A32 server release `comp-rea-20261018-r2` contains the task policy at source
+  commit `3cad985859c691a042a7e50bca0781202b8e1c9b`, tree
+  `78d14f43f4ed7abcbf785e19cd0578bbaa72cc58`, source archive SHA-256
+  `1e63197336f041b06796373ab1b890d828fc72f2e3869ec90241c526e2cf42c0`,
+  backend image
+  `sha256:08158966b1662482a8d430811d2d1582d0c26020b9da98bb65ad04321820b74b`,
+  and embedded version `v0.6.3-comp-rea.a32.3cad98585`. The frontend and
+  PostgreSQL images remained unchanged. Fresh backup
+  `20261018T230602Z-1092fc83` passed local, off-box, and private-R2 checks;
+  rollback is the prior backend image `sha256:08a97bad4263db315fa50e6a3eb46340d79a3f7740302cbaca26ccfbcc64b0a0`
+  plus `/Users/a32/.config/silver-mediums/multica/host.before-comp-rea-20261018-r2.env`.
+- Live-path corrections after the server release are daemon-side commits:
+  `a33df174b9b643d12caebbeb536ad58c6a873da1` binds the evaluator on the
+  production drain path; `75602eb25a702ed79c948374607440f001aab361` accepts
+  the live Claude hook response shapes; `7f9fc1ae8828ce2a1fc553b898196ce61201131d`
+  verifies the real source-event feed envelope; and
+  `6dbc652636ed4155413e926bb560e906feaf0464` hardens the bounded final-answer
+  contract. The focused task-policy, agent, and daemon suites passed on the
+  final source.
+- The normal Mac Studio daemon `01a06d74-b96c-72e6-bc09-9cf50838ee84` is
+  active on final candidate `v0.6.3-comp-rea.a32.6dbc65263`, binary SHA-256
+  `865b7438078de2667dbf69f642a092b5aa71b3e79d6524f9cc2d7a7e95aa8785`.
+  Its daemon-specific auth-wrapper SHA-256 is
+  `d696c34ba40c639dcbf32657930e8169a80f80c691c6d36b421ee5120654d507`;
+  the pinned Claude binary SHA-256 is
+  `0116ee2e0a513900b633d9951367f18747686478e2b462805b8c31609f047f70`.
+  Rollback is
+  `~/.multica/rollback/comp-rea-a32-6dbc65263-20261018T233700Z`, whose prior
+  plist was verified present after the run.
+- A32 reports runtime `bd6e5717-b6a7-4f9a-9d2b-25bb0b298c43` online on that
+  daemon, Claude `2.1.295`, CLI `v0.6.3-comp-rea.a32.6dbc65263`, and capability
+  `task-execution-policy-v1`. Dedicated agent
+  `97171ec2-38ed-45cb-aff8-a635f327b090` remains privately bound to that exact
+  runtime, model `opus`, concurrency 1, with no custom environment and exactly
+  one enabled MCP: existing Mac `brain`
+  `ac4d8655-2b13-4eec-9bb5-5efe8483b78e`.
+- Final live policy task `01a15162-8c34-742b-87a2-81944cd17fe8` ran from
+  `2026-10-18T23:39:36Z` through `23:40:10Z` and completed. The frozen
+  evaluator returned `acceptance.status: passed`, establishing all five checks:
+  A33, A36, A28, the A49 unknown-project/current-claim refusal, and the bounded
+  company event. The transcript contains exactly nine `tool_use` plus nine
+  `tool_result` messages: three `brain_context`, four `brain_read`, one
+  `brain_resolve`, and one `company_events`; every result is verified. Measured
+  connector intervals were `518, 304, 329, 401, 153, 441, 121, 382, 130 ms`,
+  all below the three-second contract. No source body or final answer was
+  persisted in the operational transcript.
+- Prohibited-action count is zero. The task transcript contains no shell,
+  filesystem, write, unrelated MCP, discovery, or non-Brain tool. Usage was
+  Claude `claude-opus-5-5`: input 6, cache read 68,780, cache write 58,749,
+  output 2,335 tokens.
+- After acceptance, A32 `/health` returned HTTP 200 with commit
+  `3cad985859c691a042a7e50bca0781202b8e1c9b`; the normal Mac daemon remained
+  running on the final candidate, the runtime remained online, the acceptance
+  agent returned idle, and `SILV-105` had zero active runs. The brief A32
+  same-revision restart observed at `2026-10-18T23:37:45Z` recovered before the
+  successful task and did not alter release identity.
+
+The COMP-REA live acceptance terminal condition is satisfied. No business or
+UI decision remains. No GitHub Actions or GitHub-hosted runners were invoked.
