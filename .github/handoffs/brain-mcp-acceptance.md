@@ -8,6 +8,8 @@ completion of live acceptance.
 
 - Policy implementation head: `7451e354713dd41865024a3f007e3c3b76aa76ef`.
 - Latest code/test head: `a9f7f7f41f6529aa24bf7c4861322cba54165446`.
+- Exact qualified branch head before this documentation-only checkpoint:
+  `8b8b5831e236247fcd31cf06206a65292654e0ca`.
 - Repository: `A9shots0/multica`; branch: `a9shots0-animated-meme`.
 - Draft PR: <https://github.com/A9shots0/multica/pull/1>, base
   `upstream-main-f896cc483`.
@@ -90,6 +92,17 @@ duration at most three seconds. Retrieval and answer quality are distinct.
   same CI run also had an unchanged WeCom 150 ms deadline test fail once; that
   file has no feature-branch diff and remains separately classified as runner
   timing instability unless it repeats after the corrected head is pushed.
+- The corrected exact branch head
+  `8b8b5831e236247fcd31cf06206a65292654e0ca` then passed the repository's
+  full-scope CI workflow in run
+  <https://github.com/A9shots0/multica/actions/runs/39163932137>. Backend build,
+  tag-gated vet, migrations, the full backend tests, agent tests, vulnerability
+  scan, SQL generation, Windows execution isolation, macOS runtime stress,
+  frontend build/typecheck/lint/tests, scripts and installers all passed. The
+  first vulnerability-scan attempt failed only while downloading
+  `golang.org/x/sys` from the Go proxy; rerunning that failed job succeeded and
+  the dependent backend summary passed. This is engineering qualification, not
+  deployment or live Brain acceptance.
 - A fresh isolated PostgreSQL 16 database was migrated through upstream
   migration `582_issue_workflow_default_index` and the current
   schema. The focused claim capability, restricted connected-app suppression,
@@ -182,6 +195,14 @@ per-task workaround or treat synthetic tests as spending authority.
 Snapshot time: `2026-10-18T20:15:18Z`. Blocker ID:
 `comp-rea-live-5of5-prerequisites`; validated continuity fingerprint:
 `358ca0b19d8967b40aa6ea4a1b75aef412b479569caf1779414d38d1da288d0d`.
+
+Fresh continuation readback at `2026-10-18T20:46:40Z` found the fingerprint's
+material facts unchanged: production `/health` still reports commit
+`18fa9f728`; the two Mac Studio Multica processes still execute
+`/opt/homebrew/bin/multica` v0.4.44 at `17ebe8d...`; shared Claude remains
+2.1.259 with `loggedIn: false` and `authMethod: none`; and both retained
+candidate hashes still match the values above. No release or shared-runtime
+resume signal occurred.
 
 - Blocked goal: live A33/A36/A28/A49/event acceptance passes 5/5 through
   Multica's task-scoped policy path.
