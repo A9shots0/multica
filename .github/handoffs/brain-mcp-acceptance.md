@@ -497,3 +497,22 @@ Shared-Brain task observation `42154529-3721-4d29-bc5f-d770a4333e06` records
 the same bounded completion evidence; its generic `acceptance: not_established`
 field reflects that Brain observations do not grant acceptance, while the live
 Multica evaluator result above is the authoritative acceptance evidence.
+
+## Remote source custody
+
+Source-custody snapshot: `2026-10-18T20:21:25-04:00`.
+
+- The exact deployed A32 source lineage is preserved on remote branch
+  `codex/comp-rea-a32-deployed-source`, whose custody tip is
+  `bfe1bcda61382824476b6b1c2bdd164e55622467`. Exact server commit
+  `3cad985859c691a042a7e50bca0781202b8e1c9b` and exact daemon commit
+  `6dbc652636ed4155413e926bb560e906feaf0464` are ancestors of that tip and
+  retain their deployed trees unchanged.
+- The accepted runtime handoff commits
+  `9201ae6a6133e1c38651238f54eaa36ea7d43245`,
+  `c0b60ae6bd72d38ffb1b352f1aa499f4864f00a6`, and
+  `b76d671eea7489048af21614c508cc5c9c44d586` are preserved on the draft PR
+  branch `a9shots0-animated-meme`.
+- Both pushes use a head commit carrying the repository's existing
+  `[skip actions]` convention. No GitHub Actions workflow or hosted runner is
+  requested for this custody-only update.
