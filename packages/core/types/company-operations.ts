@@ -42,6 +42,7 @@ export interface CompanyServiceProjection {
   source_system: string;
   source_native_id: string;
   project_id?: string;
+  portfolio_binding?: CompanyPortfolioBinding;
   authority: string;
   freshness_state: string;
   privacy_class: string;
@@ -51,6 +52,34 @@ export interface CompanyServiceProjection {
   system_node_ids: string[];
   journey_ids: string[];
   revision: number;
+}
+
+export interface CompanyPortfolioBinding {
+  canonical_project_id?: string;
+  company_membership: "company" | "personal" | "unknown";
+  portfolio_classification:
+    | "business_application"
+    | "company_infrastructure"
+    | "personal"
+    | "experimental"
+    | "archived"
+    | "unknown";
+  verification_state: "verified" | "unverified";
+  provenance?: CompanyPortfolioProvenance;
+}
+
+export interface CompanyPortfolioProvenance {
+  source_system: "silver-mediums-knowledge";
+  source_repository: string;
+  source_reference: string;
+  source_revision: string;
+  source_sha256?: string;
+  source_observed_at: string;
+  evidence_stage: string;
+  program_id?: string;
+  projection_system: "silver-mediums-brain";
+  projection_revision: string;
+  projected_at: string;
 }
 
 export interface CompanyOperatingPicture {

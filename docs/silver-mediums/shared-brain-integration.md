@@ -21,6 +21,24 @@ Set `MULTICA_BRAIN_CONFIG` to a protected, server-local JSON file. Keep that fil
 
 Only an explicitly projectless task may use `defaultProject`; an unknown project never falls back. The server verifies workspace access and revalidates an owner-selected Chat target, then freezes brain project and target revision per task attempt. It reports missing configuration/binding/network evidence explicitly. A brain outage does not fail the run. Local daemons receive five scoped MCP tools: context, full immutable document read, paginated events, immutable evidence read, and queued handoff. The server holds the shared credential; the daemon retains only its existing workspace/daemon token. Full reads reject a document outside the bound project. Native/global MCP configuration is not required for this path.
 
+## Company portfolio identity projection
+
+The company operating-picture read reuses the same administrator-owned
+`workspace UUID -> Multica project UUID -> Brain project ID` mapping. For a
+mapped service it reads Brain's exact project record and exposes the local
+Multica `project_id` beside a `portfolio_binding` containing the canonical
+Knowledge project ID, company/personal/unknown membership, the full portfolio
+classification, and Knowledge source plus Brain projection provenance. Brain
+projects are projections of `A9shots0/Silver-Mediums-Knowledge`; neither the
+mapping nor a matching ID grants workspace membership, task authority, routing,
+or runtime permission.
+
+Missing mappings, unavailable Brain reads, mismatched IDs, unsupported classes,
+or provenance from another repository remain `unknown` and `unverified`, with
+no canonical ID asserted. The existing operating picture still loads. Rollback
+is application-only: older servers ignore the optional response field and no
+database row or migration must be removed.
+
 ## Durable delivery
 
 The scoped tool catalog also includes `brain_events` and `brain_evidence`.

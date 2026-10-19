@@ -135,22 +135,52 @@ type CompanyIncidentProjection struct {
 }
 
 type CompanyServiceProjection struct {
-	ServiceKey     string         `json:"service_key"`
-	DisplayName    string         `json:"display_name"`
-	AreaKey        string         `json:"area_key"`
-	Environment    string         `json:"environment"`
-	SourceSystem   string         `json:"source_system"`
-	SourceNativeID string         `json:"source_native_id"`
-	ProjectID      *string        `json:"project_id,omitempty"`
-	Authority      string         `json:"authority"`
-	FreshnessState string         `json:"freshness_state"`
-	PrivacyClass   string         `json:"privacy_class"`
-	ObservedAt     string         `json:"observed_at"`
-	ExpiresAt      *string        `json:"expires_at,omitempty"`
-	Metadata       map[string]any `json:"metadata"`
-	SystemNodeIDs  []string       `json:"system_node_ids"`
-	JourneyIDs     []string       `json:"journey_ids"`
-	Revision       int64          `json:"revision"`
+	ServiceKey       string                   `json:"service_key"`
+	DisplayName      string                   `json:"display_name"`
+	AreaKey          string                   `json:"area_key"`
+	Environment      string                   `json:"environment"`
+	SourceSystem     string                   `json:"source_system"`
+	SourceNativeID   string                   `json:"source_native_id"`
+	ProjectID        *string                  `json:"project_id,omitempty"`
+	PortfolioBinding *CompanyPortfolioBinding `json:"portfolio_binding,omitempty"`
+	Authority        string                   `json:"authority"`
+	FreshnessState   string                   `json:"freshness_state"`
+	PrivacyClass     string                   `json:"privacy_class"`
+	ObservedAt       string                   `json:"observed_at"`
+	ExpiresAt        *string                  `json:"expires_at,omitempty"`
+	Metadata         map[string]any           `json:"metadata"`
+	SystemNodeIDs    []string                 `json:"system_node_ids"`
+	JourneyIDs       []string                 `json:"journey_ids"`
+	Revision         int64                    `json:"revision"`
+}
+
+// CompanyPortfolioBinding is a read-only identity projection. ProjectID stays
+// Multica's local UUID; this binding never changes workspace membership,
+// permissions, routing, or task authorization.
+type CompanyPortfolioBinding struct {
+	CanonicalProjectID      string                      `json:"canonical_project_id,omitempty"`
+	CompanyMembership       string                      `json:"company_membership"`
+	PortfolioClassification string                      `json:"portfolio_classification"`
+	VerificationState       string                      `json:"verification_state"`
+	Provenance              *CompanyPortfolioProvenance `json:"provenance,omitempty"`
+}
+
+type CompanyPortfolioProvenance struct {
+	SourceSystem       string `json:"source_system"`
+	SourceRepository   string `json:"source_repository"`
+	SourceReference    string `json:"source_reference"`
+	SourceRevision     string `json:"source_revision"`
+	SourceSHA256       string `json:"source_sha256,omitempty"`
+	SourceObservedAt   string `json:"source_observed_at"`
+	EvidenceStage      string `json:"evidence_stage"`
+	ProgramID          string `json:"program_id,omitempty"`
+	ProjectionSystem   string `json:"projection_system"`
+	ProjectionRevision string `json:"projection_revision"`
+	ProjectedAt        string `json:"projected_at"`
+}
+
+type CompanyPortfolioResolver interface {
+	ResolveCompanyProjects(ctx context.Context, workspaceID string, localProjectIDs []string) (map[string]CompanyPortfolioBinding, error)
 }
 
 type CompanyOperatingPicture struct {
@@ -210,9 +240,10 @@ type CompanyWorkRelationshipProjection struct {
 }
 
 type CompanyOperationsService struct {
-	Queries   *db.Queries
-	TxStarter TxStarter
-	Now       func() time.Time
+	Queries           *db.Queries
+	TxStarter         TxStarter
+	Now               func() time.Time
+	PortfolioResolver CompanyPortfolioResolver
 }
 
 func NewCompanyOperationsService(q *db.Queries, tx TxStarter) *CompanyOperationsService {
@@ -520,6 +551,7 @@ func (s *CompanyOperationsService) OperatingPicture(ctx context.Context, workspa
 		serviceProjections = append(serviceProjections, ProjectCompanyService(companyService))
 		servicesByKey[companyService.ServiceKey] = companyService
 	}
+	s.attachCompanyPortfolioBindings(ctx, util.UUIDToString(workspaceID), serviceProjections)
 	projections := make([]CompanyIncidentProjection, 0, len(incidents))
 	for _, incident := range incidents {
 		projections = append(projections, projectCompanyIncident(
@@ -705,6 +737,69 @@ func ProjectCompanyService(row db.CompanyService) CompanyServiceProjection {
 		projection.ExpiresAt = &value
 	}
 	return projection
+}
+
+func (s *CompanyOperationsService) attachCompanyPortfolioBindings(ctx context.Context, workspaceID string, services []CompanyServiceProjection) {
+	localProjectIDs := make([]string, 0, len(services))
+	seen := make(map[string]struct{}, len(services))
+	for i := range services {
+		if services[i].ProjectID == nil {
+			continue
+		}
+		localID := *services[i].ProjectID
+		services[i].PortfolioBinding = &CompanyPortfolioBinding{
+			CompanyMembership:       "unknown",
+			PortfolioClassification: "unknown",
+			VerificationState:       "unverified",
+		}
+		if _, ok := seen[localID]; !ok {
+			seen[localID] = struct{}{}
+			localProjectIDs = append(localProjectIDs, localID)
+		}
+	}
+	if len(localProjectIDs) == 0 || s.PortfolioResolver == nil {
+		return
+	}
+	bindings, err := s.PortfolioResolver.ResolveCompanyProjects(ctx, workspaceID, localProjectIDs)
+	if err != nil {
+		return
+	}
+	for i := range services {
+		if services[i].ProjectID == nil {
+			continue
+		}
+		binding, ok := bindings[*services[i].ProjectID]
+		if !ok || !validCompanyPortfolioBinding(binding) {
+			continue
+		}
+		copy := binding
+		services[i].PortfolioBinding = &copy
+	}
+}
+
+func validCompanyPortfolioBinding(binding CompanyPortfolioBinding) bool {
+	if binding.VerificationState != "verified" || binding.CanonicalProjectID == "" || binding.Provenance == nil {
+		return false
+	}
+	expectedMembership := "unknown"
+	switch binding.PortfolioClassification {
+	case "business_application", "company_infrastructure":
+		expectedMembership = "company"
+	case "personal":
+		expectedMembership = "personal"
+	case "experimental", "archived", "unknown":
+	default:
+		return false
+	}
+	if binding.CompanyMembership != expectedMembership {
+		return false
+	}
+	p := binding.Provenance
+	return p.SourceSystem == "silver-mediums-knowledge" &&
+		p.SourceRepository == "A9shots0/Silver-Mediums-Knowledge" &&
+		p.SourceReference != "" && p.SourceRevision != "" && p.SourceObservedAt != "" &&
+		p.EvidenceStage != "" && p.ProjectionSystem == "silver-mediums-brain" &&
+		p.ProjectionRevision != "" && p.ProjectedAt != ""
 }
 
 func validateCompanyServiceTopology(in *CompanyServiceInput) error {

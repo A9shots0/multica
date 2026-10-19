@@ -142,6 +142,52 @@ const CompanyIncidentProjectionSchema = z.object({
   journey_ids: z.array(z.string()).default([]),
 }).loose();
 
+const CompanyPortfolioProvenanceSchema = z.object({
+  source_system: z.literal("silver-mediums-knowledge"),
+  source_repository: z.string(),
+  source_reference: z.string(),
+  source_revision: z.string(),
+  source_sha256: z.string().optional(),
+  source_observed_at: z.string(),
+  evidence_stage: z.string(),
+  program_id: z.string().optional(),
+  projection_system: z.literal("silver-mediums-brain"),
+  projection_revision: z.string(),
+  projected_at: z.string(),
+}).loose();
+
+const VerifiedCompanyPortfolioBindingSchema = z.union([
+  z.object({
+    canonical_project_id: z.string().min(1),
+    company_membership: z.literal("company"),
+    portfolio_classification: z.enum(["business_application", "company_infrastructure"]),
+    verification_state: z.literal("verified"),
+    provenance: CompanyPortfolioProvenanceSchema,
+  }).loose(),
+  z.object({
+    canonical_project_id: z.string().min(1),
+    company_membership: z.literal("personal"),
+    portfolio_classification: z.literal("personal"),
+    verification_state: z.literal("verified"),
+    provenance: CompanyPortfolioProvenanceSchema,
+  }).loose(),
+  z.object({
+    canonical_project_id: z.string().min(1),
+    company_membership: z.literal("unknown"),
+    portfolio_classification: z.enum(["experimental", "archived", "unknown"]),
+    verification_state: z.literal("verified"),
+    provenance: CompanyPortfolioProvenanceSchema,
+  }).loose(),
+]);
+
+const UnverifiedCompanyPortfolioBindingSchema = z.object({
+  company_membership: z.literal("unknown"),
+  portfolio_classification: z.literal("unknown"),
+  verification_state: z.literal("unverified"),
+  canonical_project_id: z.never().optional(),
+  provenance: z.never().optional(),
+}).loose();
+
 const CompanyServiceProjectionSchema = z.object({
   service_key: z.string(),
   display_name: z.string(),
@@ -150,6 +196,10 @@ const CompanyServiceProjectionSchema = z.object({
   source_system: z.string(),
   source_native_id: z.string(),
   project_id: z.string().optional(),
+  portfolio_binding: z.union([
+    VerifiedCompanyPortfolioBindingSchema,
+    UnverifiedCompanyPortfolioBindingSchema,
+  ]).optional(),
   authority: z.string(),
   freshness_state: z.string(),
   privacy_class: z.string(),

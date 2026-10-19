@@ -478,6 +478,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 			slog.Error("shared brain configuration invalid; claims will report unavailable", "error", err)
 		} else {
 			h.SharedBrain = &brain.Service{Client: client, Store: queries}
+			h.CompanyOperationsService.PortfolioResolver = brain.NewPortfolioResolver(client)
 		}
 	}
 	invitationRateLimits := handler.DefaultInvitationRateLimits()

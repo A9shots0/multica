@@ -21,6 +21,25 @@ describe("CompanyOperatingPictureSchema", () => {
         environment: "production",
         source_system: "watcher",
         source_native_id: "phonefarm-prod",
+        project_id: "7d4de3db-8a78-4b01-8cb3-664e95d23d22",
+        portfolio_binding: {
+          canonical_project_id: "multica",
+          company_membership: "company",
+          portfolio_classification: "company_infrastructure",
+          verification_state: "verified",
+          provenance: {
+            source_system: "silver-mediums-knowledge",
+            source_repository: "A9shots0/Silver-Mediums-Knowledge",
+            source_reference: "initiatives/company-improvement/portfolio.json",
+            source_revision: "e3f7669146740cbeb3069489349931a63f5890d1",
+            source_observed_at: "2026-10-18",
+            evidence_stage: "business-verified",
+            program_id: "COMP-REA",
+            projection_system: "silver-mediums-brain",
+            projection_revision: "9585421724da1c797fd073f9340a0a4aa001df06573dd251f7800800740012f5",
+            projected_at: "2026-10-19T00:53:42Z",
+          },
+        },
         authority: "observed",
         freshness_state: "fresh",
         privacy_class: "internal",
@@ -58,6 +77,8 @@ describe("CompanyOperatingPictureSchema", () => {
       }],
     });
     expect(parsed.services[0]?.display_name).toBe("PhoneFarm");
+    expect(parsed.services[0]?.portfolio_binding?.canonical_project_id).toBe("multica");
+    expect(parsed.services[0]?.portfolio_binding?.provenance?.source_revision).toBe("e3f7669146740cbeb3069489349931a63f5890d1");
     expect(parsed.services[0]?.system_node_ids).toEqual([]);
     expect(parsed.services[0]?.journey_ids).toEqual([]);
     expect(parsed.current_effort[0]?.state).toBe("reported_done_unaccepted");
@@ -68,6 +89,43 @@ describe("CompanyOperatingPictureSchema", () => {
   it("degrades a malformed response to honest empty evidence", () => {
     expect(parseWithFallback(
       { services: "healthy", incidents: [] },
+      CompanyOperatingPictureSchema,
+      EMPTY_COMPANY_OPERATING_PICTURE,
+      { endpoint: "GET /api/workspaces/:id/company-operating-picture", redactReceived: true },
+    )).toEqual(EMPTY_COMPANY_OPERATING_PICTURE);
+  });
+
+  it("rejects a verified company label without canonical provenance", () => {
+    expect(parseWithFallback(
+      {
+        contract_version: 1,
+        generated_at: "2026-10-19T00:53:42Z",
+        services: [{
+          service_key: "multica",
+          display_name: "Multica",
+          area_key: "company",
+          environment: "production",
+          source_system: "multica",
+          source_native_id: "multica-platform",
+          project_id: "7d4de3db-8a78-4b01-8cb3-664e95d23d22",
+          portfolio_binding: {
+            canonical_project_id: "multica",
+            company_membership: "company",
+            portfolio_classification: "company_infrastructure",
+            verification_state: "verified",
+          },
+          authority: "source",
+          freshness_state: "current",
+          privacy_class: "internal",
+          observed_at: "2026-10-19T00:53:42Z",
+          metadata: {},
+          revision: 1,
+        }],
+        incidents: [],
+        current_effort: [],
+        work_topology: [],
+        work_relationships: [],
+      },
       CompanyOperatingPictureSchema,
       EMPTY_COMPANY_OPERATING_PICTURE,
       { endpoint: "GET /api/workspaces/:id/company-operating-picture", redactReceived: true },
