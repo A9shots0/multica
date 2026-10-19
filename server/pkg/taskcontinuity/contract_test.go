@@ -16,13 +16,32 @@ func TestEvaluateRecoveryAndBoundaryMatrix(t *testing.T) {
 		want Decision
 	}{
 		{
-			name: "browser unavailable with non-browser work stays active",
+			name: "browser unavailable keeps UI recovery active",
 			in: Observation{
-				Kind:               KindToolUnavailable,
-				Scope:              ScopeLane,
-				SafeInScopeActions: 4,
+				Kind:                    KindBrowserUnavailable,
+				Scope:                   ScopeLane,
+				RecoveryExhausted:       true,
+				ConsecutiveObservations: 3,
+				ObservedAt:              observedAt,
+				EvidenceRefs:            []string{"browser:all-surfaces-failed"},
+				AccountableParty:        "browser runtime",
+				ResumeCondition:         "a supported browser surface works",
 			},
 			want: Decision{GoalState: StateActive, LaneState: StateDegraded, Continue: true},
+		},
+		{
+			name: "browser unavailable cannot externally block UI goal",
+			in: Observation{
+				Kind:                    KindBrowserUnavailable,
+				Scope:                   ScopeGoal,
+				RecoveryExhausted:       true,
+				ConsecutiveObservations: 3,
+				ObservedAt:              observedAt,
+				EvidenceRefs:            []string{"browser:all-surfaces-failed"},
+				AccountableParty:        "browser runtime",
+				ResumeCondition:         "a supported browser surface works",
+			},
+			want: Decision{GoalState: StateDegraded, LaneState: StateDegraded, Continue: true},
 		},
 		{
 			name: "stale Brain evidence starts recovery rather than asking owner",
@@ -237,7 +256,9 @@ func TestRuntimeInstructionCarriesTheBehavioralContract(t *testing.T) {
 		"three unchanged checks",
 		"recovery is exhausted",
 		"Do not ask the owner",
-		"browser",
+		"Browser access is mandatory for UI work",
+		"do not replace browser-based UI verification",
+		"Browser recovery is agent-owned",
 	}
 	for _, want := range wants {
 		if !contains(RuntimeInstruction, want) {

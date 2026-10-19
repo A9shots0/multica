@@ -8,8 +8,10 @@ Recorded: 2026-10-18
 
 Agents recover and continue by default. They involve the owner only when the
 owner's judgment or authority is genuinely required. A preferred tool failing,
-missing or stale evidence, an occupied lane, a dirty shared checkout, or an
-unverified acceptance path must not stop unrelated safe work.
+missing or stale evidence, an occupied lane, or a dirty shared checkout must
+not stop unrelated safe work. UI work is the exception to evidence fallback:
+it must regain browser access and complete browser-based verification rather
+than substituting source, API, logs, tests, screenshots, or agent claims.
 
 This contract is provider-neutral. Multica enforces the state decision for the
 agents it runs; generated Codex, Claude Code, and Copilot instructions adapt the
@@ -20,7 +22,8 @@ same contract for sessions launched outside Multica.
 | Source | Current state | Decision or fact | Accounted for here |
 | --- | --- | --- | --- |
 | Owner discussion, 2026-10-18 | accepted | Recoverable inconvenience must not become owner-required work. | The decision table keeps the goal active whenever a safe in-scope action remains. |
-| Owner discussion, 2026-10-18 | accepted | Browser access failure must trigger recovery and fallback work, not an immediate stop. | Tool failure is a degraded execution state unless it is the sole acceptance path and recovery is exhausted. |
+| Owner discussion, 2026-10-18 | accepted | Browser access is mandatory for UI work. Losing one or every current surface is an agent-owned recovery problem, never permission to finish through non-browser evidence. | Browser failure has its own non-terminal classification and a tested recovery-only path. |
+| Read-only audit of `Audit AI token usage`, 2026-10-18 | current implementation evidence | Multica's continuous-work program already owns persistent Mika identity, goals, capsules, attempts, checkpoints, context manifests, receipts, cold worker rotation, budgets, loop detection, route preflight, and event-driven continuation. | This contract does not recreate those mechanisms. It supplies obstacle classification and stop/owner rules for that controller and standalone provider sessions. |
 | Global agent guidance | current on inspected Mac and Windows installations | Direct owner authority is durable; routine in-scope work continues across phase boundaries. | Owner action is limited to explicit consequential boundaries. |
 | `server/pkg/taskfailure` | current source | Multica already has a provider-neutral technical failure taxonomy and resume safeguards. | The continuity contract complements it; it does not replace provider/runtime failure classification. |
 | `server/internal/daemon/execenv/runtime_config_sections.go` | current source | Every issue agent is told to mark an issue blocked when it "cannot proceed," without a recovery or whole-goal test. | Runtime guidance will use the decision table below. |
@@ -78,6 +81,27 @@ External loading behavior used for the adapters:
   matching file in source is not proof that a target host loaded it; installed
   files and a fresh agent session must still be checked during rollout.
 
+## Boundary with Multica continuous work
+
+The continuous-work program audited in `Audit AI token usage` owns **how work
+keeps running**: Mika's persistent owner-facing identity, disposable workers,
+durable goals and capsules, attempts and receipts, checkpoint/cold-resume
+rotation, context and token budgets, loop detection, cheap route preflight,
+and event-driven wakeups. Brain holds reviewed reusable knowledge;
+Intelligence holds operational measurement; Multica holds live execution
+state.
+
+This contract owns **how an obstacle is classified**: recoverable degradation,
+a waiting lane, a genuine owner decision, or a proven whole-goal external
+block. It also supplies the provider-neutral instruction and standalone
+Codex/Claude/Copilot adapters.
+
+Integration should therefore pass obstacle observations from the continuous
+controller through this decision table and record the resulting state in its
+existing attempt/checkpoint receipts. It must not introduce a second goal
+ledger, checkpoint schema, supervisor hierarchy, budget system, polling loop,
+or worker-rotation mechanism.
+
 Render a standalone block from the canonical source without copying prose:
 
 ```sh
@@ -113,17 +137,22 @@ go run ./cmd/agent-continuity --check ~/.codex/AGENTS.md
 
 ## Browser recovery
 
-When the preferred browser surface is unavailable, try in order:
+For UI work, browser interaction and browser-based verification are mandatory.
+When a browser surface is unavailable, the agent owns recovery and tries in
+order:
 
 1. refresh the browser and tab inventory;
 2. reacquire the intended tab;
 3. open a fresh controlled tab;
-4. use an available browser-automation fallback;
-5. continue API, source, logs, tests, and other non-browser work;
-6. leave only the browser-specific acceptance claim unverified.
+4. use another supported browser or browser-automation surface;
+5. repair or restart the browser session, local tooling, connection, or
+   configuration when that is safe and in scope;
+6. repeat the real UI workflow in a working browser.
 
-The whole goal may stop only when browser interaction is the sole remaining
-acceptance path and the external-blocked requirements above are satisfied.
+Non-browser evidence may help diagnose the failure, but it cannot replace the
+browser path, close the UI lane, or support a UI-complete claim. Browser
+unavailability remains a non-terminal recovery state and does not become an
+owner decision merely because every currently discovered surface failed.
 
 ## Host and product boundaries
 
@@ -151,8 +180,9 @@ The contract must be replayed against at least:
 - production lock;
 - provider safety lock.
 
-The first six continue or recover without owner intervention. The final four
-may wait or request owner action only when their exact boundary applies.
+The first six continue or recover without owner intervention; browser recovery
+must end in a real working browser before UI completion. The final four may
+wait or request owner action only when their exact boundary applies.
 
 ## Disproof and acceptance
 

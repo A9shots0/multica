@@ -39,6 +39,7 @@ type Kind string
 
 const (
 	KindToolUnavailable       Kind = "tool_unavailable"
+	KindBrowserUnavailable    Kind = "browser_unavailable"
 	KindEvidenceUnavailable   Kind = "evidence_unavailable"
 	KindWorkspaceConflict     Kind = "workspace_conflict"
 	KindResourceOccupied      Kind = "resource_occupied"
@@ -59,7 +60,7 @@ const (
 )
 
 var validKinds = map[Kind]struct{}{
-	KindToolUnavailable: {}, KindEvidenceUnavailable: {}, KindWorkspaceConflict: {},
+	KindToolUnavailable: {}, KindBrowserUnavailable: {}, KindEvidenceUnavailable: {}, KindWorkspaceConflict: {},
 	KindResourceOccupied: {}, KindTransientProvider: {}, KindContextRecovery: {},
 	KindExternalDependency: {}, KindProductionLock: {}, KindProviderSafetyLock: {},
 	KindProductDecision: {}, KindSecurityTrustChange: {}, KindAccessChange: {},
@@ -105,6 +106,17 @@ func Evaluate(in Observation) (Decision, error) {
 	}
 	if in.SafeInScopeActions < 0 || in.RecoveryAttempts < 0 || in.ConsecutiveObservations < 0 {
 		return Decision{}, fmt.Errorf("continuity counts must be non-negative")
+	}
+
+	// Browser-based verification is a required execution path for UI work, not
+	// an optional evidence source. Losing every current browser surface keeps
+	// recovery agent-owned and active; it never converts the UI acceptance path
+	// into a non-browser substitute or an owner decision.
+	if in.Kind == KindBrowserUnavailable {
+		if in.Scope == ScopeLane {
+			return Decision{GoalState: StateActive, LaneState: StateDegraded, Continue: true}, nil
+		}
+		return Decision{GoalState: StateDegraded, LaneState: StateDegraded, Continue: true}, nil
 	}
 
 	if in.SafeInScopeActions > 0 {

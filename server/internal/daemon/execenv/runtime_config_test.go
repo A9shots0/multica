@@ -302,8 +302,11 @@ func TestEveryRuntimeCarriesProviderNeutralContinuityContract(t *testing.T) {
 				out := buildMetaSkillContent(provider, ctx)
 				for _, want := range []string{
 					"## Execution Continuity",
-					"preferred tool, browser surface, evidence source, shared checkout, or provider call failing is degraded execution",
+					"preferred tool, evidence source, shared checkout, or provider call failing is degraded execution",
 					"continue other safe in-scope work",
+					"Browser access is mandatory for UI work",
+					"do not replace browser-based UI verification",
+					"Browser recovery is agent-owned",
 					"Do not ask the owner to resolve agent inconvenience",
 					"three unchanged checks",
 				} {
